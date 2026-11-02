@@ -1,0 +1,59 @@
+{
+  "_说明": "tests/capture.js 的抓取清单。enabled=false 表示暂时不抓（例如还没找到可用的详情页 URL）。proxy=true 的目标会走 127.0.0.1:7897。",
+  "_判定字段": "minLen=HTML 至少多少字节；mustInclude=HTML 里必须出现的字符串（用来识别反爬页/挑战页）；ready=就绪表达式；expectPath=最终 URL 必须包含的片段（详情页 404 会被回首页，靠这条挡住）。",
+  "targets": [
+    {
+      "id": "douban-movie-1292052",
+      "site": "豆瓣电影",
+      "url": "https://movie.douban.com/subject/1292052/",
+      "mediaType": "movie",
+      "extractor": "DoubanMovieExtractor",
+      "note": "《肖申克的救赎》，含 v:average 评分与 #info 信息块",
+      "proxy": false,
+      "minLen": 60000,
+      "mustInclude": ["v:average", "id=\"info\""],
+      "expectPath": "/subject/1292052",
+      "ready": "document.readyState === 'complete' && !!document.querySelector('[property=\"v:average\"]')"
+    },
+    {
+      "id": "douban-game-26417112",
+      "site": "豆瓣游戏",
+      "url": "https://www.douban.com/game/26417112/",
+      "mediaType": "game",
+      "extractor": "DoubanGameExtractor",
+      "note": "暂缓：这个 ID 已失效，会 302 回豆瓣首页（capture.js 的 expectPath 会挡住）。要抓需先在 https://www.douban.com/game/ 里找一个有效的 /game/<id>/ 详情页。",
+      "enabled": false,
+      "proxy": false,
+      "minLen": 20000,
+      "mustInclude": [],
+      "expectPath": "/game/26417112",
+      "ready": "document.readyState === 'complete' && document.documentElement.outerHTML.length > 20000"
+    },
+    {
+      "id": "tmdb-movie-278",
+      "site": "TMDB",
+      "url": "https://www.themoviedb.org/movie/278?language=zh-CN",
+      "mediaType": "movie",
+      "extractor": "TmdbExtractor",
+      "note": "《肖申克的救赎》中文页，JSON-LD 结构化数据",
+      "proxy": true,
+      "minLen": 40000,
+      "mustInclude": ["application/ld+json"],
+      "expectPath": "/movie/278",
+      "ready": "document.readyState === 'complete' && !!document.querySelector('script[type=\"application/ld+json\"]')"
+    },
+    {
+      "id": "metacritic-game-hades",
+      "site": "Metacritic",
+      "url": "https://www.metacritic.com/game/hades/",
+      "mediaType": "game",
+      "extractor": "MetacriticGameExtractor",
+      "note": "Hades 游戏页（Cloudflare，可能需 --headful）",
+      "proxy": false,
+      "minLen": 30000,
+      "mustInclude": ["metacritic"],
+      "expectPath": "/game/hades",
+      "ready": "document.documentElement.outerHTML.length > 30000"
+    }
+  ]
+}

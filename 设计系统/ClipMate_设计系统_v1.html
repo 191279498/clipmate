@@ -1,0 +1,1187 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>采媒灵 ClipMate · 设计系统 v1.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   采媒灵 ClipMate · 设计系统 v1.0
+   01 token  02 基础  03 版式骨架  04 章节  05 组件  06 响应式
+   ============================================================ */
+
+/* ---------- 01 token ---------- */
+:root{
+  /* 纸与墨：一切都是纸，只有需要指出来的地方才上色 */
+  --paper:#F7F6F2;
+  --surface:#FFFFFF;
+  --surface-2:#F1EFE8;
+  --surface-3:#E8E4D9;
+  --ink:#111820;
+  --ink-2:#4C555E;
+  --ink-3:#6B7278;
+  --line:#E1DCD1;
+  --line-2:#CBC5B7;
+
+  /* 指路色：取自吉祥物本体 */
+  --azure:#056BF4;
+  --azure-ink:#0448A6;
+  --azure-wash:#EEF4FF;
+  --visor:#1FB6FF;
+  --blush:#FF8FA3;
+  --amber:#F8C020;
+  --ok:#0E7A3E;
+  --ok-wash:#EAF7F0;
+  --bad:#B42318;
+  --bad-wash:#FDECEC;
+
+  /* 度量 */
+  --r1:8px; --r2:12px; --r3:18px; --r4:28px;
+  --rail:212px;
+  --shadow-pop:0 12px 28px -14px rgba(17,24,32,.32);
+
+  --font-ui:"Bricolage Grotesque","PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+
+[data-theme="dark"]{
+  --paper:#0E1319;
+  --surface:#151C24;
+  --surface-2:#1C242E;
+  --surface-3:#232C37;
+  --ink:#E8EDF2;
+  --ink-2:#9AA6B4;
+  --ink-3:#78838F;
+  --line:#26303B;
+  --line-2:#33404E;
+
+  --azure:#5B9CFF;
+  --azure-ink:#9CC2FF;
+  --azure-wash:#152741;
+  --visor:#38C0FF;
+  --ok:#3ECF8E;
+  --ok-wash:#12291F;
+  --bad:#FF7A6E;
+  --bad-wash:#2A1517;
+  --shadow-pop:0 14px 30px -14px rgba(0,0,0,.7);
+}
+
+/* ---------- 02 基础 ---------- */
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--font-ui);
+  font-size:15px;
+  line-height:1.75;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+/* 纸的脊线：右侧渐隐的竖向发丝网格，暗示这是一页手稿 */
+body::before{
+  content:"";
+  position:fixed; inset:0;
+  pointer-events:none; z-index:0;
+  background-image:linear-gradient(90deg,rgba(17,24,32,.05) 1px,transparent 1px);
+  background-size:88px 100%;
+  -webkit-mask-image:linear-gradient(90deg,#000 0%,rgba(0,0,0,.5) 46%,transparent 82%);
+  mask-image:linear-gradient(90deg,#000 0%,rgba(0,0,0,.5) 46%,transparent 82%);
+}
+[data-theme="dark"] body::before{
+  background-image:linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+}
+img{max-width:100%; display:block}
+h1,h2,h3,h4{margin:0; font-weight:700; line-height:1.2; letter-spacing:-.01em}
+p{margin:0}
+a{color:var(--azure-ink); text-decoration:none}
+a:hover{text-decoration:underline; text-underline-offset:3px}
+::selection{background:var(--azure-wash); color:var(--azure-ink)}
+:focus-visible{outline:2px solid var(--azure); outline-offset:3px; border-radius:3px}
+.skip{position:absolute; left:-9999px; top:0; background:var(--azure); color:#fff; padding:10px 16px; z-index:99}
+.skip:focus{left:12px; top:12px}
+
+.mono{font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3)}
+.num{font-family:var(--font-mono); font-variant-numeric:tabular-nums; letter-spacing:.02em}
+
+/* ---------- 03 版式骨架 ---------- */
+.rail{
+  position:fixed; left:0; top:0; bottom:0; width:var(--rail);
+  padding:30px 24px 26px;
+  border-right:1px solid var(--line);
+  background:linear-gradient(180deg,var(--paper) 0%,var(--paper) 60%,var(--surface-2) 100%);
+  display:flex; flex-direction:column; gap:26px;
+  z-index:4;
+}
+.rail-mark{font-size:17px; font-weight:800; letter-spacing:-.02em; line-height:1.15}
+.rail-mark span{display:block; font-size:12px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3); margin-top:4px}
+.rail-nav{display:flex; flex-direction:column; gap:1px; margin-top:2px}
+.rail-nav a{
+  display:flex; align-items:baseline; gap:10px;
+  padding:7px 8px 7px 0; border-left:2px solid transparent;
+  font-size:13px; color:var(--ink-2); text-decoration:none;
+  transition:color .16s, border-color .16s, padding .16s;
+}
+.rail-nav a i{font-family:var(--font-mono); font-style:normal; font-size:10px; letter-spacing:.08em; color:var(--ink-3); width:18px; flex:none}
+.rail-nav a:hover{color:var(--ink); text-decoration:none}
+.rail-nav a[aria-current="true"]{color:var(--azure-ink); border-left-color:var(--azure); padding-left:10px; font-weight:600}
+.rail-nav a[aria-current="true"] i{color:var(--azure)}
+.rail-foot{margin-top:auto; display:flex; flex-direction:column; gap:12px}
+.rail-btn{
+  display:flex; align-items:center; gap:9px;
+  font-family:var(--font-ui); font-size:12px; color:var(--ink-2);
+  background:var(--surface); border:1px solid var(--line-2);
+  border-radius:999px; padding:7px 13px; cursor:pointer;
+  transition:border-color .16s, color .16s, background .16s;
+}
+.rail-btn:hover{border-color:var(--azure); color:var(--azure-ink)}
+.rail-btn .dot{width:7px; height:7px; border-radius:50%; background:var(--ink-3); flex:none; transition:background .16s}
+[data-theme="dark"] .rail-btn .dot{background:var(--amber)}
+.rail-meta{font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; color:var(--ink-3)}
+
+main{margin-left:var(--rail); padding:0 64px; position:relative; z-index:1}
+.wrap{max-width:1120px; margin:0 auto}
+section{padding:84px 0 76px; border-top:1px solid var(--line); scroll-margin-top:0}
+section:first-of-type{border-top:0}
+
+/* ---------- 04 章节骨架 ---------- */
+.shead{display:flex; align-items:baseline; gap:14px; margin-bottom:34px}
+.shead-idx{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; color:var(--azure); padding-top:2px}
+.shead h2{font-size:26px; letter-spacing:-.02em; white-space:nowrap}
+.shead-en{font-family:var(--font-mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3); white-space:nowrap}
+.shead-rule{flex:1; height:1px; background:var(--line-2); align-self:center; min-width:20px}
+.shead-note{font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; color:var(--ink-3); white-space:nowrap}
+.slead{max-width:60ch; color:var(--ink-2); font-size:15px; margin-bottom:38px}
+
+/* ---------- 封面 ---------- */
+.cover{padding:34px 0 60px}
+.cover-meta{
+  display:flex; gap:22px; align-items:center;
+  border-bottom:1px solid var(--line); padding-bottom:14px; margin-bottom:clamp(28px,5vw,66px);
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
+}
+.cover-meta span:first-child{color:var(--ink-2)}
+.cover-meta span:last-child{margin-left:auto}
+.cover-grid{display:grid; grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr); gap:44px; align-items:center}
+.kicker{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--azure); margin-bottom:18px}
+.cover h1{
+  font-size:clamp(38px,5.2vw,66px); line-height:.99; letter-spacing:-.035em; font-weight:800;
+  margin-bottom:22px;
+}
+.cover h1 em{font-style:normal; position:relative; white-space:nowrap}
+[data-theme="dark"] .cover h1 em::after{opacity:.62}
+.cover h1 em::after{
+  content:""; position:absolute; left:0; right:-.06em; bottom:.1em; height:.14em;
+  background:var(--blush); opacity:.5; border-radius:2px; z-index:-1;
+}
+.lede{max-width:46ch; color:var(--ink-2); font-size:15.5px; line-height:1.85}
+.spec-strip{display:flex; gap:0; margin-top:40px; border-top:1px solid var(--line); padding-top:18px}
+.spec-strip div{flex:1; padding-right:18px}
+.spec-strip b{display:block; font-family:var(--font-mono); font-size:24px; font-weight:700; letter-spacing:-.02em; line-height:1.1; color:var(--ink); font-variant-numeric:tabular-nums}
+.spec-strip span{display:block; font-size:12px; color:var(--ink-3); margin-top:6px}
+.cover-art{position:relative; display:grid; place-items:center; min-height:280px}
+.cover-art::before{
+  content:""; position:absolute; width:min(430px,92%); aspect-ratio:1; border-radius:50%;
+  background:radial-gradient(circle at 50% 46%,#DFEBFF 0%,#EFF5FF 42%,rgba(247,246,242,0) 71%);
+}
+[data-theme="dark"] .cover-art::before{
+  background:radial-gradient(circle at 50% 46%,#16304F 0%,#142235 42%,rgba(14,19,25,0) 71%);
+}
+.cover-art img{position:relative; width:min(352px,100%); height:auto; filter:drop-shadow(0 22px 34px rgba(6,60,140,.16))}
+.enter{animation:rise .7s cubic-bezier(.22,.8,.3,1) both}
+.cover-art img.enter{animation-delay:.08s}
+@keyframes rise{from{opacity:0; transform:translateY(14px)}to{opacity:1; transform:none}}
+@media (prefers-reduced-motion:reduce){.enter{animation:none}}
+
+/* ---------- 主张 ---------- */
+.thesis{display:grid; grid-template-columns:repeat(3,1fr); gap:0; border-top:1px solid var(--line)}
+.th{padding:26px 26px 8px 0; border-right:1px solid var(--line)}
+.th:last-child{border-right:0; padding-right:0}
+.th-code{font-family:var(--font-mono); font-size:10px; letter-spacing:.14em; color:var(--ink-3); margin-bottom:16px}
+.th h3{font-size:19px; margin-bottom:10px; letter-spacing:-.01em}
+.th p{color:var(--ink-2); font-size:14px; line-height:1.8}
+.th b{color:var(--ink); font-weight:600}
+
+/* ---------- 色板 ---------- */
+.ratio{margin-bottom:44px}
+.ratio-bar{display:flex; height:44px; border-radius:var(--r2); overflow:hidden; border:1px solid var(--line-2)}
+.ratio-bar span{display:block; height:100%}
+.ratio-bar .c1{flex:88; background:#F7F6F2}
+.ratio-bar .c2{flex:9; background:#111820}
+.ratio-bar .c3{flex:3; background:#056BF4}
+.ratio-legend{display:flex; gap:26px; margin-top:12px; flex-wrap:wrap}
+.ratio-legend div{font-size:12px; color:var(--ink-3)}
+.ratio-legend b{font-family:var(--font-mono); color:var(--ink); font-weight:700; margin-right:6px}
+
+.swatches{display:grid; grid-template-columns:repeat(4,1fr); gap:16px}
+.sw{
+  border:1px solid var(--line); border-radius:var(--r3); overflow:hidden; background:var(--surface);
+  text-align:left; padding:0; cursor:pointer; font-family:inherit; color:inherit;
+  transition:transform .18s cubic-bezier(.22,.8,.3,1), box-shadow .18s, border-color .18s;
+}
+.sw:hover{transform:translateY(-3px); box-shadow:var(--shadow-pop); border-color:var(--line-2)}
+.sw-chip{height:92px; display:flex; align-items:flex-end; justify-content:space-between; padding:12px 14px}
+.sw-chip i{font-family:var(--font-mono); font-style:normal; font-size:11px; letter-spacing:.06em}
+.sw-body{padding:13px 14px 15px}
+.sw-name{font-size:13.5px; font-weight:600; letter-spacing:-.01em}
+.sw-hex{font-family:var(--font-mono); font-size:11px; color:var(--ink-3); margin-top:3px; letter-spacing:.04em}
+.sw-use{font-size:12px; color:var(--ink-2); margin-top:8px; line-height:1.6}
+.sw-cr{display:inline-flex; align-items:center; gap:6px; margin-top:10px; font-family:var(--font-mono); font-size:10px; letter-spacing:.06em; color:var(--ink-3); border-top:1px solid var(--line); padding-top:8px; width:100%}
+.sw-cr b{color:var(--ink-2); font-weight:500}
+.aaa{color:var(--ok)}
+
+.note{border-left:2px solid var(--azure); padding:2px 0 2px 16px; margin-top:30px; font-size:13.5px; color:var(--ink-2); max-width:64ch}
+.note b{color:var(--ink)}
+
+/* ---------- 字体 ---------- */
+.faces{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:42px}
+.face{border:1px solid var(--line); border-radius:var(--r3); background:var(--surface); padding:22px 20px 20px; min-height:168px; display:flex; flex-direction:column}
+.face-name{font-family:var(--font-mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); margin-bottom:auto}
+.face-spec{font-size:40px; line-height:1.1; letter-spacing:-.03em; font-weight:700; margin:14px 0 10px}
+.face-spec.mono-spec{font-family:var(--font-mono); font-size:30px; letter-spacing:-.01em; font-weight:500}
+.face-role{font-size:12.5px; color:var(--ink-2); line-height:1.65}
+.face-role b{color:var(--ink); font-weight:600}
+
+.scale{border-top:1px solid var(--line)}
+.scale-row{display:grid; grid-template-columns:150px minmax(0,1fr) 190px; gap:24px; align-items:baseline; padding:16px 0; border-bottom:1px solid var(--line)}
+.scale-spec{font-family:var(--font-mono); font-size:11px; color:var(--ink-3); letter-spacing:.02em; white-space:nowrap}
+.scale-spec b{color:var(--ink); font-weight:700}
+.scale-use{font-size:12px; color:var(--ink-3); text-align:right}
+.s64{font-size:40px; line-height:.98; letter-spacing:-.035em; font-weight:800}
+.s40{font-size:30px; line-height:1.06; letter-spacing:-.02em; font-weight:700}
+.s28{font-size:22px; line-height:1.2; letter-spacing:-.015em; font-weight:700}
+.s20{font-size:17px; line-height:1.35; font-weight:600}
+.s15{font-size:15px; line-height:1.75}
+.s13{font-size:13px; line-height:1.6; color:var(--ink-2)}
+.s11{font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3)}
+
+/* ---------- 版式 ---------- */
+.grid-demo{border:1px solid var(--line); border-radius:var(--r3); padding:16px; background:var(--surface); margin-bottom:36px}
+.grid-cols{display:grid; grid-template-columns:repeat(12,1fr); gap:10px; height:76px}
+.grid-cols span{background:var(--azure-wash); border-radius:2px; border:1px solid rgba(5,107,244,.16)}
+[data-theme="dark"] .grid-cols span{border-color:rgba(91,156,255,.24)}
+.grid-cap{display:flex; justify-content:space-between; margin-top:12px; font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; color:var(--ink-3)}
+
+.tokens-row{display:grid; grid-template-columns:1fr 1fr; gap:36px}
+.scale-bars{display:flex; flex-direction:column; gap:9px}
+.sb{display:flex; align-items:center; gap:14px}
+.sb i{display:block; height:10px; background:var(--ink); border-radius:1px; flex:none}
+.sb b{font-family:var(--font-mono); font-size:10px; color:var(--ink-3); font-weight:400; letter-spacing:.06em}
+.sb em{font-style:normal; font-size:12px; color:var(--ink-3); margin-left:auto}
+.radius-row{display:flex; gap:14px; flex-wrap:wrap}
+.rad{width:74px; height:64px; background:var(--surface); border:1px solid var(--line-2); display:grid; place-items:center; font-family:var(--font-mono); font-size:10px; color:var(--ink-3)}
+.elev{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:34px}
+.elev-panel{border-radius:var(--r3); padding:22px; background:var(--paper)}
+.elev-panel h4{font-size:14px; margin-bottom:8px}
+.elev-panel p{font-size:12.5px; color:var(--ink-2); line-height:1.7}
+.ep-card{border-radius:var(--r2); background:var(--surface); padding:14px 16px; margin-top:16px; display:flex; justify-content:space-between; align-items:center; font-size:12.5px}
+.ep-card.shadow{box-shadow:0 12px 26px -16px rgba(17,24,32,.5); border:1px solid transparent}
+.ep-card.line{border:1px solid var(--line-2)}
+.ep-card b{font-family:var(--font-mono); font-size:10px; color:var(--ink-3); font-weight:400; letter-spacing:.08em}
+
+/* ---------- 组件 ---------- */
+.cgroup{border-top:1px solid var(--line); padding:26px 0 6px}
+.cgroup:first-of-type{border-top:0; padding-top:0}
+.cgroup-head{display:flex; align-items:baseline; gap:12px; margin-bottom:20px}
+.cgroup-head h3{font-size:15px; font-weight:600}
+.cgroup-head span{font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; color:var(--ink-3)}
+.stage{display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:22px; border:1px dashed var(--line-2); border-radius:var(--r3); background:var(--surface)}
+
+.btn{
+  display:inline-flex; align-items:center; gap:8px;
+  height:40px; padding:0 18px; border-radius:var(--r2);
+  font-family:var(--font-ui); font-size:13.5px; font-weight:600; letter-spacing:-.005em;
+  border:1px solid transparent; cursor:pointer;
+  transition:background .16s, border-color .16s, color .16s, transform .12s;
+}
+.btn:active{transform:translateY(1px)}
+.btn svg{width:15px; height:15px; flex:none}
+.btn-primary{background:var(--azure); color:#fff}
+.btn-primary:hover{background:#0459D0}
+.btn-secondary{background:var(--surface); color:var(--azure-ink); border-color:var(--line-2)}
+.btn-secondary:hover{border-color:var(--azure); background:var(--azure-wash)}
+.btn-ghost{background:transparent; color:var(--ink-2); padding:0 12px}
+.btn-ghost:hover{background:var(--surface-2); color:var(--ink)}
+.btn-danger{background:var(--bad); color:#fff}
+.btn-danger:hover{filter:brightness(.94)}
+.btn-icon{width:40px; height:40px; padding:0; justify-content:center; background:var(--surface); border-color:var(--line-2); color:var(--ink-2)}
+.btn-icon:hover{border-color:var(--azure); color:var(--azure-ink)}
+.btn[disabled]{opacity:.45; pointer-events:none}
+
+.pill{display:inline-flex; align-items:center; gap:8px; height:34px; padding:0 14px; border-radius:999px; font-size:12.5px; font-weight:600}
+.pill-wait{background:var(--azure-wash); color:var(--azure-ink)}
+.pill-ok{background:var(--ok-wash); color:var(--ok)}
+.pill-bad{background:var(--bad-wash); color:var(--bad)}
+.pill-info{background:var(--surface-2); color:var(--ink-2)}
+.spin{width:13px; height:13px; border-radius:50%; border:2px solid currentColor; border-top-color:transparent; animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}}
+
+.notices{display:flex; flex-direction:column; gap:10px; width:100%; max-width:560px}
+.notice{display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:var(--r1); font-size:13px; border:1px solid transparent}
+.notice b{font-weight:600}
+.notice .x{margin-left:auto; font-family:var(--font-mono); font-size:12px; opacity:.5; background:none; border:0; cursor:pointer; color:inherit}
+.n-ok{background:var(--ok-wash); color:var(--ok); border-color:rgba(14,122,62,.16)}
+.n-bad{background:var(--bad-wash); color:var(--bad); border-color:rgba(180,35,24,.16)}
+.n-info{background:var(--azure-wash); color:var(--azure-ink); border-color:rgba(5,107,244,.16)}
+
+.switch{position:relative; width:44px; height:26px; border-radius:999px; border:0; background:var(--surface-3); cursor:pointer; padding:0; transition:background .2s}
+.switch::after{content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.28); transition:transform .2s cubic-bezier(.22,.8,.3,1)}
+.switch[aria-checked="true"]{background:var(--azure)}
+.switch[aria-checked="true"]::after{transform:translateX(18px)}
+.switch-row{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:340px; padding:9px 0; font-size:13.5px; border-bottom:1px solid var(--line)}
+.switch-row:last-child{border-bottom:0}
+
+.chips{display:flex; gap:8px; flex-wrap:wrap}
+.chip{display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 12px; border-radius:999px; border:1px solid var(--line-2); font-size:12.5px; color:var(--ink-2); background:var(--surface)}
+.chip i{width:8px; height:8px; border-radius:2px; flex:none}
+.cat-film{background:#F0883E}
+.cat-book{background:var(--amber)}
+.cat-game{background:#34C759}
+.cat-social{background:#8B6CF0}
+.cat-person{background:var(--visor)}
+.count-badge{display:inline-flex; align-items:center; gap:6px; height:26px; padding:0 10px; border-radius:7px; background:var(--azure-wash); color:var(--azure-ink); font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; font-weight:500}
+
+/* 提取卡 */
+.excard{border:1px solid var(--line); border-radius:var(--r3); background:var(--surface); overflow:hidden; margin-top:6px}
+.excard-head{display:flex; align-items:center; gap:14px; padding:14px 18px; border-bottom:1px solid var(--line); background:var(--surface)}
+.excard-head .t{font-size:14px; font-weight:600}
+.excard-head .u{font-family:var(--font-mono); font-size:10.5px; color:var(--ink-3); letter-spacing:.02em; margin-left:auto}
+.tabs{display:flex; gap:2px; background:var(--surface-2); padding:3px; border-radius:9px}
+.tab{border:0; background:none; font-family:var(--font-ui); font-size:12px; padding:5px 12px; border-radius:7px; cursor:pointer; color:var(--ink-3)}
+.tab[aria-selected="true"]{background:var(--surface); color:var(--ink); box-shadow:0 1px 2px rgba(17,24,32,.1); font-weight:600}
+.expane{padding:20px 18px; min-height:268px}
+.expane[hidden]{display:none}
+.raw{font-family:var(--font-mono); font-size:12px; line-height:1.9; color:var(--ink-3); max-height:268px; overflow:auto; white-space:pre-wrap}
+.raw mark{background:rgba(5,107,244,.1); color:var(--ink-2); border-radius:2px; padding:0 2px}
+.frow{display:grid; grid-template-columns:74px minmax(0,1fr); gap:16px; padding:9px 0; border-bottom:1px solid var(--line); align-items:baseline}
+.frow:last-child{border-bottom:0}
+.frow dt{font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; color:var(--ink-3); text-transform:uppercase}
+.frow dd{margin:0; font-size:13.5px; line-height:1.6}
+.frow dd small{color:var(--ink-3); font-size:12px}
+.frow dd.hi{font-weight:600}
+.rate{font-family:var(--font-mono); font-weight:700; color:var(--azure-ink)}
+
+.empty{display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; padding:26px 0 8px}
+.empty img{width:104px; opacity:.9; filter:grayscale(.25)}
+.empty b{font-size:14px}
+.empty span{font-size:12.5px; color:var(--ink-3); max-width:34ch}
+
+/* popup 预制件 */
+.pop{width:314px; border:1px solid var(--line-2); border-radius:14px; background:var(--surface); box-shadow:var(--shadow-pop); overflow:hidden; font-size:13px}
+.pop-head{display:flex; align-items:center; gap:9px; padding:11px 13px; border-bottom:1px solid var(--line)}
+.pop-head img{width:24px; height:24px; border-radius:7px}
+.pop-head b{font-size:13px; font-weight:600}
+.pop-head .g{margin-left:auto; font-family:var(--font-mono); font-size:10px; color:var(--ink-3)}
+.pop-body{padding:6px 13px 10px}
+.pop-row{display:flex; align-items:center; justify-content:space-between; padding:8px 0}
+.pop-row span{font-size:13px}
+.pop-sub{padding-left:18px; display:flex; align-items:center; justify-content:space-between; color:var(--ink-3); font-size:12.5px}
+.pop-foot{display:flex; align-items:center; justify-content:space-between; padding:9px 13px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-3); background:var(--surface-2)}
+.pop-foot a{color:var(--azure-ink); font-size:11.5px}
+
+/* ---------- 吉祥物 ---------- */
+.states{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:40px}
+.state{border:1px solid var(--line); border-radius:var(--r3); background:var(--surface); padding:18px 14px 16px; text-align:center}
+.state img{height:92px; width:auto; margin:0 auto 12px}
+.state b{display:block; font-size:13.5px; margin-bottom:4px}
+.state span{font-size:11.5px; color:var(--ink-3); line-height:1.55; display:block}
+.state em{display:block; font-family:var(--font-mono); font-style:normal; font-size:9.5px; letter-spacing:.12em; color:var(--ink-3); margin-top:9px; opacity:.75}
+
+.sizes{display:flex; align-items:flex-end; gap:26px; flex-wrap:wrap; padding:22px; border:1px dashed var(--line-2); border-radius:var(--r3); background:var(--surface); margin-bottom:40px}
+.sizes figure{margin:0; text-align:center}
+.sizes figcaption{font-family:var(--font-mono); font-size:10px; color:var(--ink-3); margin-top:9px; letter-spacing:.06em}
+
+.dodont{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+.dd{border-radius:var(--r3); padding:20px 22px; border:1px solid var(--line)}
+.dd h4{font-size:13px; display:flex; align-items:center; gap:8px; margin-bottom:12px}
+.dd h4 i{width:18px; height:18px; border-radius:50%; display:grid; place-items:center; font-style:normal; font-size:11px; color:#fff; flex:none}
+.dd-yes{background:var(--surface)}
+.dd-yes h4 i{background:var(--ok)}
+.dd-no{background:var(--surface)}
+.dd-no h4 i{background:var(--bad)}
+.dd ul{margin:0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:8px}
+.dd li{font-size:12.5px; color:var(--ink-2); line-height:1.6; padding-left:16px; position:relative}
+.dd li::before{content:""; position:absolute; left:0; top:.62em; width:5px; height:1px; background:var(--line-2)}
+.board-fig{margin-top:40px; border:1px solid var(--line); border-radius:var(--r3); overflow:hidden; background:var(--surface)}
+.board-fig img{width:100%}
+.board-fig figcaption{padding:12px 16px; font-size:12px; color:var(--ink-3); border-top:1px solid var(--line); display:flex; gap:10px}
+.board-fig figcaption b{color:var(--ink-2); font-weight:600}
+
+/* ---------- 落地 ---------- */
+.code{border:1px solid var(--line); border-radius:var(--r3); background:var(--surface-2); padding:20px 22px; overflow:auto; margin-bottom:36px}
+.code pre{margin:0; font-family:var(--font-mono); font-size:12px; line-height:1.95; color:var(--ink-2); tab-size:2}
+.code .k{color:var(--azure-ink)}
+.code .v{color:var(--ink)}
+.code .c{color:var(--ink-3); opacity:.8}
+.checklist{display:grid; grid-template-columns:1fr 1fr; gap:10px 30px; border-top:1px solid var(--line); padding-top:22px}
+.checklist div{font-size:13px; color:var(--ink-2); display:flex; gap:10px; padding:6px 0; border-bottom:1px solid var(--line)}
+.checklist div b{font-family:var(--font-mono); font-size:10px; color:var(--ok); font-weight:400; flex:none; padding-top:3px}
+
+.foot{border-top:1px solid var(--line); margin-left:var(--rail); padding:26px 64px 40px; display:flex; align-items:center; gap:16px; color:var(--ink-3); font-size:12px}
+.foot img{width:30px; height:30px; border-radius:8px; border:1px solid var(--line)}
+.foot .r{margin-left:auto; font-family:var(--font-mono); font-size:10px; letter-spacing:.1em}
+
+.toast{
+  position:fixed; left:50%; bottom:30px; transform:translate(-50%,14px);
+  background:var(--ink); color:var(--paper); padding:9px 18px; border-radius:999px;
+  font-size:12.5px; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:50;
+  font-family:var(--font-mono); letter-spacing:.06em;
+}
+.toast.on{opacity:1; transform:translate(-50%,0)}
+
+/* ---------- 06 响应式 ---------- */
+@media (max-width:1180px){
+  .swatches{grid-template-columns:repeat(3,1fr)}
+}
+@media (max-width:980px){
+  .rail{position:static; width:auto; flex-direction:row; flex-wrap:wrap; align-items:center; gap:10px 18px; padding:12px 20px; border-right:0; border-bottom:1px solid var(--line); overflow:visible}
+  .rail-nav{flex-direction:row; flex-wrap:wrap; margin:0; gap:4px 16px; flex:1 1 240px}
+  .rail-nav a{border-left:0; border-bottom:2px solid transparent; padding:3px 0; white-space:nowrap}
+  .rail-nav a[aria-current="true"]{border-left:0; border-bottom-color:var(--azure); padding-left:0}
+  .rail-nav a i{display:none}
+  .rail-foot{flex-direction:row; align-items:center; margin:0; gap:10px}
+  .rail-mark{font-size:15px}
+  .rail-meta{display:none}
+  main{margin-left:0; padding:0 26px}
+  .wrap{padding:0}
+  .foot{margin-left:0; padding:22px 26px 34px}
+  .cover-grid{grid-template-columns:1fr; gap:26px}
+  .cover-art{order:-1; min-height:0}
+  .cover-art img{width:min(240px,62%)}
+  .thesis{grid-template-columns:1fr}
+  .th{border-right:0; border-bottom:1px solid var(--line); padding:22px 0}
+  .th:last-child{border-bottom:0}
+  .swatches{grid-template-columns:repeat(2,1fr)}
+  .faces,.states,.dodont,.elev,.tokens-row,.checklist{grid-template-columns:1fr}
+  .states{grid-template-columns:repeat(2,1fr)}
+  .scale-row{grid-template-columns:110px minmax(0,1fr); gap:14px}
+  .scale-use{display:none}
+  section{padding:56px 0 48px}
+  .shead h2{font-size:22px}
+  .shead-en,.shead-note{display:none}
+}
+@media (max-width:560px){
+  .swatches{grid-template-columns:1fr 1fr; gap:10px}
+  .spec-strip b{font-size:19px}
+  .cover h1{font-size:34px}
+  .stage{padding:14px}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+
+<aside class="rail">
+  <div class="rail-mark">采媒灵<span>ClipMate</span></div>
+  <nav class="rail-nav" aria-label="章节">
+    <a href="#thesis" data-spy="thesis"><i>01</i>主张</a>
+    <a href="#color" data-spy="color"><i>02</i>色彩</a>
+    <a href="#type" data-spy="type"><i>03</i>字体</a>
+    <a href="#layout" data-spy="layout"><i>04</i>版式</a>
+    <a href="#components" data-spy="components"><i>05</i>组件</a>
+    <a href="#mascot" data-spy="mascot"><i>06</i>吉祥物</a>
+    <a href="#build" data-spy="build"><i>07</i>落地</a>
+  </nav>
+  <div class="rail-foot">
+    <button class="rail-btn" id="themeBtn" aria-pressed="false">
+      <span class="dot" aria-hidden="true"></span><span id="themeTxt">纸面</span>
+    </button>
+    <span class="rail-meta">v1.0 · 2026.11</span>
+  </div>
+</aside>
+
+<main id="main">
+
+<!-- ============ 封面 ============ -->
+<section class="cover wrap" id="top">
+  <div class="cover-meta">
+    <span>采媒灵 ClipMate · 设计系统</span>
+    <span>v1.0</span>
+    <span>2026.11</span>
+  </div>
+
+  <div class="cover-grid">
+    <div class="cover-copy enter">
+      <p class="kicker">Chrome / Edge 扩展 · 23 个站点 · 30 余个字段</p>
+      <h1>把网页，<br>整理成<em>一张卡</em>。</h1>
+      <p class="lede">采媒灵把任意页面拆成可用的字段——片名、导演、ISBN、作者、播放量——再按你选的格式交出来。这套系统只解决一件事：<b>让它读起来像一张档案卡，而不是一台控制台。</b></p>
+      <div class="spec-strip">
+        <div><b>23</b><span>接入站点</span></div>
+        <div><b>05</b><span>内容分类</span></div>
+        <div><b>03</b><span>输出格式</span></div>
+        <div><b>01</b><span>只吉祥物</span></div>
+      </div>
+    </div>
+    <div class="cover-art">
+      <img class="enter" src="assets/mascot-hero@2x.png" alt="采媒灵吉祥物：一只圆头机器人，蓝色面罩，手里拿着一份文档" width="345" height="233">
+    </div>
+  </div>
+</section>
+
+<!-- ============ 01 主张 ============ -->
+<section id="thesis" class="wrap">
+  <header class="shead">
+    <span class="shead-idx">01</span>
+    <h2>主张</h2>
+    <span class="shead-en">Thesis</span>
+    <span class="shead-rule"></span>
+    <span class="shead-note">3 条 · 不商量</span>
+  </header>
+  <p class="slead">工具类界面最常见的错误，是把「功能多」画成「东西多」。采媒灵的功能确实不少，但用户每次只做一件事：<b>从一个页面拿走一份数据</b>。所以整套界面收敛成三种材料——纸、墨、一条发丝线——颜色只在必须指路时出现。</p>
+
+  <div class="thesis">
+    <article class="th">
+      <div class="th-code">Room 01 / 单位</div>
+      <h3>卡片是唯一单位</h3>
+      <p>提取结果、站点设置、字段顺序、空状态，全部长成同一种卡：<b>一条发丝线、一个字段标签、一个值</b>。学会一张卡，就学会了整个扩展。</p>
+    </article>
+    <article class="th">
+      <div class="th-code">Room 02 / 颜色</div>
+      <h3>颜色只用来指路</h3>
+      <p>蓝只出现在两处：<b>要你动手的地方</b>，和<b>正在动的地方</b>。其余一律纸、墨、发丝线。当满屏都是蓝色按钮时，没有一个是重要的。</p>
+    </article>
+    <article class="th">
+      <div class="th-code">Room 03 / 语气</div>
+      <h3>吉祥物负责卖萌</h3>
+      <p>机器人管亲和，排版管专业，两者<b>不互相妥协</b>：不让插图去凑版式，也不让版式去迁就插图。整个界面只有它一个可以软。</p>
+    </article>
+  </div>
+</section>
+
+<!-- ============ 02 色彩 ============ -->
+<section id="color" class="wrap">
+  <header class="shead">
+    <span class="shead-idx">02</span>
+    <h2>色彩</h2>
+    <span class="shead-en">Palette</span>
+    <span class="shead-rule"></span>
+    <span class="shead-note">5 组 · 14 色</span>
+  </header>
+  <p class="slead">主蓝 <span class="num">#056BF4</span> 与青色 <span class="num">#1FB6FF</span> 直接从吉祥物的按钮和眼睛上取色，不是挑来的；底色则从常见的冷白灰换成<b>微暖的纸白</b>，蓝因此显得更重、更干净，也更像印出来的东西。点色块可复制色值。</p>
+
+  <div class="ratio">
+    <div class="ratio-bar" role="img" aria-label="用色配比：纸与白 88%，墨 9%，蓝 3%">
+      <span class="c1"></span><span class="c2"></span><span class="c3"></span>
+    </div>
+    <div class="ratio-legend">
+      <div><b>88%</b>纸与白 —— 底、卡、留白</div>
+      <div><b>9%</b>墨 —— 文字与发丝线</div>
+      <div><b>3%</b>蓝 —— 唯一的按钮与状态</div>
+      <div><b>&lt;1%</b>粉与黄 —— 只给吉祥物和一处重点</div>
+    </div>
+  </div>
+
+  <div class="swatches">
+    <button class="sw" data-copy="#F7F6F2">
+      <div class="sw-chip" style="background:#F7F6F2;border-bottom:1px solid #E1DCD1"><i style="color:#6B7278">paper</i></div>
+      <div class="sw-body">
+        <div class="sw-name">纸面</div>
+        <div class="sw-hex">#F7F6F2</div>
+        <div class="sw-use">页面底色。比纯白暖 3%，长时间看不刺眼。</div>
+        <div class="sw-cr"><b>基准</b></div>
+      </div>
+    </button>
+    <button class="sw" data-copy="#FFFFFF">
+      <div class="sw-chip" style="background:#FFFFFF;border-bottom:1px solid #E1DCD1"><i style="color:#8B9197">surface</i></div>
+      <div class="sw-body">
+        <div class="sw-name">卡面</div>
+        <div class="sw-hex">#FFFFFF</div>
+        <div class="sw-use">卡片、输入框、浮层。靠白与纸的差分层。</div>
+        <div class="sw-cr"><b>—</b></div>
+      </div>
+    </button>
+    <button class="sw" data-copy="#111820">
+      <div class="sw-chip" style="background:#111820"><i style="color:#9AA6B4">ink</i></div>
+      <div class="sw-body">
+        <div class="sw-name">墨</div>
+        <div class="sw-hex">#111820</div>
+        <div class="sw-use">正文与标题。带一点蓝的深墨，不用纯黑。</div>
+        <div class="sw-cr"><b>16.5:1</b> <span class="aaa">AAA</span></div>
+      </div>
+    </button>
+    <button class="sw" data-copy="#4C555E">
+      <div class="sw-chip" style="background:#4C555E"><i style="color:#C7CDD4">ink-2</i></div>
+      <div class="sw-body">
+        <div class="sw-name">次级墨</div>
+        <div class="sw-hex">#4C555E</div>
+        <div class="sw-use">说明文字、次要字段。仍可长读。</div>
+        <div class="sw-cr"><b>7.0:1</b> <span class="aaa">AAA</span></div>
+      </div>
+    </button>
+
+    <button class="sw" data-copy="#056BF4">
+      <div class="sw-chip" style="background:#056BF4"><i style="color:#BFD8FF">azure</i></div>
+      <div class="sw-body">
+        <div class="sw-name">信号蓝</div>
+        <div class="sw-hex">#056BF4</div>
+        <div class="sw-use">主按钮、选中态、焦点圈。取自吉祥物按钮。</div>
+        <div class="sw-cr"><b>4.8:1</b> 白字 AA</div>
+      </div>
+    </button>
+    <button class="sw" data-copy="#0448A6">
+      <div class="sw-chip" style="background:#0448A6"><i style="color:#A8C6F0">azure-ink</i></div>
+      <div class="sw-body">
+        <div class="sw-name">深蓝（文字用）</div>
+        <div class="sw-hex">#0448A6</div>
+        <div class="sw-use">链接、蓝色文字。填充用上面的蓝，写字用这个。</div>
+        <div class="sw-cr"><b>7.8:1</b> <span class="aaa">AAA</span></div>
+      </div>
+    </button>
+    <button class="sw" data-copy="#EEF4FF">
+      <div class="sw-chip" style="background:#EEF4FF;border-bottom:1px solid #DCE6F8"><i style="color:#4C7BC4">wash</i></div>
+      <div class="sw-body">
+        <div class="sw-name">蓝晕</div>
+        <div class="sw-hex">#EEF4FF</div>
+        <div class="sw-use">选中行、进行中的底色。只做面，不做字。</div>
+        <div class="sw-cr"><b>配 #0448A6</b> 7.9:1</div>
+      </div>
+    </button>
+    <button class="sw" data-copy="#1FB6FF">
+      <div class="sw-chip" style="background:#1FB6FF"><i style="color:#063A52">visor</i></div>
+      <div class="sw-body">
+        <div class="sw-name">面罩青</div>
+        <div class="sw-hex">#1FB6FF</div>
+        <div class="sw-use">从吉祥物眼睛取的色。只用于「正在扫描」的光点。</div>
+        <div class="sw-cr"><b>装饰色</b> 不作文字</div>
+      </div>
+    </button>
+
+    <button class="sw" data-copy="#0E7A3E">
+      <div class="sw-chip" style="background:#0E7A3E"><i style="color:#BFE4CE">ok</i></div>
+      <div class="sw-body">
+        <div class="sw-name">完成绿</div>
+        <div class="sw-hex">#0E7A3E</div>
+        <div class="sw-use">提取成功、已复制。深一档才能承白色文字。</div>
+        <div class="sw-cr"><b>5.4:1</b> 白字 AA</div>
+      </div>
+    </button>
+    <button class="sw" data-copy="#B42318">
+      <div class="sw-chip" style="background:#B42318"><i style="color:#F4C8C4">fail</i></div>
+      <div class="sw-body">
+        <div class="sw-name">失败红</div>
+        <div class="sw-hex">#B42318</div>
+        <div class="sw-use">提取失败、校验不通过。偏砖红，不刺眼。</div>
+        <div class="sw-cr"><b>6.6:1</b> 白字 AA</div>
+      </div>
+    </button>
+    <button class="sw" data-copy="#F8C020">
+      <div class="sw-chip" style="background:#F8C020"><i style="color:#5C4300">amber</i></div>
+      <div class="sw-body">
+        <div class="sw-name">星光黄</div>
+        <div class="sw-hex">#F8C020</div>
+        <div class="sw-use">吉祥物身边的星芒。界面里不当颜色用。</div>
+        <div class="sw-cr"><b>插画专用</b></div>
+      </div>
+    </button>
+    <button class="sw" data-copy="#FF8FA3">
+      <div class="sw-chip" style="background:#FF8FA3"><i style="color:#6B1F2E">blush</i></div>
+      <div class="sw-body">
+        <div class="sw-name">腮红粉</div>
+        <div class="sw-hex">#FF8FA3</div>
+        <div class="sw-use">一屏只许出现一次：封面重点，或成功的“嗒”一下。</div>
+        <div class="sw-cr"><b>点缀色</b> 不作文字</div>
+      </div>
+    </button>
+  </div>
+
+  <p class="note"><b>唯一的硬规则：</b>蓝色文字一律用深蓝 <span class="num">#0448A6</span>，亮蓝只做填充。亮蓝写在纸上只有 4.4:1，刚好卡在及格线下——这就是为什么界面里从不让它当正文颜色。</p>
+</section>
+
+<!-- ============ 03 字体 ============ -->
+<section id="type" class="wrap">
+  <header class="shead">
+    <span class="shead-idx">03</span>
+    <h2>字体</h2>
+    <span class="shead-en">Type</span>
+    <span class="shead-rule"></span>
+    <span class="shead-note">2 个字族</span>
+  </header>
+  <p class="slead">只用两个字族：一个带点古怪细节的无衬线 <b>Bricolage Grotesque</b> 管标题与拉丁文，一个等宽 <b>JetBrains Mono</b> 管所有字段码、数字和代码；中文回落到系统黑体（苹方 / 微软雅黑 / HarmonyOS Sans）。等宽不是装饰——它是这套系统的口音：凡是「被采集下来的东西」，都用它写。</p>
+
+  <div class="faces">
+    <div class="face">
+      <div class="face-name">主字族 / Display</div>
+      <div class="face-spec">Aa 采媒灵</div>
+      <div class="face-role"><b>Bricolage Grotesque</b><br>标题、数字、拉丁文。字重 700–800，紧字距 −0.03em。</div>
+    </div>
+    <div class="face">
+      <div class="face-name">等宽 / Mono</div>
+      <div class="face-spec mono-spec">A0·ISBN</div>
+      <div class="face-role"><b>JetBrains Mono</b><br>字段标签、版本号、数值、代码。字距 +0.12em，全大写。</div>
+    </div>
+    <div class="face">
+      <div class="face-name">中文 / CJK</div>
+      <div class="face-spec" style="font-family:'PingFang SC','Microsoft YaHei',sans-serif;font-weight:600;font-size:34px">结构化</div>
+      <div class="face-role"><b>系统黑体</b><br>不加载中文字体，省 2MB。靠字号与行高建立层级。</div>
+    </div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-row">
+      <div class="scale-spec"><b>40</b> / 0.98 / 800<br>−0.035em</div>
+      <div class="s64">把网页整理成卡</div>
+      <div class="scale-use">封面大字</div>
+    </div>
+    <div class="scale-row">
+      <div class="scale-spec"><b>30</b> / 1.06 / 700<br>−0.02em</div>
+      <div class="s40">章节标题</div>
+      <div class="scale-use">页签、区块首屏</div>
+    </div>
+    <div class="scale-row">
+      <div class="scale-spec"><b>22</b> / 1.2 / 700</div>
+      <div class="s28">卡片主标题</div>
+      <div class="scale-use">作品名、站点名</div>
+    </div>
+    <div class="scale-row">
+      <div class="scale-spec"><b>17</b> / 1.35 / 600</div>
+      <div class="s20">分组小标题</div>
+      <div class="scale-use">「提取」「复制」分组</div>
+    </div>
+    <div class="scale-row">
+      <div class="scale-spec"><b>15</b> / 1.75 / 400</div>
+      <div class="s15">正文。这一行用来检查行距是否够松：中文正文在 15px 时需要 1.75 倍行高，否则密集的汉字会糊成一片。</div>
+      <div class="scale-use">正文、说明</div>
+    </div>
+    <div class="scale-row">
+      <div class="scale-spec"><b>13</b> / 1.6 / 400</div>
+      <div class="s13">辅助文字，比正文暗一档</div>
+      <div class="scale-use">字段值、脚注</div>
+    </div>
+    <div class="scale-row">
+      <div class="scale-spec"><b>11</b> / 1.4 / 500<br>+0.12em</div>
+      <div class="s11">field code · 字段标签</div>
+      <div class="scale-use">字段码、版本号</div>
+    </div>
+  </div>
+
+  <p class="note"><b>行宽：</b>中文段落不超过 <span class="num">34</span> 个汉字（约 60 字符），超过就在 34 字处断开或在卡片里截断。这是本系统里最容易被忽略、但最影响「像不像专业产品」的一条。</p>
+</section>
+
+<!-- ============ 04 版式 ============ -->
+<section id="layout" class="wrap">
+  <header class="shead">
+    <span class="shead-idx">04</span>
+    <h2>版式</h2>
+    <span class="shead-en">Layout</span>
+    <span class="shead-rule"></span>
+    <span class="shead-note">12 栏 · 8px 基准</span>
+  </header>
+  <p class="slead">所有间距都是 4 的倍数，主要落点只有 8 / 16 / 24 / 32 / 48 五个值。<b>卡片不靠阴影分层</b>——靠发丝线与纸白差；阴影只留给真正浮起来的浮层（popup、下拉、toast）。滚动时页面像一张被翻动的档案表，而不是一堆飘着的白盒子。</p>
+
+  <div class="grid-demo">
+    <div class="grid-cols" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="grid-cap"><span>12 栏 · 沟槽 24px · 最大宽 1180px</span><span>内容列 720px ≈ 34 汉字</span></div>
+  </div>
+
+  <div class="tokens-row">
+    <div>
+      <div class="cgroup-head" style="margin-bottom:14px"><h3>间距阶梯</h3><span>SPACING</span></div>
+      <div class="scale-bars">
+        <div class="sb"><i style="width:4px"></i><b>4</b><em>图标与文字之间</em></div>
+        <div class="sb"><i style="width:8px"></i><b>8</b><em>标签与值之间</em></div>
+        <div class="sb"><i style="width:16px"></i><b>16</b><em>卡片内边距</em></div>
+        <div class="sb"><i style="width:24px"></i><b>24</b><em>字段行高、栅格沟槽</em></div>
+        <div class="sb"><i style="width:32px"></i><b>32</b><em>卡片之间</em></div>
+        <div class="sb"><i style="width:48px"></i><b>48</b><em>区块之间</em></div>
+        <div class="sb"><i style="width:72px"></i><b>72</b><em>一级分组之间</em></div>
+      </div>
+    </div>
+    <div>
+      <div class="cgroup-head" style="margin-bottom:14px"><h3>圆角</h3><span>RADIUS</span></div>
+      <div class="radius-row">
+        <div class="rad" style="border-radius:8px">8</div>
+        <div class="rad" style="border-radius:12px">12</div>
+        <div class="rad" style="border-radius:18px">18</div>
+        <div class="rad" style="border-radius:28px">28</div>
+      </div>
+      <p style="font-size:12.5px; color:var(--ink-3); margin-top:14px; line-height:1.7">输入框与按钮 12，卡片 18，浮层 28。吉祥物本身是圆的，界面不能再比它更圆。</p>
+    </div>
+  </div>
+
+  <div class="elev">
+    <div class="elev-panel">
+      <h4>本系统的做法：靠线</h4>
+      <p>1px 发丝线 + 纸白差，信息层次一样清楚，但页面不会变成一堆塑料卡片。</p>
+      <div class="ep-card line"><span>豆瓣读书 · 已提取</span><b>12 字段</b></div>
+    </div>
+    <div class="elev-panel">
+      <h4>只在这种情况下用影</h4>
+      <p>元素真的离开了页面——popup、下拉、toast。影子是「层次」的信号，不是装饰。</p>
+      <div class="ep-card shadow"><span>浮窗 · 正在加载</span><b>浮层</b></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 05 组件 ============ -->
+<section id="components" class="wrap">
+  <header class="shead">
+    <span class="shead-idx">05</span>
+    <h2>组件</h2>
+    <span class="shead-en">Components</span>
+    <span class="shead-rule"></span>
+    <span class="shead-note">6 组</span>
+  </header>
+  <p class="slead">按钮高度统一 40px，圆角 12px，图标 15px 且永远在文字左边。一个屏幕上只允许一个<b>实心蓝按钮</b>——它就是这一屏的「下一步」。其余全是描边或纯文字。</p>
+
+  <div class="cgroup">
+    <div class="cgroup-head"><h3>按钮</h3><span>BUTTON / 5 种</span></div>
+    <div class="stage">
+      <button class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>
+        提取信息
+      </button>
+      <button class="btn btn-secondary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h9a2 2 0 0 1 2 2v9"/><rect x="4" y="8" width="12" height="13" rx="2"/></svg>
+        复制 Markdown
+      </button>
+      <button class="btn btn-ghost">取消</button>
+      <button class="btn btn-danger">清空缓存</button>
+      <button class="btn btn-icon" aria-label="更多">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+      </button>
+      <button class="btn btn-primary" disabled>已禁用</button>
+    </div>
+  </div>
+
+  <div class="cgroup">
+    <div class="cgroup-head"><h3>状态</h3><span>STATUS / 4 态</span></div>
+    <div class="stage">
+      <span class="pill pill-wait"><span class="spin" aria-hidden="true"></span>提取中…</span>
+      <span class="pill pill-ok">✓ 提取成功</span>
+      <span class="pill pill-bad">! 提取失败</span>
+      <span class="pill pill-info">提示信息</span>
+    </div>
+    <p style="font-size:12.5px; color:var(--ink-3); margin-top:12px; line-height:1.7">四态都带底晕，不用纯色块 —— 纯色块会把整行压成一道横幅，而状态只是行内的一点提示。措辞用主语的口气：<b>提取成功</b>，不是「操作已完成」。</p>
+  </div>
+
+  <div class="cgroup">
+    <div class="cgroup-head"><h3>提示条</h3><span>NOTICE / 3 类</span></div>
+    <div class="stage" style="display:block">
+      <div class="notices">
+        <div class="notice n-ok"><b>已复制到剪贴板</b><span style="opacity:.75;font-weight:400">Markdown · 12 个字段</span><button class="x" aria-label="关闭">×</button></div>
+        <div class="notice n-bad"><b>这个页面没有识别出可用的字段</b><span style="opacity:.8;font-weight:400">换到条目详情页再试一次</span><button class="x" aria-label="关闭">×</button></div>
+        <div class="notice n-info"><b>正在提取…</b><span style="opacity:.8;font-weight:400">约 2 秒</span><button class="x" aria-label="关闭">×</button></div>
+      </div>
+    </div>
+    <p style="font-size:12.5px; color:var(--ink-3); margin-top:12px; line-height:1.7">出错时不道歉、不模糊，直接说下一步：<b>「换到条目详情页再试一次」</b>。</p>
+  </div>
+
+  <div class="cgroup">
+    <div class="cgroup-head"><h3>开关与标记</h3><span>TOGGLE · CHIP · BADGE</span></div>
+    <div class="stage" style="align-items:flex-start; gap:44px">
+      <div>
+        <div class="switch-row"><span>自动提取</span><button class="switch" role="switch" aria-checked="true" aria-label="自动提取"></button></div>
+        <div class="switch-row"><span>自动复制</span><button class="switch" role="switch" aria-checked="false" aria-label="自动复制"></button></div>
+      </div>
+      <div style="flex:1; min-width:220px">
+        <div class="chips">
+          <span class="chip"><i class="cat-film"></i>影视</span>
+          <span class="chip"><i class="cat-book"></i>书籍</span>
+          <span class="chip"><i class="cat-game"></i>游戏</span>
+          <span class="chip"><i class="cat-social"></i>社交媒体</span>
+          <span class="chip"><i class="cat-person"></i>人物档案</span>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:16px; align-items:center">
+          <span class="count-badge">12 项字段</span>
+          <span class="pill pill-ok" style="height:26px; font-size:11.5px">✓ 已复制</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cgroup">
+    <div class="cgroup-head"><h3>提取卡</h3><span>FIELD CARD / 核心组件</span></div>
+    <p style="font-size:13px; color:var(--ink-2); max-width:60ch; margin-bottom:16px">整个产品的原型就是这一张卡：左边是乱糟糟的页面，右边是排好的字段。标签用等宽小字，值是正文；一眼扫下去，长度对齐、颜色克制，读起来像一张借书卡。</p>
+
+    <div class="excard">
+      <div class="excard-head">
+        <span class="t">小王子</span>
+        <div class="tabs" role="tablist">
+          <button class="tab" role="tab" aria-selected="false" data-pane="raw">原始页面</button>
+          <button class="tab" role="tab" aria-selected="true" data-pane="card">结构化</button>
+        </div>
+        <span class="u">book.douban.com/subject/1084336</span>
+      </div>
+
+      <div class="expane" id="pane-card">
+        <dl style="margin:0">
+          <div class="frow"><dt>标题</dt><dd class="hi">小王子</dd></div>
+          <div class="frow"><dt>作者</dt><dd>[法] 圣埃克苏佩里 / 马振骋 <small>· 3 人</small></dd></div>
+          <div class="frow"><dt>出版社</dt><dd>人民文学出版社</dd></div>
+          <div class="frow"><dt>出版年</dt><dd>2003-8</dd></div>
+          <div class="frow"><dt>页数</dt><dd>97</dd></div>
+          <div class="frow"><dt>ISBN</dt><dd class="num" style="font-size:12.5px">9787020042494</dd></div>
+          <div class="frow"><dt>评分</dt><dd><span class="rate">9.1</span> <small>· 1,284,392 人评价</small></dd></div>
+          <div class="frow"><dt>简介</dt><dd>小王子住在一颗只比他大一点的小行星上……<small>628 字</small></dd></div>
+        </dl>
+      </div>
+
+      <div class="expane" id="pane-raw" hidden>
+        <div class="raw">内容简介 ……………………………………
+<mark>小王子</mark>（Le Petit Prince）是法国作家
+圣埃克苏佩里于 1942 年写成的儿童文学
+短篇小说。本书的主人公是来自外星球的小
+王子。书中以一位飞行员作为故事叙述者，
+讲述了<mark>小王子</mark>从自己星球出发前往地球
+的过程中所经历的各种历险。作者以小王
+子孩子式的眼光，透视出成人的空虚、盲
+目和愚妄，用浅显天真的语言写出了人类
+的孤独寂寞……（展开全部）
+
+作者简介 ……………………………………
+安托万·德·圣埃克苏佩里，法国飞行员、
+作家。1900 年生于里昂……</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cgroup">
+    <div class="cgroup-head"><h3>空状态与浮窗</h3><span>EMPTY · POPUP</span></div>
+    <div class="stage" style="gap:34px; align-items:flex-start">
+      <div style="flex:1; min-width:240px">
+        <div class="empty">
+          <img src="assets/mascot-hero.png" alt="" aria-hidden="true">
+          <b>这个页面还没有可提取的内容</b>
+          <span>打开条目详情页，采媒灵会自动认出它属于哪一类。</span>
+          <button class="btn btn-secondary" style="margin-top:6px">查看支持的站点</button>
+        </div>
+      </div>
+      <div class="pop">
+        <div class="pop-head">
+          <img src="assets/state-1.png" alt="">
+          <b>豆瓣读书</b>
+          <span class="g">⚙</span>
+        </div>
+        <div class="pop-body">
+          <div class="pop-row"><span>自动提取</span><button class="switch" role="switch" aria-checked="true" aria-label="自动提取"></button></div>
+          <div class="pop-sub" style="padding:2px 0 8px 0"><span>等待加载</span><span class="num">3 秒</span></div>
+          <div class="pop-row"><span>自动复制</span><button class="switch" role="switch" aria-checked="true" aria-label="自动复制"></button></div>
+          <div class="pop-sub" style="padding:2px 0 8px 0"><span>复制格式</span><span>Notion</span></div>
+          <div class="pop-row"><span>显示提取按钮</span><button class="switch" role="switch" aria-checked="true" aria-label="显示提取按钮"></button></div>
+        </div>
+        <div class="pop-foot"><span>本站已单独设置 · <a href="#components">恢复默认</a></span><span class="num">v2.8.4</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 06 吉祥物 ============ -->
+<section id="mascot" class="wrap">
+  <header class="shead">
+    <span class="shead-idx">06</span>
+    <h2>吉祥物</h2>
+    <span class="shead-en">Mascot</span>
+    <span class="shead-rule"></span>
+    <span class="shead-note">原样使用 · 4 态</span>
+  </header>
+  <p class="slead">它是这套系统里唯一允许「软」的东西，所以必须<b>原样使用</b>：不改色、不加描边、不旋转、不裁掉天线。四个状态对应四种情绪，只在需要缓和语气的地方出现——成功、等待、不确定、失败。</p>
+
+  <div class="states">
+    <figure class="state" style="margin:0">
+      <img src="assets/state-1.png" alt="吉祥物正常状态">
+      <b>正常</b>
+      <span>默认、空闲、列表为空</span>
+      <em>IDLE</em>
+    </figure>
+    <figure class="state" style="margin:0">
+      <img src="assets/state-2.png" alt="吉祥物加油状态">
+      <b>加油</b>
+      <span>提取成功、已复制</span>
+      <em>SUCCESS</em>
+    </figure>
+    <figure class="state" style="margin:0">
+      <img src="assets/state-3.png" alt="吉祥物疑问状态">
+      <b>疑问</b>
+      <span>等待确认、需要选择</span>
+      <em>ASK</em>
+    </figure>
+    <figure class="state" style="margin:0">
+      <img src="assets/state-4.png" alt="吉祥物困惑状态">
+      <b>困惑</b>
+      <span>抓取失败、页面不支持</span>
+      <em>ERROR</em>
+    </figure>
+  </div>
+
+  <div class="sizes">
+    <figure><img src="assets/mascot-hero.png" style="width:128px" alt="128 像素"><figcaption>128 × 128</figcaption></figure>
+    <figure><img src="assets/mascot-hero.png" style="width:48px" alt="48 像素"><figcaption>48 × 48</figcaption></figure>
+    <figure><img src="assets/mascot-hero.png" style="width:32px" alt="32 像素"><figcaption>32 × 32</figcaption></figure>
+    <figure><img src="assets/mascot-hero.png" style="width:16px" alt="16 像素"><figcaption>16 × 16</figcaption></figure>
+    <div style="margin-left:auto; max-width:280px; font-size:12.5px; color:var(--ink-3); line-height:1.7">
+      下限 <b style="color:var(--ink-2)">24px</b>：再小就只剩一团蓝。<br>四周留白 ≥ 身高的 <b style="color:var(--ink-2)">1/4</b>，否则像被裁进框里。
+    </div>
+  </div>
+
+  <div class="dodont">
+    <div class="dd dd-yes">
+      <h4><i aria-hidden="true">✓</i>这样做</h4>
+      <ul>
+        <li>保持原始配色与比例，从设计板直接导出 PNG</li>
+        <li>让它单独站一处留白，旁边不放第二个视觉重点</li>
+        <li>空状态与成功反馈，用它替代一句干巴巴的提示</li>
+        <li>透明背景叠在纸面上，允许它自带的柔和投影</li>
+      </ul>
+    </div>
+    <div class="dd dd-no">
+      <h4><i aria-hidden="true">✕</i>不要这样</h4>
+      <ul>
+        <li>改色、加描边、加滤镜、旋转或镜像</li>
+        <li>裁掉天线或手里的文档——那是「采集」的语义</li>
+        <li>铺满整屏当背景，或在按钮里当图标</li>
+        <li>和第四个表情同时出现在一屏（情绪会打架）</li>
+      </ul>
+    </div>
+  </div>
+
+  <figure class="board-fig">
+    <img src="assets/design-board.jpg" alt="采媒灵 ClipMate 原始设计板：图标、状态、按钮、分类、提示条与吉祥物">
+    <figcaption><b>原始设计板</b>所有素材以此为准；本页的吉祥物、四态表情均从这张板裁出，未做任何改色。</figcaption>
+  </figure>
+</section>
+
+<!-- ============ 07 落地 ============ -->
+<section id="build" class="wrap">
+  <header class="shead">
+    <span class="shead-idx">07</span>
+    <h2>落地</h2>
+    <span class="shead-en">Handoff</span>
+    <span class="shead-rule"></span>
+    <span class="shead-note">复制即可用</span>
+  </header>
+  <p class="slead">整套 token 只有这些，换成 CSS 变量后，浅色与深色主题共用一套组件。深色主题不是把颜色调暗，而是把纸换成墨、把墨换成纸。</p>
+
+  <div class="code">
+<pre><span class="c">/* ClipMate design tokens · v1.0 */</span>
+<span class="k">:root</span> {
+  <span class="c">/* 纸与墨 */</span>
+  <span class="k">--paper</span>:      <span class="v">#F7F6F2</span>;
+  <span class="k">--surface</span>:    <span class="v">#FFFFFF</span>;
+  <span class="k">--surface-2</span>:  <span class="v">#F1EFE8</span>;
+  <span class="k">--ink</span>:        <span class="v">#111820</span>;
+  <span class="k">--ink-2</span>:      <span class="v">#4C555E</span>;
+  <span class="k">--ink-3</span>:      <span class="v">#6B7278</span>;
+  <span class="k">--line</span>:       <span class="v">#E1DCD1</span>;
+
+  <span class="c">/* 指路色 */</span>
+  <span class="k">--azure</span>:      <span class="v">#056BF4</span>;   <span class="c">/* 只做填充 */</span>
+  <span class="k">--azure-ink</span>:  <span class="v">#0448A6</span>;   <span class="c">/* 只做文字 */</span>
+  <span class="k">--azure-wash</span>: <span class="v">#EEF4FF</span>;
+  <span class="k">--visor</span>:      <span class="v">#1FB6FF</span>;
+  <span class="k">--blush</span>:      <span class="v">#FF8FA3</span>;
+  <span class="k">--ok</span>:         <span class="v">#0E7A3E</span>;
+  <span class="k">--bad</span>:        <span class="v">#B42318</span>;
+
+  <span class="c">/* 度量 */</span>
+  <span class="k">--r-btn</span>: <span class="v">12px</span>;  <span class="k">--r-card</span>: <span class="v">18px</span>;  <span class="k">--r-pop</span>: <span class="v">28px</span>;
+  <span class="k">--h-btn</span>: <span class="v">40px</span>;  <span class="k">--gap</span>: <span class="v">8px</span>;
+
+  <span class="k">--font-ui</span>:   <span class="v">"Bricolage Grotesque","PingFang SC","Microsoft YaHei",system-ui,sans-serif</span>;
+  <span class="k">--font-mono</span>: <span class="v">"JetBrains Mono",ui-monospace,Consolas,monospace</span>;
+}</pre>
+  </div>
+
+  <div class="checklist">
+    <div><b>01</b>正文对比度 ≥ 4.5:1，大字 ≥ 3:1</div>
+    <div><b>02</b>焦点圈 2px 亮蓝 + 3px 偏移，不用 outline:none</div>
+    <div><b>03</b>开关用 role="switch" + aria-checked</div>
+    <div><b>04</b>状态不只靠颜色，配图标或文字</div>
+    <div><b>05</b>动效 ≤ 200ms，尊重 prefers-reduced-motion</div>
+    <div><b>06</b>中文字号不小于 13px，行高不低于 1.6</div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <img src="assets/state-1.png" alt="">
+  <span>采媒灵 ClipMate · 设计系统 v1.0</span>
+  <span style="opacity:.6">纸、墨、一条发丝线</span>
+  <span class="r">2026.11</span>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  var root=document.documentElement;
+
+  /* 主题 */
+  var btn=document.getElementById('themeBtn'), txt=document.getElementById('themeTxt');
+  function apply(t){
+    root.setAttribute('data-theme',t);
+    txt.textContent = t==='dark' ? '墨面' : '纸面';
+    btn.setAttribute('aria-pressed', t==='dark' ? 'true':'false');
+  }
+  var saved=null;
+  try{ saved=localStorage.getItem('clipmate-ds-theme'); }catch(e){}
+  var qs=null;
+  try{ qs=new URLSearchParams(location.search).get('theme'); }catch(e){}
+  apply(qs==='dark'||qs==='light' ? qs : (saved==='dark'?'dark':'light'));
+  btn.addEventListener('click',function(){
+    var next = root.getAttribute('data-theme')==='dark' ? 'light':'dark';
+    apply(next);
+    try{ localStorage.setItem('clipmate-ds-theme',next); }catch(e){}
+  });
+
+  /* 复制色值 */
+  var toast=document.getElementById('toast'), timer=null;
+  function say(msg){
+    toast.textContent=msg; toast.classList.add('on');
+    clearTimeout(timer); timer=setTimeout(function(){ toast.classList.remove('on'); },1600);
+  }
+  document.querySelectorAll('[data-copy]').forEach(function(el){
+    el.addEventListener('click',function(){
+      var v=el.getAttribute('data-copy');
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(v).then(function(){ say('已复制 '+v); },function(){ say(v); });
+      } else { say(v); }
+    });
+  });
+
+  /* 提取卡页签 */
+  var tabs=document.querySelectorAll('.tab');
+  tabs.forEach(function(t){
+    t.addEventListener('click',function(){
+      tabs.forEach(function(o){ o.setAttribute('aria-selected','false'); });
+      t.setAttribute('aria-selected','true');
+      document.querySelectorAll('.expane').forEach(function(p){ p.hidden=true; });
+      var pane=document.getElementById('pane-'+t.getAttribute('data-pane'));
+      if(pane){ pane.hidden=false; }
+    });
+  });
+
+  /* 开关演示 */
+  document.querySelectorAll('.switch').forEach(function(s){
+    s.addEventListener('click',function(){
+      var on = s.getAttribute('aria-checked')==='true';
+      s.setAttribute('aria-checked', on ? 'false':'true');
+    });
+  });
+
+  /* 侧栏高亮 */
+  var links=[].slice.call(document.querySelectorAll('[data-spy]'));
+  var secs=links.map(function(a){ return document.getElementById(a.getAttribute('data-spy')); }).filter(Boolean);
+  if('IntersectionObserver' in window && secs.length){
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(!e.isIntersecting) return;
+        links.forEach(function(a){
+          a.setAttribute('aria-current', a.getAttribute('data-spy')===e.target.id ? 'true':'false');
+        });
+      });
+    },{rootMargin:'-20% 0px -70% 0px', threshold:0});
+    secs.forEach(function(s){ io.observe(s); });
+  }
+})();
+</script>
+</body>
+</html>

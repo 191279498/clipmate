@@ -1,0 +1,436 @@
+/* 弹出窗口样式（v2.8.4 极简版）
+ *
+ * 设计约束：一屏、无解释段、无分段控件。
+ * 左侧一行一件事，右侧直接是控件；子项（等待秒数 / 复制格式）缩进挂在父开关下面，
+ * 父开关关掉时整行收起 —— 所以永远只显示「此刻真正有用」的项。
+ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #374151;
+  background: #ffffff;
+  width: 320px !important;
+  min-width: 320px !important;
+  max-width: 320px !important;
+  max-height: 600px;
+  overflow-y: auto;
+  overflow-x: hidden !important;
+  user-select: none;
+  -webkit-user-select: none;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+  visibility: hidden; /* 首帧渲染完成后由 init 打开，避免半截界面闪一下 */
+}
+
+.popup-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* ===== 头部：站点名 + 域名 + 版本 + 齿轮 ===== */
+.pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px 9px;
+  border-bottom: 1px solid #f1f2f4;
+}
+
+.pop-id {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pop-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pop-name.is-plain {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.pop-host {
+  font-size: 11px;
+  color: #9ca3af;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pop-host:empty {
+  display: none;
+}
+
+.pop-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.pop-ver {
+  font-size: 10.5px;
+  color: #c3c8d0;
+}
+
+.icon-btn {
+  width: 26px;
+  height: 26px;
+  border: 1px solid #e8eaee;
+  background: #fff;
+  border-radius: 7px;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.icon-btn:hover {
+  background: #f9fafb;
+  color: #4c1d95;
+  border-color: #ddd6fe;
+}
+
+/* ===== 提示条（不支持的站 / 浏览器内部页） ===== */
+.pop-note {
+  margin: 9px 12px 0;
+  padding: 6px 8px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 11.5px;
+  line-height: 1.5;
+  border-radius: 6px;
+}
+
+/* ===== 设置行 ===== */
+.pop-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.pop-rows[hidden] {
+  display: none !important;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #1f2937;
+  cursor: pointer;
+  border-bottom: 1px solid #f6f7f9;
+}
+
+.row:hover {
+  background: #fafbfc;
+}
+
+.row-label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* 子行：缩进 + 小一号字 + 浅色 */
+.sub {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 12px 9px 22px;
+  font-size: 12px;
+  color: #6b7280;
+  border-bottom: 1px solid #f6f7f9;
+}
+
+.sub[hidden] {
+  display: none !important;
+}
+
+.sub-label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sub-ctl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.sub-range {
+  width: 96px;
+  accent-color: #6d5ce7;
+  cursor: pointer;
+}
+
+/* 深色下光靠 accent-color 不够：未填充那段轨道会留成一条刺眼的白条，只能自己画 */
+.theme-dark .sub-range {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 3px;
+  border-radius: 2px;
+  background: #3a4356;
+}
+
+.theme-dark .sub-range::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 50%;
+  background: #a78bfa;
+  cursor: pointer;
+}
+
+.theme-dark .sub-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 50%;
+  background: #a78bfa;
+  cursor: pointer;
+}
+
+.theme-dark .sub-range::-moz-range-track {
+  height: 3px;
+  border-radius: 2px;
+  background: #3a4356;
+}
+
+.sub-val {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #4c1d95;
+  min-width: 14px;
+  text-align: right;
+}
+
+.sub-unit {
+  color: #9ca3af;
+}
+
+.sub-select {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid #e8eaee;
+  border-radius: 6px;
+  background: #fff;
+  color: #374151;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 3px 20px 3px 8px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6' viewBox='0 0 9 6'%3E%3Cpath d='M1 1l3.5 3.5L8 1' fill='none' stroke='%239ca3af' stroke-width='1.3' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 7px center;
+}
+
+.sub-select:hover {
+  border-color: #ddd6fe;
+}
+
+.sub-hint {
+  color: #b45309;
+  font-size: 11.5px;
+  padding-top: 6px;
+}
+
+/* ===== 开关 ===== */
+.sw {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 0 0 auto;
+  position: relative;
+  width: 34px;
+  height: 20px;
+  border-radius: 10px;
+  background: #d8dbe1;
+  cursor: pointer;
+  transition: background 0.16s ease;
+  margin: 0;
+}
+
+.sw::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.16s ease;
+}
+
+.sw:checked {
+  background: #6d5ce7;
+}
+
+.sw:checked::after {
+  transform: translateX(14px);
+}
+
+.sw:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ===== 底部 ===== */
+.pop-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 30px;
+  padding: 7px 12px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.foot-state {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.foot-state[hidden] {
+  display: none !important;
+}
+
+.link-btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 11px;
+  color: #6d5ce7;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link-btn:hover {
+  color: #4c1d95;
+}
+
+.link-btn[hidden] {
+  display: none !important;
+}
+
+.saved-tip {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: #10b981;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  white-space: nowrap;
+}
+
+.saved-tip.on {
+  opacity: 1;
+}
+
+/* ===== 深色主题 ===== */
+body.theme-dark {
+  color-scheme: dark; /* 让原生控件（滑块轨道、下拉框、滚动条）跟着变深，否则滑轨是一片白 */
+  color: #e5e7eb;
+  background: #1b2130;
+}
+
+.theme-dark .pop-head,
+.theme-dark .row,
+.theme-dark .sub {
+  border-bottom-color: #262d3d;
+}
+
+.theme-dark .pop-name {
+  color: #f3f4f6;
+}
+
+.theme-dark .pop-name.is-plain {
+  color: #9ca3af;
+}
+
+.theme-dark .row {
+  color: #e5e7eb;
+}
+
+.theme-dark .row:hover {
+  background: #202737;
+}
+
+.theme-dark .sub {
+  color: #9ca3af;
+}
+
+.theme-dark .icon-btn {
+  background: #232b3c;
+  border-color: #2f3849;
+  color: #9ca3af;
+}
+
+.theme-dark .icon-btn:hover {
+  color: #c7d2fe;
+  border-color: #4338ca;
+}
+
+.theme-dark .sw {
+  background: #3f4757;
+}
+
+.theme-dark .sw:checked {
+  background: #7c3aed;
+}
+
+.theme-dark .sub-select {
+  background-color: #232b3c;
+  border-color: #2f3849;
+  color: #e5e7eb;
+}
+
+.theme-dark .sub-val {
+  color: #c7d2fe;
+}
+
+.theme-dark .pop-note {
+  background: #3a2a10;
+  color: #fcd34d;
+}
+
+.theme-dark .foot-state {
+  color: #6b7280;
+}
+
+.theme-dark .sub-hint {
+  color: #fbbf24;
+}

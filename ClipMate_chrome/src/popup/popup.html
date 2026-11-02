@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClipMate - 采媒灵</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <!-- v2.8.4：popup 只干一件事 —— 改「当前这个站」。
+       没有「跟随全局 / 单独设置」的选择，改哪个开关就直接按本站存下来。 -->
+  <div class="popup-container">
+
+    <header class="pop-head">
+      <div class="pop-id">
+        <span class="pop-name" id="siteName">本站设置</span>
+        <span class="pop-host" id="siteHost"></span>
+      </div>
+      <div class="pop-tools">
+        <span class="pop-ver" id="popVersion"></span>
+        <button type="button" class="icon-btn" id="openOptions" title="完整设置" aria-label="完整设置">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true">
+            <path d="M2 4.5h2.1M8.2 4.5H14"/>
+            <circle cx="6.1" cy="4.5" r="2.1"/>
+            <path d="M2 11.5h6.1M12.2 11.5H14"/>
+            <circle cx="10.1" cy="11.5" r="2.1"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="pop-note" id="siteNote" hidden></div>
+
+    <main class="pop-rows" id="siteRows">
+      <label class="row">
+        <span class="row-label">自动提取</span>
+        <input type="checkbox" class="sw" id="siteAutoExtract">
+      </label>
+
+      <div class="sub" id="rowDelay">
+        <span class="sub-label">等待加载</span>
+        <span class="sub-ctl">
+          <input type="range" id="siteAutoExtractDelay" min="0" max="20" step="1" class="sub-range">
+          <span class="sub-val" id="siteDelayValue">3</span><span class="sub-unit">秒</span>
+        </span>
+      </div>
+
+      <label class="row">
+        <span class="row-label">自动复制</span>
+        <input type="checkbox" class="sw" id="siteAutoCopy">
+      </label>
+
+      <div class="sub" id="rowFormat">
+        <span class="sub-label">复制格式</span>
+        <select id="siteAutoCopyFormat" class="sub-select">
+          <option value="notion">Notion</option>
+          <option value="markdown">Markdown</option>
+          <option value="plaintext">纯文本</option>
+        </select>
+      </div>
+
+      <label class="row">
+        <span class="row-label">显示提取按钮</span>
+        <input type="checkbox" class="sw" id="siteShowButton">
+      </label>
+
+      <div class="sub sub-hint" id="rowBtnHint" hidden>按钮已隐藏，需要时在这里打开</div>
+    </main>
+
+    <footer class="pop-foot">
+      <span class="foot-state" id="footState" hidden>
+        <span id="footText"></span>
+        <button type="button" class="link-btn" id="restoreGlobal" hidden>恢复默认</button>
+      </span>
+      <span class="saved-tip" id="savedTip">已保存</span>
+    </footer>
+
+  </div>
+
+  <script src="../shared/site-config.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

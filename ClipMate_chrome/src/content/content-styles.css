@@ -1,0 +1,539 @@
+/* 媒体信息提取器样式 - 极简风格 */
+
+/* 模态窗口基础样式 */
+.media-extractor-modal, .modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.media-extractor-modal.hidden {
+  display: none;
+}
+
+/* 模态内容容器 */
+.modal-content {
+  background: white;
+  width: 95%;
+  max-width: 100%;
+  max-height: 95vh;
+  overflow: auto;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 模态窗口头部 */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 4px;
+  color: #000;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 14px;
+  color: #000;
+}
+
+.modal-close {
+  background: none;
+  border: 1px solid #000;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 6px;
+  color: #000;
+}
+
+/* 模态窗口内容 */
+.modal-body {
+  padding: 2px;
+  overflow: auto;
+  flex: 1;
+}
+
+/* 数据表格 - 极简样式 */
+.data-table, .responsive-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  color: #000;
+}
+
+.data-table th,
+.data-table td,
+.responsive-table th,
+.responsive-table td {
+  padding: 2px;
+  text-align: left;
+  border: 1px solid #000;
+  vertical-align: top;
+  word-break: break-word;
+  color: #000;
+}
+
+/* 纵向表格样式 */
+.data-table.vertical-table th {
+  width: 120px;
+  text-align: right;
+}
+
+/* 按钮基础样式 - 极简 */
+.btn {
+  padding: 4px 8px;
+  border: 1px solid #000;
+  background: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: #000;
+}
+
+/* 按钮容器 */
+.modal-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+  padding: 2px 4px;
+}
+
+/* 数据字段样式 */
+.data-field {
+  padding: 2px 4px;
+  display: block;
+  color: #000;
+}
+
+/* 表头编辑器样式 */
+.header-editor {
+  width: 100%;
+  padding: 2px 4px;
+  border: 1px solid #000;
+  font-size: 12px;
+  outline: none;
+}
+
+/* 字段编辑样式 */
+.field-editor {
+  border: 1px solid #000;
+  padding: 2px 4px;
+  font-size: 12px;
+  outline: none;
+  width: 100%;
+}
+
+/* ==========================================================================
+ * 页面层提示卡片（v2.5.44）
+ *
+ * 只在浮窗不存在时用到，典型场景是「提取失败」——那时还没有浮窗可以挂横幅。
+ * 规格和浮窗里的横幅完全一致：40px 高 / 14px 字 / 字重 500 / 左侧 4px 色条 / 右侧 ×，
+ * 区别只是这里居中悬浮、带圆角和浅阴影。
+ * 同样不自动消失：只能点 × 关掉，或等下一条提示替换。
+ *
+ * 为什么这里敢给 display / padding 也加 !important：
+ *   这张卡片只靠「整块插入 / 整块移除」控制显隐，没有任何 JS 会去动态改它的这些属性，
+ *   所以不存在 v2.5.41 记下的「!important 压死内联动态样式」的坑。
+ * ========================================================================== */
+
+#clipmate-page-notice {
+  position: fixed !important;
+  top: 16px !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translateX(-50%) !important;
+  z-index: 2147483647 !important;
+  max-width: min(440px, calc(100vw - 32px)) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  display: block !important;
+}
+
+.clipmate-notice--page {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  box-sizing: border-box !important;
+  min-height: 40px !important;
+  padding: 10px 14px !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12) !important;
+  font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  font-style: normal !important;
+  line-height: 1.4 !important;
+  letter-spacing: normal !important;
+  word-spacing: normal !important;
+  text-align: left !important;
+  text-transform: none !important;
+  animation: clipmate-notice-in 180ms ease-out !important;
+}
+
+.clipmate-notice--page.clipmate-notice--success {
+  background: #eaf3de !important;
+  border-left: 4px solid #639922 !important;
+  color: #27500a !important;
+}
+
+.clipmate-notice--page.clipmate-notice--error {
+  background: #fcebeb !important;
+  border-left: 4px solid #a32d2d !important;
+  color: #501313 !important;
+}
+
+.clipmate-notice--page.clipmate-notice--info {
+  background: #e6f1fb !important;
+  border-left: 4px solid #185fa5 !important;
+  color: #042c53 !important;
+}
+
+.clipmate-notice--page .clipmate-notice-icon {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.clipmate-notice--page .clipmate-notice-icon svg {
+  display: block !important;
+}
+
+.clipmate-notice--page .clipmate-notice-text {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+}
+
+.clipmate-notice--page .clipmate-notice-close {
+  flex: 0 0 auto !important;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  color: inherit !important;
+  font-family: inherit !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  opacity: 0.55 !important;
+}
+
+.clipmate-notice--page .clipmate-notice-close:hover {
+  opacity: 1 !important;
+}
+
+/* ===== 技术细节块（v2.5.45 / B6）=====
+   失败提示的第二层内容，页面层同样需要加固：网页的 pre/code/button 通用规则
+   很容易把等宽字体、字号、内边距改掉，那样多行堆栈会挤成一团。 */
+.clipmate-notice--page.has-detail {
+  align-items: flex-start !important;
+  min-height: 40px !important;
+}
+
+.clipmate-notice--page.has-detail .clipmate-notice-text {
+  display: block !important;
+}
+
+.clipmate-notice--page .clipmate-notice-detail {
+  margin-top: 6px !important;
+  padding: 6px 8px !important;
+  background: rgba(0, 0, 0, 0.045) !important;
+  border-radius: 4px !important;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace !important;
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+  letter-spacing: normal !important;
+  color: #444 !important;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  max-height: 108px !important;
+  overflow: auto !important;
+  text-align: left !important;
+  user-select: text !important;
+}
+
+.clipmate-notice--page .clipmate-notice-detail-copy {
+  display: block !important;
+  margin-top: 6px !important;
+  padding: 2px 8px !important;
+  border: 1px solid #c9c9c9 !important;
+  border-radius: 4px !important;
+  background: #fff !important;
+  color: #333 !important;
+  font-family: inherit !important;
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  line-height: 1.6 !important;
+  text-transform: none !important;
+  cursor: pointer !important;
+}
+
+.clipmate-notice--page .clipmate-notice-detail-copy:hover {
+  background: #f2f2f2 !important;
+}
+
+@keyframes clipmate-notice-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 主提取按钮 - 醒目样式
+   v2.5.92 三处手感修复，改之前先读这段：
+   1) 选择器从 `.media-extractor-button` 提到 `button.media-extractor-button`。
+      我们的样式表是 manifest 注入的，特异性只有 0,1,0，和站点自己的 `button{...}`
+      打平后靠源码顺序决胜 —— 站点样式后插入就赢（v2.5.45 被页面 `button{height}`
+      把按钮压到 28px 就是这个原因）。提到 0,1,1 之后页面单标签规则再也压不住，
+      几何与命中区（height/box-sizing/position）再加 !important 兜底。
+   2) transition 原来写的是 `all 0.3s`，把 left/top 也包了进去。拖动时每帧写一次位置
+      = 每帧重开一次 300ms 缓动，按钮永远在追 300ms 前的目标点，手感发黏、拖不动。
+      现在只给颜色类属性做过渡，位置与 transform 永不过渡。
+   3) hover/active 原来是 translateY(-2px)/(0)。按下瞬间按钮自己下沉 2px，
+      鼠标若落在按钮上沿 2px 内，松手时指针已经不在按钮上了 → 浏览器不派发 click。
+      这就是「有时点得动、有时点不动」的机械原因之一。悬浮感改由阴影承担。 */
+button.media-extractor-button {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2147483647;
+  border: 2px solid #4285f4;
+  background: #4285f4;
+  color: white;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: move;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.4);
+  /* 只过渡颜色：left/top/transform 一旦进入过渡，拖动就会「追帧」。
+     这一条必须是 !important —— 本文件是用户级样式表，不加 !important 就连
+     站点自身的 `button{transition:...}`（作者级普通）都压不住。JS 从不写 transition，安全。 */
+  transition: background-color 0.18s ease, border-color 0.18s ease,
+              box-shadow 0.18s ease, opacity 0.18s ease !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  user-select: none;
+  /* 触摸设备上从按钮起手不滚动页面，否则拖按钮会变成滚页面 */
+  touch-action: none;
+  /* v2.5.45：把按钮盒子钉死成固定尺寸。
+     原来按钮高度随内容变化（加载态塞了 spinner + 文字会折行），而页面自带的
+     `button { height: ... }` 又会在 disabled 时把高度压到 28px，
+     导致「提取信息→提取中→提取完成」过程中按钮忽高忽低。
+     更严重的是浮窗按按钮下沿定位，正好撞上加载态的塌陷高度，窗口就贴到了按钮里面。
+     这里固定 48px（= 静止态原本的视觉高度）+ 不折行 + 内容居中，各状态完全一致。
+     ⚠️ display 绝对不能加 !important：setVisible() 靠内联 display:none 关按钮。
+     加固副本在文件下方「v2.5.41 跨站点样式统一」一节，那里才带 !important。 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 48px;
+  white-space: nowrap;
+}
+
+/* 悬浮感只改颜色和阴影，不动几何 —— 按钮绝不能在指针下面挪位置 */
+.media-extractor-button:hover {
+  background: #3367d6;
+  border-color: #3367d6;
+  box-shadow: 0 6px 16px rgba(66, 133, 244, 0.6);
+}
+
+.media-extractor-button:active {
+  box-shadow: 0 2px 8px rgba(66, 133, 244, 0.4);
+}
+
+/* 拖拽状态样式（v2.5.92）
+   去掉原来的 transform: scale(1.05)：它和 hover/active 的 translateY 三处抢同一个
+   transform，而且以中心缩放会让抓取点相对按钮漂移，越拖越偏。
+   反馈改由阴影 + 透明度承担，几何完全不动。
+   transition: none 必须带 !important —— 基础规则的 transition 是 !important 的，
+   不这样写压不住，拖动时仍会「追帧」。 */
+.media-extractor-button.dragging {
+  opacity: 0.9;
+  cursor: grabbing;
+  box-shadow: 0 8px 20px rgba(66, 133, 244, 0.5);
+  transition: none !important;
+  /* 只在拖动期间提示合成层，平时不留常驻层，避免多站同时吃显存 */
+  will-change: transform;
+}
+/* 未就绪状态（v2.5.60）：按钮已插入页面、但 onClick 还没接上的那 1 秒多。
+   置灰 + 禁用鼠标，让用户知道「还没点得动」，而不是点了没反应。
+   必须排在 .loading / .success / .error 之前：这几个状态和它同特异性，
+   靠源码顺序让它们能盖住置灰色。 */
+.media-extractor-button.pending {
+  background: #9aa0a6;
+  border-color: #9aa0a6;
+  box-shadow: none;
+  cursor: progress;
+}
+
+.media-extractor-button.pending:hover {
+  background: #9aa0a6;
+  border-color: #9aa0a6;
+  box-shadow: none;
+}
+
+/* 加载状态样式 */
+.media-extractor-button.loading {
+  background: #3367d6;
+  border-color: #3367d6;
+  opacity: 0.9;
+}
+
+/* 加载动画 */
+.loading-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 成功状态样式 */
+.media-extractor-button.success {
+  background: #34a853;
+  border-color: #34a853;
+  box-shadow: 0 4px 12px rgba(52, 168, 83, 0.4);
+}
+
+.media-extractor-button.success:hover {
+  background: #2d8e47;
+  border-color: #2d8e47;
+  box-shadow: 0 6px 16px rgba(52, 168, 83, 0.6);
+}
+
+/* 失败状态样式（v2.5.45：原来失败也走 success，按钮会亮成绿色「提取完成」） */
+.media-extractor-button.error {
+  background: #d93025;
+  border-color: #d93025;
+  box-shadow: 0 4px 12px rgba(217, 48, 37, 0.4);
+}
+
+.media-extractor-button.error:hover {
+  background: #b7271d;
+  border-color: #b7271d;
+  box-shadow: 0 6px 16px rgba(217, 48, 37, 0.6);
+}
+
+/* 拖拽排序相关样式 */
+.sortable-ghost {
+  opacity: 0.4;
+}
+
+.sortable-chosen {
+  background: #e0e0e0;
+}
+
+/* ==========================================================================
+ * v2.5.41 跨站点样式统一：页面侧加固
+ *
+ * 浮窗内部元素已全部装进 Shadow DOM（样式见 ui/floating-window-styles.js），
+ * 页面 CSS 进不来，各站点字号/字重/行高/边框不会再互相打架。
+ *
+ * 但仍有元素留在页面里，必须在这里加固：
+ *   1) .media-floating-window  浮窗宿主 —— 继承属性会穿透 Shadow 边界，
+ *      宿主被页面改掉的话，内部 inherit 的字体、字号会跟着一起变；
+ *   2) .media-extractor-button 右上角「提取信息」按钮 —— 各站 button 全局字体规则会改写它；
+ *   3) .clipmate-notice--page  页面层提示卡片（v2.5.44）—— 规格写在文件上方的独立小节里，
+ *      那一节已经逐条带 !important，这里不再重复。
+ *
+ * 这里必须用 !important：Firefox 把扩展注入的样式表当作“用户级样式”，
+ * 层叠顺序为  用户普通 < 页面普通 < 页面 !important < 用户 !important，
+ * 只有 user !important 才压得住任何站点。
+ *
+ * 铁律：绝不加固 display / 宽高 / 位置 / overflow / 背景色（会变色的那几个），
+ * 这些属性由 JS 用 element.style 动态改写，加了 !important 会把交互压死。
+ * ========================================================================== */
+
+/* 1) 浮窗宿主：钉死字体排版，页面无法再改 */
+.media-floating-window {
+  font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  line-height: 1.3 !important;
+  color: #000 !important;
+  letter-spacing: normal !important;
+  word-spacing: normal !important;
+  text-align: left !important;
+  text-transform: none !important;
+  box-sizing: border-box !important;
+  background-color: #fff !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* v2.5.47（B3）：最小化成胶囊时的外形。
+ *
+ * 为什么形状写在这里、而不是 floating-window.js 的内联 style：
+ * 上面那条规则带 !important，属于「用户级 !important」，比内联样式（作者级）还高，
+ * JS 设的 border-radius / box-shadow 一律被压掉（v2.5.47 实机验证时实测就是 8px 没变）。
+ * 内联的 !important 也压不过用户级 !important，所以只能在这个文件里用 class 覆盖。
+ * 特异性更高的选择器写在后面，同一张表里后写的赢。
+ */
+.media-floating-window.is-minimized {
+  border-radius: 18px !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18) !important;
+}
+
+/* 2) 右上角「提取信息」按钮 */
+.media-extractor-button {
+  font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  font-style: normal !important;
+  line-height: 1.2 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  box-sizing: border-box !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+  /* v2.5.45：这三个属性 JS 从不改写，可以安全加固。
+     页面自身的 `button { height: ... }` 属于「作者普通」，会压过我们的「用户普通」，
+     但压不过「用户 !important」——实测豆瓣页面不带 !important 的 height:28px 就能把
+     加载态按钮压成 28px，浮窗随之贴到按钮里面。
+     注意这里不能写 display：setVisible() 靠内联 display:none 隐藏按钮，
+     一旦 display 被 !important 钉住，那个开关就永远关不掉。 */
+  height: 48px !important;
+  white-space: nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 3) 提示卡片见本文件上方「页面层提示卡片」一节，那里已自带 !important，不必重复 */

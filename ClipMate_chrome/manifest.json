@@ -1,0 +1,363 @@
+{
+  "manifest_version": 3,
+  "name": "采媒灵",
+  "short_name": "采媒灵",
+  "version": "2.8.4",
+  "description": "从多个媒体网站提取结构化信息，支持书籍、影视、游戏的统一字段映射",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "https://book.douban.com/*",
+    "https://movie.douban.com/*",
+    "https://www.douban.com/game/*",
+    "https://www.douban.com/personage/*",
+    "https://www.douban.com/j/*",
+    "https://api.bgm.tv/*",
+    "https://game.douban.com/*",
+    "https://bgm.tv/*",
+    "https://bangumi.tv/*",
+    "https://chii.in/*",
+    "https://www.qidian.com/*",
+    "https://store.steampowered.com/*",
+    "https://www.imdb.com/*",
+    "https://v3.sg.media-imdb.com/*",
+    "https://www.themoviedb.org/*",
+    "https://www.douyin.com/*",
+    "https://v.douyin.com/*",
+    "https://www.kuaishou.com/*",
+    "https://www.xiaohongshu.com/*",
+    "https://www.instagram.com/*",
+    "https://www.weibo.com/*",
+    "https://weibo.com/*",
+    "https://m.weibo.cn/*",
+    "https://s.weibo.com/*",
+    "https://www.x.com/*",
+    "https://x.com/*",
+    "https://www.youtube.com/*",
+    "https://youtube.com/*",
+    "https://www.tiktok.com/*",
+    "https://tiktok.com/*",
+    "https://www.bilibili.com/*",
+    "https://bilibili.com/*",
+    "https://space.bilibili.com/*",
+    "https://fanqienovel.com/*",
+    "https://www.17k.com/*",
+    "https://www.goodreads.com/*",
+    "https://www.metacritic.com/*",
+    "https://www.xiaoheihe.cn/*",
+    "https://www.mobygames.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://book.douban.com/subject/*",
+        "https://movie.douban.com/subject/*",
+        "https://www.douban.com/game/*",
+        "https://www.douban.com/personage/*",
+        "https://game.douban.com/subject/*",
+        "https://bgm.tv/subject/*",
+        "https://bangumi.tv/subject/*",
+        "https://chii.in/subject/*",
+        "https://www.qidian.com/book/*",
+        "https://qidian.com/book/*",
+        "https://store.steampowered.com/app/*",
+        "https://www.imdb.com/title/*",
+        "https://www.themoviedb.org/movie/*",
+        "https://www.themoviedb.org/tv/*",
+        "https://www.douyin.com/*",
+        "https://v.douyin.com/*",
+        "https://www.kuaishou.com/*",
+        "https://www.instagram.com/*",
+        "https://www.xiaohongshu.com/*",
+        "https://www.weibo.com/*",
+        "https://weibo.com/*",
+        "https://m.weibo.cn/*",
+        "https://s.weibo.com/*",
+        "https://www.x.com/*",
+        "https://x.com/*",
+        "https://www.youtube.com/*",
+        "https://youtube.com/*",
+        "https://www.tiktok.com/*",
+        "https://tiktok.com/*",
+        "https://www.bilibili.com/video/*",
+        "https://bilibili.com/video/*",
+        "https://www.bilibili.com/bangumi/play/*",
+        "https://bilibili.com/bangumi/play/*",
+        "https://space.bilibili.com/*",
+        "https://fanqienovel.com/page/*",
+        "https://www.17k.com/book/*",
+        "https://www.goodreads.com/book/show/*",
+        "https://www.metacritic.com/game/*",
+        "https://www.xiaoheihe.cn/app/topic/game/pc/*",
+        "https://www.mobygames.com/game/*"
+      ],
+      "exclude_matches": [
+        "https://www.metacritic.com/game/",
+        "https://www.metacritic.com/game/*/critic-reviews/",
+        "https://www.metacritic.com/game/*/user-reviews/",
+        "https://www.metacritic.com/game/*/details/",
+        "https://www.goodreads.com/book/show/*/editions",
+        "https://www.goodreads.com/book/show/*/editions/",
+        "https://www.goodreads.com/book/show/*/editions/*",
+        "https://www.xiaoheihe.cn/app/topic/game/pc/*/*",
+        "https://www.mobygames.com/game/",
+        "https://www.mobygames.com/game/*/adblurbs/",
+        "https://www.mobygames.com/game/*/adblurbs/*",
+        "https://www.mobygames.com/game/*/compare-credits/",
+        "https://www.mobygames.com/game/*/compare-credits/*",
+        "https://www.mobygames.com/game/*/contribute/",
+        "https://www.mobygames.com/game/*/contribute/*",
+        "https://www.mobygames.com/game/*/cover/",
+        "https://www.mobygames.com/game/*/cover/*",
+        "https://www.mobygames.com/game/*/covers/",
+        "https://www.mobygames.com/game/*/covers/*",
+        "https://www.mobygames.com/game/*/credits/",
+        "https://www.mobygames.com/game/*/credits/*",
+        "https://www.mobygames.com/game/*/forum/",
+        "https://www.mobygames.com/game/*/forum/*",
+        "https://www.mobygames.com/game/*/media/",
+        "https://www.mobygames.com/game/*/media/*",
+        "https://www.mobygames.com/game/*/patches/",
+        "https://www.mobygames.com/game/*/patches/*",
+        "https://www.mobygames.com/game/*/promo/",
+        "https://www.mobygames.com/game/*/promo/*",
+        "https://www.mobygames.com/game/*/releases/",
+        "https://www.mobygames.com/game/*/releases/*",
+        "https://www.mobygames.com/game/*/reviews/",
+        "https://www.mobygames.com/game/*/reviews/*",
+        "https://www.mobygames.com/game/*/screenshots/",
+        "https://www.mobygames.com/game/*/screenshots/*",
+        "https://www.mobygames.com/game/*/specs/",
+        "https://www.mobygames.com/game/*/specs/*",
+        "https://www.mobygames.com/game/*/stores/",
+        "https://www.mobygames.com/game/*/stores/*",
+        "https://www.mobygames.com/game/*/trivia/",
+        "https://www.mobygames.com/game/*/trivia/*",
+        "https://www.mobygames.com/game/*/user-review/",
+        "https://www.mobygames.com/game/*/user-review/*"
+      ],
+      "js": [
+        "src/shared/logger.js",
+        "src/shared/browser-api.js",
+        "src/shared/cache-manager.js",
+        "src/shared/cache-key-manager.js",
+        "src/shared/country-names.js",
+        "src/shared/country-extract.js",
+        "src/shared/cross-site-linker.js",
+        "src/shared/platform-utils.js",
+        "src/shared/config/media-types.js",
+        "src/shared/site-config.js",
+        "src/shared/feature-flags.js",
+        "src/content/shared/social-title-processor.js",
+        "src/content/shared/url-normalizer.js",
+        "src/content/shared/social-site-names.js",
+        "src/content/shared/social-fields-builder.js",
+        "src/content/shared/person-date.js",
+        "src/content/shared/person-fields-builder.js",
+        "src/content/shared/social-dom-utils.js",
+        "src/content/shared/social-date-utils.js",
+        "src/content/shared/weibo-feed-context.js",
+        "src/content/shared/x-feed-context.js",
+        "src/content/shared/author-id-fetcher.js",
+        "src/content/shared/aweme-id-date.js",
+        "src/content/shared/douyin-modal-context.js",
+        "src/content/shared/douyin-fiber-client.js",
+        "src/content/shared/douyin-net-cache.js",
+        "src/content/shared/kuaishou-cover-time.js",
+        "src/content/shared/kuaishou-immersive-context.js",
+        "src/content/shared/instagram-entry-context.js",
+        "src/content/shared/instagram-inline-data.js",
+        "src/content/shared/kuaishou-state-client.js",
+        "src/content/shared/tiktok-page-data.js",
+        "src/content/utils/media-detector.js",
+        "src/content/utils/field-mapper.js",
+        "src/content/utils/title-processor.js",
+        "src/content/utils/extractor-factory.js",
+        "src/content/extractors/base-extractor.js",
+        "src/content/extractors/douban-book.js",
+        "src/content/extractors/douban-movie.js",
+        "src/content/extractors/douban-game.js",
+        "src/content/extractors/douban-celebrity.js",
+        "src/content/extractors/steam.js",
+        "src/content/extractors/bgm-book.js",
+        "src/content/extractors/bgm-game.js",
+        "src/content/extractors/bgm-movie.js",
+        "src/content/extractors/qidian-book.js",
+        "src/content/extractors/douyin-social.js",
+        "src/content/extractors/douyin-profile-ssr.js",
+        "src/content/extractors/douyin-profile.js",
+        "src/content/extractors/douyin-modal.js",
+        "src/content/extractors/kuaishou-profile.js",
+        "src/content/extractors/kuaishou-social.js",
+        "src/content/extractors/kuaishou-immersive.js",
+        "src/content/extractors/xiaohongshu-social.js",
+        "src/content/extractors/xiaohongshu-profile.js",
+        "src/content/extractors/instagram-social.js",
+        "src/content/extractors/instagram-profile.js",
+        "src/content/extractors/weibo-social.js",
+        "src/content/extractors/weibo-profile.js",
+        "src/content/extractors/weibo-mobile-social.js",
+        "src/content/extractors/x-social.js",
+        "src/content/extractors/x-profile.js",
+        "src/content/extractors/youtube-social.js",
+        "src/content/extractors/youtube-profile.js",
+        "src/content/extractors/tiktok-social.js",
+        "src/content/extractors/tiktok-profile.js",
+        "src/content/extractors/bilibili-social.js",
+        "src/content/extractors/bilibili-profile.js",
+        "src/content/extractors/imdb.js",
+        "src/content/extractors/tmdb.js",
+        "src/content/extractors/fanqie-book.js",
+        "src/content/extractors/17k-book.js",
+        "src/content/extractors/goodreads-book.js",
+        "src/content/extractors/metacritic-game.js",
+        "src/content/extractors/xiaoheihe-game.js",
+        "src/content/extractors/mobygames-game.js",
+        "src/content/ui/floating-window-styles.js",
+        "src/content/ui/notice.js",
+        "src/content/ui/floating-window.js",
+        "src/content/ui/button-manager.js",
+        "src/content/ui/modal-manager.js",
+        "src/content/ui/instagram-modal-watcher.js",
+        "src/content/ui/instagram-feed-buttons.js",
+        "src/content/ui/ig-spa-handler.js",
+        "src/content/ui/weibo-feed-buttons.js",
+        "src/content/ui/weibo-spa-handler.js",
+        "src/content/ui/x-feed-buttons.js",
+        "src/content/ui/x-spa-handler.js",
+        "src/content/ui/douyin-spa-handler.js",
+        "src/content/ui/kuaishou-spa-handler.js",
+        "src/content/ui/kuaishou-route-watcher.js",
+        "src/content/ui/tiktok-spa-handler.js",
+        "src/content/ui/xiaohongshu-spa-handler.js",
+        "src/content/ui/modal-persistence.js",
+        "src/content/ui/modal-copy-export.js",
+        "src/content/ui/modal-cross-site.js",
+        "src/content/ui/modal-table-renderer.js",
+        "src/content/ui/modal-search.js",
+        "src/content/ui/modal-edit-mode.js",
+        "src/content/ui/modal-data-processor.js",
+        "src/content/ui/modal-window.js",
+        "src/content/utils/data-formatters.js",
+        "src/content/utils/copy-helper.js",
+        "src/content/utils/data-processors.js",
+        "src/content/utils/social-hashtag-cleaner.js",
+        "src/content/kuaishou-no-autoplay-flag.js",
+        "src/content/content-main.js"
+      ],
+      "run_at": "document_idle",
+      "css": [
+        "src/content/content-styles.css"
+      ]
+    },
+    {
+      "matches": [
+        "https://www.douyin.com/*",
+        "https://v.douyin.com/*"
+      ],
+      "js": [
+        "src/content/douyin-net-hook.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://www.tiktok.com/*",
+        "https://tiktok.com/*"
+      ],
+      "js": [
+        "src/content/tiktok-fiber-hook.js"
+      ],
+      "run_at": "document_idle",
+      "world": "MAIN",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://www.tiktok.com/*",
+        "https://tiktok.com/*"
+      ],
+      "js": [
+        "src/content/tiktok-net-hook.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://www.xiaohongshu.com/*"
+      ],
+      "js": [
+        "src/content/xiaohongshu-page-data.js"
+      ],
+      "run_at": "document_idle",
+      "world": "MAIN",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://www.kuaishou.com/*"
+      ],
+      "js": [
+        "src/content/kuaishou-no-autoplay.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://www.instagram.com/*",
+        "https://instagram.com/*"
+      ],
+      "js": [
+        "src/content/instagram-net-hook.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://m.weibo.cn/*"
+      ],
+      "js": [
+        "src/content/weibo-mobile-bridge.js"
+      ],
+      "run_at": "document_idle",
+      "world": "MAIN",
+      "all_frames": false
+    }
+  ],
+  "background": {
+    "service_worker": "src/background/background.js"
+  },
+  "options_ui": {
+    "page": "src/options/options.html",
+    "open_in_tab": true
+  },
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "采媒灵",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

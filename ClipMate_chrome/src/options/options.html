@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>设置 · 采媒灵</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="app">
+
+    <!-- ============ 左侧导航 ============ -->
+    <aside class="side">
+      <div class="brand">
+        <span class="brand-name">采媒灵</span>
+        <span class="brand-ver" id="brandVersion"></span>
+      </div>
+
+      <nav class="nav" id="nav" aria-label="设置分区">
+        <a class="nav-item" href="#general" data-tab="general" aria-current="true">通用</a>
+        <a class="nav-item" href="#sites" data-tab="sites">网站</a>
+        <a class="nav-item" href="#fields" data-tab="fields">字段</a>
+        <a class="nav-item" href="#data" data-tab="data">数据</a>
+        <a class="nav-item" href="#about" data-tab="about">关于</a>
+      </nav>
+
+      <div class="side-foot">
+        <p>改完立即生效，不用点保存。</p>
+        <p>配置只存在本机，不上传。</p>
+      </div>
+    </aside>
+
+    <!-- ============ 右侧内容 ============ -->
+    <main class="main">
+
+      <!-- ---------- 通用 ---------- -->
+      <section class="tab" id="tab-general" aria-labelledby="nav">
+        <header class="tab-head">
+          <h1>通用</h1>
+          <p class="lead">没单独设过的站，都用这一套。想给某个站单独设，去「网站」页。</p>
+        </header>
+        <div id="generalGroups"></div>
+      </section>
+
+      <!-- ---------- 网站 ---------- -->
+      <section class="tab" id="tab-sites" hidden>
+        <header class="tab-head">
+          <h1>网站</h1>
+          <p class="lead">23 个站，默认全部跟着「通用」走。点开一个站才能改它自己的设置。</p>
+        </header>
+
+        <div class="toolbar">
+          <div class="search-wrap">
+            <input type="text" id="siteSearch" class="search" placeholder="搜站名或域名…（按 / 聚焦）" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="bulk-wrap">
+            <select id="siteFilter" class="pick" aria-label="筛选站点">
+              <option value="all">全部站点</option>
+              <option value="custom">仅已单独设置</option>
+              <option value="off">有开关是关的</option>
+            </select>
+            <select id="siteBulk" class="pick" aria-label="批量操作">
+              <option value="">批量…</option>
+              <option value="follow">全部恢复跟随通用</option>
+              <option value="button-on">全部显示按钮</option>
+              <option value="button-off">全部隐藏按钮</option>
+            </select>
+          </div>
+          <span class="count" id="siteCount">—</span>
+        </div>
+
+        <div id="siteList" class="site-list"></div>
+
+        <p class="list-foot">
+          <span class="dot own"></span>已单独设置
+          <span class="dot inherit"></span>跟着上层域名规则走
+          <span class="dot plain"></span>跟随通用
+        </p>
+      </section>
+
+      <!-- ---------- 字段 ---------- -->
+      <section class="tab" id="tab-fields" hidden>
+        <header class="tab-head">
+          <h1>字段</h1>
+          <p class="lead">浮窗里字段的先后顺序。调完下次打开浮窗就按新顺序排，没调过的类型仍按默认顺序。</p>
+        </header>
+        <p class="note">只影响显示与导出的字段顺序，提取到的内容本身不受影响。同一类型下所有站点共用一套顺序。</p>
+        <div id="fieldGroups"></div>
+      </section>
+
+      <!-- ---------- 数据 ---------- -->
+      <section class="tab" id="tab-data" hidden>
+        <header class="tab-head">
+          <h1>数据</h1>
+          <p class="lead">缓存、备份与重置。下面每一项只动自己那一块，互不牵连。</p>
+        </header>
+
+        <h2 class="sub">缓存</h2>
+        <div class="card">
+          <div class="card-row">
+            <span class="card-label">已缓存</span>
+            <span class="card-value" id="cacheInfo">正在读取…</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"></span>
+            <span class="card-value">
+              <button type="button" class="btn" id="clearCacheBtn">清除缓存</button>
+              <span class="hint-inline">只删缓存，所有设置原样保留</span>
+            </span>
+          </div>
+        </div>
+
+        <h2 class="sub">备份</h2>
+        <div class="card">
+          <div class="card-row">
+            <span class="card-label">导出设置</span>
+            <span class="card-value">
+              <button type="button" class="btn" id="exportBtn">导出为文件</button>
+              <span class="hint-inline">包含站点设置、功能开关、字段顺序</span>
+            </span>
+          </div>
+          <div class="card-row">
+            <span class="card-label">导入设置</span>
+            <span class="card-value">
+              <button type="button" class="btn" id="importBtn">选择文件…</button>
+              <input type="file" id="importFile" accept=".json,application/json" hidden>
+              <span class="hint-inline">会覆盖同名设置，导入前先给你看清楚</span>
+            </span>
+          </div>
+          <div class="card-row" id="importPreviewRow" hidden>
+            <span class="card-label"></span>
+            <span class="card-value" id="importPreview"></span>
+          </div>
+        </div>
+
+        <h2 class="sub">重置</h2>
+        <p class="lead">每个按钮只清自己那一块。清掉之后回到默认，且不能撤销。</p>
+        <div id="resetList"></div>
+      </section>
+
+      <!-- ---------- 关于 ---------- -->
+      <section class="tab" id="tab-about" hidden>
+        <header class="tab-head">
+          <h1>关于</h1>
+          <p class="lead">从多个媒体网站提取结构化信息，按统一字段输出。</p>
+        </header>
+
+        <div class="card">
+          <div class="card-row">
+            <span class="card-label">版本</span>
+            <span class="card-value" id="aboutVersion">—</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label">支持站点</span>
+            <span class="card-value" id="aboutSiteCount">—</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label">数据</span>
+            <span class="card-value">所有配置只写在本机浏览器存储里，不发往任何服务器。</span>
+          </div>
+        </div>
+
+        <h2 class="sub">支持的网站</h2>
+        <div id="aboutSites" class="about-sites"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- 已保存 + 撤销 -->
+  <div class="save-bar" id="saveBar" role="status" aria-live="polite">
+    <span class="save-text" id="saveText">已保存</span>
+    <button type="button" class="undo-btn" id="undoBtn">撤销</button>
+  </div>
+
+  <script src="../shared/site-config.js"></script>
+  <script src="../shared/settings-schema.js"></script>
+  <script src="../shared/feature-flags.js"></script>
+  <!-- 字段清单的唯一真源（MEDIA_FIELD_LISTS / PERSON_FIELD_LISTS）。
+       放这里是为了不在设置页再抄一份字段名 —— 抄一份就迟早和提取器对不上。 -->
+  <script src="../shared/config/media-types.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

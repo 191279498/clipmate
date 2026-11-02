@@ -1,0 +1,37 @@
+# ---- 打包产物与备份（体积大，不入库） ----
+发行包/
+backups/
+ClipMate_v*/
+*.zip
+
+# ---- 本地工作区记忆 ----
+.workbuddy/
+
+# ---- 测试用真实页面存档（第三方内容，不随仓库分发） ----
+tests/fixtures/
+tests/golden/
+tests/live-bsk/
+tests/_capture_dy/
+tests/_preview*.html
+设计系统/_preview*.html
+设计系统/_*.png
+test-*.html
+_tmp-*.js
+
+# ---- 开发过程中的分析文档与抓包（个人草稿，不入库） ----
+/*.md
+/*.html
+/*.png
+/*.jpg
+!/README.md
+bgm-search-*.json
+douban-suggest-*.json
+ClipMate_UI设计稿_*.html
+ClipMate_UI重构方案_*.md
+
+# ---- 系统与依赖 ----
+node_modules/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log

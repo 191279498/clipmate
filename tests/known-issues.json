@@ -1,0 +1,12 @@
+{
+  "_说明": "已知问题白名单。清单对账（check-registry.js）发现的问题如果已经在这里登记，只报警告不报错，避免「一上来就红」把真回归淹掉。修好之后请把条目删掉，好让护栏重新生效。",
+  "knownProblems": [
+    {
+      "url": "https://www.goodreads.com/book/show/5907.The_Hobbit/editions",
+      "kind": "negative-injected",
+      "since": "2.5.59",
+      "reason": "getExtractorByUrl 的正则已经排除 /editions，但 manifest 的 matches 是 /book/show/*，没有对应 exclude_matches → 版本列表页仍会出现按钮，点了会提取出列表页的杂数据。修法：manifest 加一条 exclude_matches。",
+      "fixBatch": "批次 2"
+    }
+  ]
+}
