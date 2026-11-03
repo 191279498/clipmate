@@ -50,9 +50,9 @@
 
 /* ==================== 标题栏 ==================== */
 .floating-window-header {
-  background: #f5f5f5;
+  background: #F1EFE8;
   padding: 10px 15px;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #E1DCD1;
   border-top: none;
   border-left: none;
   border-right: none;
@@ -64,7 +64,7 @@
   font-size: 12px;
   font-weight: 400;
   line-height: 1.3;
-  color: #333;
+  color: #111820;
   position: relative;
   margin: 0;
 }
@@ -81,8 +81,8 @@
    标题文字里的「 - 编辑模式」随标题一起消失，改用整条标题栏换底色。
    底色写在样式表、不写内联，保证退出编辑时 class 一去就恢复原色。 */
 .floating-window-header.is-edit-mode {
-  background: #fff3e0;
-  border-bottom-color: #ffcc80;
+  background: #FDF3D6;
+  border-bottom-color: #E8C46A;
 }
 
 .floating-window-title-buttons {
@@ -121,13 +121,26 @@
 }
 
 /* 初始 background / color 在这里定，悬停时由 JS 写内联样式覆盖（内联优先于本表） */
+
+/* v2.8.5：高频区 / 低频区之间的细分隔线。
+   是真元素（div），不是 ::after —— 按钮容器是 flex-wrap，
+   伪元素折行时会挂在最后一个按钮的尾巴上，分隔线就跑到行中间去了。
+   align-self:center 让它和按钮垂直居中；高度按小字行高取，不撑高标题栏。 */
+.floating-window-title-divider {
+  width: 1px;
+  height: 16px;
+  flex: none;
+  align-self: center;
+  margin: 0 2px;
+  background: #CBC5B7;
+}
 .floating-window-close {
   width: 24px;
   height: 24px;
   min-width: 24px;
   border-radius: 50%;
-  background: #f0f0f0;
-  color: #666;
+  background: #E8E4D9;
+  color: #6B7278;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -172,26 +185,26 @@
   width: 100%;
   border-radius: 0;
   border-left: 4px solid transparent;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid #E1DCD1;
   animation: clipmate-notice-in 180ms ease-out;
 }
 
 .clipmate-notice--success {
-  background: #eaf3de;
-  border-left-color: #639922;
-  color: #27500a;
+  background: #EAF7F0;
+  border-left-color: #0E7A3E;
+  color: #0B5A2E;
 }
 
 .clipmate-notice--error {
-  background: #fcebeb;
-  border-left-color: #a32d2d;
-  color: #501313;
+  background: #FDECEC;
+  border-left-color: #B42318;
+  color: #8C1D16;
 }
 
 .clipmate-notice--info {
-  background: #e6f1fb;
-  border-left-color: #185fa5;
-  color: #042c53;
+  background: #EEF4FF;
+  border-left-color: #056BF4;
+  color: #0448A6;
 }
 
 .clipmate-notice-icon {
@@ -264,13 +277,13 @@
 .clipmate-notice-detail {
   margin-top: 6px;
   padding: 6px 8px;
-  background: rgba(0, 0, 0, 0.045);
+  background: rgba(17, 24, 32, 0.04);
   border-radius: 4px;
   font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
   font-size: 11px;
   font-weight: 400;
   line-height: 1.5;
-  color: #444;
+  color: #6B7278;
   white-space: pre-wrap;
   word-break: break-word;
   max-height: 108px;
@@ -283,10 +296,10 @@
   display: block;
   margin-top: 6px;
   padding: 2px 8px;
-  border: 1px solid #c9c9c9;
+  border: 1px solid #D5CFC1;
   border-radius: 4px;
-  background: #fff;
-  color: #333;
+  background: #FFFFFF;
+  color: #111820;
   font-family: inherit;
   font-size: 11px;
   line-height: 1.6;
@@ -294,7 +307,7 @@
 }
 
 .clipmate-notice-detail-copy:hover {
-  background: #f2f2f2;
+  background: #F1EFE8;
 }
 
 @keyframes clipmate-notice-in {
@@ -313,15 +326,15 @@
   flex: 1;
   padding: 15px;
   overflow: auto;
-  background: #fff;
+  background: #F7F6F2;
   user-select: text;
   font-size: 12px;
   font-weight: 400;
   line-height: 1.3;
-  color: #000;
+  color: #111820;
   text-align: left;
   scrollbar-width: thin;
-  scrollbar-color: #c8c8c8 #f5f5f5;
+  scrollbar-color: #CBC5B7 #F1EFE8;
 }
 
 .floating-window-content::-webkit-scrollbar {
@@ -329,18 +342,18 @@
   height: 10px;
 }
 .floating-window-content::-webkit-scrollbar-thumb {
-  background: #c8c8c8;
+  background: #CBC5B7;
   border-radius: 5px;
 }
 .floating-window-content::-webkit-scrollbar-track {
-  background: #f5f5f5;
+  background: #F1EFE8;
 }
 
 /* ==================== 底部折叠手柄 / 缩放角 ==================== */
 .floating-window-collapse-handle {
   height: 20px;
-  background: #f5f5f5;
-  border-top: 1px solid #ddd;
+  background: #F1EFE8;
+  border-top: 1px solid #E1DCD1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -348,7 +361,7 @@
   font-size: 12px;
   font-weight: 400;
   line-height: 1;
-  color: #666;
+  color: #6B7278;
   transition: all 0.2s;
   margin: 0;
   padding: 0;
@@ -362,7 +375,7 @@
   width: 15px;
   height: 15px;
   cursor: nwse-resize;
-  background: linear-gradient(135deg, transparent 50%, #ccc 50%);
+  background: linear-gradient(135deg, transparent 50%, #C9C3B5 50%);
   border-bottom-right-radius: 8px;
 }
 
@@ -374,7 +387,7 @@
   font-size: 12px;
   font-weight: 400;
   line-height: 1.3;
-  color: #000;
+  color: #111820;
   text-align: left;
   table-layout: auto;
   margin: 0;
@@ -384,11 +397,11 @@
 .data-table td {
   padding: 2px;
   text-align: left;
-  border: 1px solid #000;
+  border: 1px solid #D9D3C5;
   vertical-align: top;
   word-break: break-word;
   overflow-wrap: break-word;
-  color: #000;
+  color: #111820;
   background: transparent;
   font-size: 12px;
   line-height: 1.3;
@@ -408,7 +421,7 @@
   text-align: right;
   position: sticky;
   left: 0;
-  background: #fff;
+  background: #F1EFE8;
   z-index: 2;
 }
 
@@ -416,18 +429,18 @@
 .data-table.horizontal-table thead th {
   position: sticky;
   top: 0;
-  background: #fff;
+  background: #F1EFE8;
   z-index: 3;
 }
 
 /* 行悬停高亮（v2.5.45）：23 列宽表格横向看容易串行 */
 .data-table tbody tr:hover td,
 .data-table tbody tr:hover th {
-  background: #f4f8fd;
+  background: #F1EFE8;
 }
 
 .data-table a {
-  color: #0066cc;
+  color: #056BF4;
   text-decoration: underline;
   font-size: 12px;
   line-height: 1.3;
@@ -437,7 +450,7 @@
 .data-field {
   padding: 2px 4px;
   display: block;
-  color: #000;
+  color: #111820;
   font-size: 12px;
   font-weight: 400;
   line-height: 1.3;
@@ -458,7 +471,7 @@
 .data-field-toggle {
   display: inline-block;
   margin-left: 6px;
-  color: #185fa5;
+  color: #0448A6;
   cursor: pointer;
   user-select: none;
   font-size: 12px;
@@ -470,7 +483,7 @@
 
 /* 点单元格复制后的短暂反馈（v2.5.45） */
 .data-table td.is-copied {
-  background: #eaf3de;
+  background: #EAF7F0;
 }
 
 /* ==================== 编辑模式 ==================== */
@@ -478,12 +491,12 @@
 .field-editor {
   width: 100%;
   padding: 2px 4px;
-  border: 1px solid #000;
+  border: 1px solid #CBC5B7;
   font-size: 12px;
   font-weight: 400;
   line-height: 1.3;
-  color: #000;
-  background: #fff;
+  color: #111820;
+  background: #FFFFFF;
   outline: none;
   margin: 0;
   border-radius: 0;
@@ -504,7 +517,7 @@
 }
 
 .sortable-chosen {
-  background: #e0e0e0;
+  background: #E8E4D9;
 }
 
 /* v2.5.45（B17）拖拽落点提示：
@@ -518,7 +531,7 @@
 .sortable-header.drop-after::after {
   content: "";
   position: absolute;
-  background: #4285f4;
+  background: #056BF4;
   pointer-events: none;
   z-index: 5;
 }
@@ -563,13 +576,13 @@
 /* 旧式按钮类（保留兼容） */
 .btn {
   padding: 4px 8px;
-  border: 1px solid #000;
+  border: 1px solid #CBC5B7;
   background: none;
   cursor: pointer;
   font-size: 12px;
   font-weight: 400;
   line-height: 1.3;
-  color: #000;
+  color: #111820;
   border-radius: 0;
   margin: 0;
 }
@@ -586,7 +599,7 @@
   justify-content: center;
   gap: 6px;
   padding: 0 10px;
-  background: #fff;
+  background: #F7F6F2;
   border-radius: inherit;
   cursor: pointer;
   user-select: none;
@@ -596,14 +609,14 @@
 .floating-window-capsule-icon {
   font-size: 12px;
   line-height: 1;
-  color: #185fa5;
+  color: #0448A6;
   flex: 0 0 auto;
 }
 
 .floating-window-capsule-name {
   font-size: 12px;
   line-height: 1;
-  color: #000;
+  color: #111820;
   white-space: nowrap;
   flex: 0 0 auto;
 }
@@ -611,14 +624,14 @@
 .floating-window-capsule-divider {
   width: 1px;
   height: 12px;
-  background: #d1d5db;
+  background: #CBC5B7;
   flex: 0 0 auto;
 }
 
 .floating-window-capsule-count {
   font-size: 12px;
   line-height: 1;
-  color: #4b5563;
+  color: #6B7278;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   flex: 0 0 auto;
@@ -632,7 +645,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #e24b4b;
+  background: #E0453C;
   display: none;
 }
 
@@ -647,8 +660,8 @@
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  background: #eef2f7;
-  border-bottom: 1px solid #d1d5db;
+  background: #F1EFE8;
+  border-bottom: 1px solid #E1DCD1;
   flex: 0 0 auto;
   font-size: 12px;
   line-height: 1.3;
@@ -663,40 +676,40 @@
   min-width: 0;
   height: 24px;
   padding: 0 8px;
-  border: 1px solid #b8c4d4;
+  border: 1px solid #CBC5B7;
   border-radius: 5px;
-  background: #fff;
+  background: #FFFFFF;
   font-family: inherit;
   font-size: 12px;
   font-weight: 400;
   line-height: 1.3;
-  color: #000;
+  color: #111820;
   outline: none;
   margin: 0;
 }
 
 .clipmate-search-input:focus {
-  border-color: #185fa5;
-  box-shadow: 0 0 0 2px rgba(24, 95, 165, 0.16);
+  border-color: #056BF4;
+  box-shadow: 0 0 0 2px rgba(5, 107, 244, 0.16);
 }
 
 .clipmate-search-count {
-  color: #4b5563;
+  color: #6B7278;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   flex: 0 0 auto;
 }
 
 .clipmate-search-count.is-none {
-  color: #a32d2d;
+  color: #B42318;
   font-weight: 600;
 }
 
 .clipmate-search-filter,
 .clipmate-search-close {
-  border: 1px solid #b8c4d4;
-  background: #fff;
-  color: #374151;
+  border: 1px solid #CBC5B7;
+  background: #FFFFFF;
+  color: #111820;
   border-radius: 5px;
   font-family: inherit;
   font-size: 11.5px;
@@ -715,13 +728,13 @@
 
 .clipmate-search-filter:hover,
 .clipmate-search-close:hover {
-  background: #f3f4f6;
+  background: #F1EFE8;
 }
 
 .clipmate-search-filter.is-active {
-  background: #185fa5;
-  border-color: #185fa5;
-  color: #fff;
+  background: #056BF4;
+  border-color: #056BF4;
+  color: #FFFFFF;
 }
 
 /* 搜索命中 / 未命中。写在表格基础样式之后，同特异性下靠顺序取胜，
@@ -730,7 +743,7 @@
 .data-table tr.is-search-hit td,
 .data-table th.is-search-hit,
 .data-table td.is-search-hit {
-  background: #fff8c5;
+  background: #FBF3CE;
 }
 
 .data-table tr.is-search-dim {
@@ -756,10 +769,10 @@
   z-index: 10;
   min-width: 120px;
   padding: 4px;
-  background: #fff;
-  border: 1px solid #d1d5db;
+  background: #FFFFFF;
+  border: 1px solid #E1DCD1;
   border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 8px 24px rgba(17, 24, 32, 0.16);
 }
 
 .clipmate-title-menu button {
@@ -773,7 +786,7 @@
   font-size: 12px;
   font-weight: 400;
   line-height: 1.3;
-  color: #000;
+  color: #111820;
   text-align: left;
   cursor: pointer;
   white-space: nowrap;
@@ -781,7 +794,7 @@
 }
 
 .clipmate-title-menu button:hover {
-  background: #f3f4f6;
+  background: #F1EFE8;
 }
 
 /* 图标按钮（🔍/⋯/—）：方形窄按钮，省标题栏位置 */

@@ -534,10 +534,31 @@ function doc(body) {
     mgr.start();
     const b1 = w.document.querySelector('.clipmate-weibo-feed-btn[data-mid="RpgfDebQV"]');
     const b2 = w.document.querySelector('.clipmate-weibo-feed-btn[data-mid="X2"]');
-    eq('带「热门」条：跟自己的「⋯」居中 → top 50px', b1.style.top, '50px');
-    eq('不带「热门」条：跟自己的「⋯」居中 → top 16px', b2.style.top, '16px');
+    // v2.8.8：按钮 26 → 28（换成头像后要放得下 20px 的头），竖向居中的 top 因此各减 1
+    eq('带「热门」条：跟自己的「⋯」居中 → top 49px', b1.style.top, '49px');
+    eq('不带「热门」条：跟自己的「⋯」居中 → top 15px', b2.style.top, '15px');
     ok('两张卡片算出不一样的高度（证明是逐卡算的，不是写死的）', b1.style.top !== b2.style.top);
     mgr.stop();
+
+    // v2.8.8：桌面页原来写死 right:17 —— 按钮右边缘落在 865，而右上角那颗「⌄」
+    // 占 842~866，整颗压在箭头上（真机 2026-11-02 实测）。改成按锚点几何算。
+    // 单条会被当成详情页不挂（MIN_POSTS=2），所以造两条，对第二条加锚点
+    const { w: w4 } = openDom(doc(searchCard({}) + searchCard({ mid: 'XyzAbc123' })),
+      'https://s.weibo.com/weibo?q=x');
+    const c4 = w4.document.querySelectorAll('.card-wrap')[1];
+    c4.getBoundingClientRect = () => ({ top: 100, bottom: 600, height: 500, width: 642, left: 240, right: 882 });
+    const m4 = new w4.WeiboFeedButtons({ onExtract: () => true });
+    m4.start();
+    const b4 = c4.querySelector('.clipmate-weibo-feed-btn');
+    // 真机时序：卡片先出来、头部那颗「⌄」随后才挂上 → 再扫一轮必须重摆
+    const pop = w4.document.createElement('div');
+    pop.className = 'woo-pop-wrap';                 // 真机：右上角「⌄」的外层
+    pop.getBoundingClientRect = () => ({ top: 130, bottom: 154, height: 24, width: 21, left: 842, right: 863 });
+    c4.querySelector('.content').appendChild(pop);
+    m4.sync();
+    eq('让开「⌄」：右边缘站到它左边 6px（882-842+6=46）', b4.style.right, '46px');
+    eq('竖向跟「⌄」居中（130-100+(24-28)/2=28）', b4.style.top, '28px');
+    m4.stop();
 
     // 没有「⋯」的卡片 → 算不出来，退回 CSS 固定值（不加内联 top）
     const { w: w2 } = openDom(doc(searchCard({}) + searchCard({ mid: 'X3', uid: '3' })), 'https://s.weibo.com/weibo?q=x');

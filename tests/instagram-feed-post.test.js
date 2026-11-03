@@ -221,6 +221,70 @@ const FEED_HTML = '<!DOCTYPE html><html><head><title>Instagram</title></head><bo
     mgr.stop();
   }
 
+  /* ============ 二·B 让位：头部有「关注」时必须站到它左边 ============ */
+  section('二·B 让位：头部有「关注」按钮时不许压上去');
+  {
+    // v2.8.9 真机实证：关注按钮 599~659、⋯ 667~691，写死 right:40 的按钮落在
+    // 633~661 —— 整整压住关注 26px。改为按几何算：右边缘站到「同一行最左那颗」左边 6px。
+    const html = '<!DOCTYPE html><html><body><main><article>'
+      + '<a href="/p/AAAAAAAAAAA/"><time datetime="2026-10-31T15:32:08.000Z">1小时</time></a>'
+      + '<button aria-label="关注" type="button">关注</button>'
+      + '<button aria-label="更多选项" type="button"><svg></svg></button>'
+      + '</article></main></body></html>';
+    const { w } = openFeedDom(html);
+    const art = w.document.querySelector('main article');
+    art.getBoundingClientRect = () => ({ left: 231, right: 701, top: 0, bottom: 600, width: 470, height: 600 });
+    art.querySelector('[aria-label="关注"]').getBoundingClientRect =
+      () => ({ left: 599, right: 659, top: 12, bottom: 44, width: 60, height: 32 });
+    art.querySelector('[aria-label="更多选项"]').getBoundingClientRect =
+      () => ({ left: 667, right: 691, top: 14, bottom: 38, width: 24, height: 24 });
+
+    const mgr = new w.InstagramFeedButtons({ onExtract: () => true });
+    mgr.start();
+    const btn = w.document.querySelector('main article > button.clipmate-ig-feed-btn');
+    // 701 - 599 + 6 = 108 → 按钮右边缘 593，离关注左沿 6px
+    eq('让开「关注」：right 从 40 变成 108', btn.style.right, '108px');
+    eq('行内 right 必须带 important（否则压不过样式表里那条 !important）',
+      btn.style.getPropertyPriority('right'), 'important');
+    mgr.stop();
+
+    // 没有关注按钮 → 落到「⋯」左边，正好等于 CSS 默认的 40
+    const only = '<!DOCTYPE html><html><body><main><article>'
+      + '<a href="/p/BBBBBBBBBBB/"><time datetime="2026-10-31T15:32:08.000Z">1小时</time></a>'
+      + '<button aria-label="更多选项" type="button"><svg></svg></button>'
+      + '</article></main></body></html>';
+    const s = openFeedDom(only);
+    const art2 = s.w.document.querySelector('main article');
+    art2.getBoundingClientRect = () => ({ left: 231, right: 701, top: 0, bottom: 600, width: 470, height: 600 });
+    art2.querySelector('[aria-label="更多选项"]').getBoundingClientRect =
+      () => ({ left: 667, right: 691, top: 14, bottom: 38, width: 24, height: 24 });
+    const m2 = new s.w.InstagramFeedButtons({ onExtract: () => true });
+    m2.start();
+    eq('没有「关注」时落到 ⋯ 左边 → right 40（701-667+6）',
+      s.w.document.querySelector('main article > button.clipmate-ig-feed-btn').style.right, '40px');
+    m2.stop();
+
+    // 头像那颗「可点按钮」（离 ⋯ 400 多 px、宽 468）不能被当成避让目标，
+    // 否则按钮会被推到帖子最左边压住头像
+    const wide = '<!DOCTYPE html><html><body><main><article>'
+      + '<a href="/p/CCCCCCCCCCC/"><time datetime="2026-10-31T15:32:08.000Z">1小时</time></a>'
+      + '<button aria-label="头像" type="button"></button>'
+      + '<button aria-label="更多选项" type="button"><svg></svg></button>'
+      + '</article></main></body></html>';
+    const t = openFeedDom(wide);
+    const art3 = t.w.document.querySelector('main article');
+    art3.getBoundingClientRect = () => ({ left: 231, right: 701, top: 0, bottom: 600, width: 470, height: 600 });
+    art3.querySelector('[aria-label="头像"]').getBoundingClientRect =
+      () => ({ left: 248, right: 280, top: 10, bottom: 42, width: 32, height: 32 });
+    art3.querySelector('[aria-label="更多选项"]').getBoundingClientRect =
+      () => ({ left: 667, right: 691, top: 14, bottom: 38, width: 24, height: 24 });
+    const m3 = new t.w.InstagramFeedButtons({ onExtract: () => true });
+    m3.start();
+    eq('远处的头像不算避让目标 → 仍是 40',
+      t.w.document.querySelector('main article > button.clipmate-ig-feed-btn').style.right, '40px');
+    m3.stop();
+  }
+
   /* ============ 三、只挂首页 / 弹层里不挂 / 离开要摘干净 ============ */
   section('三、范围：只挂首页；弹层里的帖子不挂；换页要撤干净');
   {

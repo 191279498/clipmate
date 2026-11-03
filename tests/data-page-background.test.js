@@ -63,7 +63,7 @@ global.chrome = {
     onInstalled: { addListener: () => {} },
     onMessage: { addListener: () => {} },
     onStartup: { addListener: () => {} },
-    getManifest: () => ({ version: '2.8.4' })
+    getManifest: () => ({ version: '2.8.5' })
   },
   tabs: {
     onUpdated: { addListener: () => {} },

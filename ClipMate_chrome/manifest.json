@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "采媒灵",
   "short_name": "采媒灵",
-  "version": "2.8.4",
+  "version": "2.9.1",
   "description": "从多个媒体网站提取结构化信息，支持书籍、影视、游戏的统一字段映射",
   "minimum_chrome_version": "116",
   "permissions": [
@@ -359,5 +359,11 @@
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/mascot/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }

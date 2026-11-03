@@ -148,6 +148,9 @@
      */
     _computeFloatingPosition(width, height) {
       const gap = 8;
+      // v2.8.6：按钮左端的吉祥物头像比按钮高，向下溢出约 10px。
+      // 贴按钮下沿的间距必须大于这个溢出量，否则浮窗会盖住它的下巴。
+      const BTN_GAP = 12;
       let x = Math.max(gap, window.innerWidth - width - 20);
       let y = 72; // 按钮默认 top:20 + 高约 44 + 间距
 
@@ -157,7 +160,7 @@
           const r = btn.getBoundingClientRect();
           if (r.width > 0 && r.height > 0) {
             x = r.right - width;   // 右边缘对齐按钮右边缘
-            y = r.bottom + gap;    // 贴在按钮正下方
+            y = r.bottom + BTN_GAP;    // 贴在按钮正下方（让开溢出的头像）
           }
         }
       } catch (e) { /* 拿不到按钮就用兜底位置 */ }

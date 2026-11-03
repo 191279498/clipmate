@@ -281,7 +281,7 @@ class MediaFloatingWindow {
     });
     
     this.collapseHandle.addEventListener('mouseleave', () => {
-      this.collapseHandle.style.background = '#f5f5f5';
+      this.collapseHandle.style.background = '#F1EFE8';
       this.collapseHandle.style.color = '#666';
     });
     

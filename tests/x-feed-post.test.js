@@ -436,8 +436,9 @@ function doc(body) {
     mgr.start();
     const b1 = w.document.querySelector('.clipmate-x-feed-btn[data-cm-mid="1718000000000000001"]');
     const b2 = w.document.querySelector('.clipmate-x-feed-btn[data-cm-mid="222"]');
-    eq('普通卡：跟自己的「⋯」居中 → top 9px', b1.style.top, '9px');
-    eq('转推卡（多一行「已转帖」）：top 25px', b2.style.top, '25px');
+    // v2.8.8：按钮 26 → 28（换成头像后要放得下 20px 的头），竖向居中的 top 因此各减 1
+    eq('普通卡：跟自己的「⋯」居中 → top 8px', b1.style.top, '8px');
+    eq('转推卡（多一行「已转帖」）：top 24px', b2.style.top, '24px');
     ok('两张卡片算出不一样的高度（证明是逐卡算的，不是写死的）', b1.style.top !== b2.style.top);
 
     // v2.7.45：横向避让（真机复验发现 v2.7.44 的避让**根本没生效**）。
@@ -657,7 +658,7 @@ function doc(body) {
     ok('上下文必须排在按钮之前（按钮启动就要用）', iCtx > -1 && iBtn > -1 && iCtx < iBtn);
     ok('按钮必须排在 mixin 之前', iBtn > -1 && iMixin > -1 && iBtn < iMixin);
 
-    eq('版本号升到 2.8.4', mf.version, '2.8.4');
+    eq('版本号升到 2.9.1', mf.version, '2.9.1');
 
     // content-main 门禁与 mixin 注册
     const mainSrc = fs.readFileSync(P.main, 'utf8');

@@ -314,7 +314,7 @@ console.log('\n四、提取中重复点击');
 
   t.bm.setLoading(true);
   eq('提取中 → 按钮不禁用（否则连点击都收不到）', t.btn.disabled, false);
-  eq('提取中 → 按钮显示「提取中...」', t.btn.textContent.trim(), '提取中...');
+  eq('提取中 → 按钮显示「提取中」（v2.8.5 去掉了省略号，头像负责表示在动）', t.btn.textContent.trim(), '提取中');
 
   t.click();
   t.click();

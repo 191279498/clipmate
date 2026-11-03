@@ -35,3 +35,10 @@ node_modules/
 Thumbs.db
 desktop.ini
 *.log
+
+# ---- 本机凭证文本（不入库） ----
+GitHub公钥_复制这一行.txt
+
+# ---- popup 借壳预览（本地临时生成，含桩） ----
+tests/_popup-preview.html
+tests/_mini-btn-preview.html

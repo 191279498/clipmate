@@ -291,6 +291,39 @@ section:first-of-type{border-top:0}
 .cgroup-head span{font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; color:var(--ink-3)}
 .stage{display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:22px; border:1px dashed var(--line-2); border-radius:var(--r3); background:var(--surface)}
 
+/* v2.8.6 页面内提取按钮的实物还原：头像 66px 压在 48px 按钮的左端，
+   左端直边、右端 26px 胶囊。样式与 content-styles.css 保持一致。 */
+.pgbtn{
+  display:inline-flex; align-items:center; position:relative;
+  height:48px; padding:0 32px 0 0; gap:10px;
+  border-radius:8px 26px 26px 8px;
+  background:var(--bg, #056BF4); color:#fff;
+  font-size:16px; font-weight:700; letter-spacing:.5px;
+  overflow:visible;
+}
+.pgbtn img{width:80px; height:80px; margin-left:-18px; flex:none; display:block}
+.pgbadge{position:absolute; right:8px; top:50%; transform:translateY(-50%);
+  width:18px; height:18px; border-radius:50%; background:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,.3); display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:700; line-height:1; font-family:var(--font-mono,monospace)}
+.pgbadge[data-tone=success]{color:#0E7A3E}
+.pgbadge[data-tone=success]::after{content:'✓'}
+.pgbadge[data-tone=error]{color:#C23038}
+.pgbadge[data-tone=error]::after{content:'!'}
+.pgbadge[data-tone=ask]{color:#0448A6}
+.pgbadge[data-tone=ask]::after{content:'?'}
+/* 角标单独展示用的大号版 */
+.pgdot{width:56px; height:56px; border-radius:50%; background:#fff; display:inline-flex;
+  align-items:center; justify-content:center; font-size:26px; font-weight:700;
+  font-family:var(--font-mono,monospace); box-shadow:0 2px 8px rgba(0,0,0,.14)}
+.pgdot::after{font-size:27px; line-height:1; transform:translateY(-1px)}
+.pgdot[data-tone=success]{color:#0E7A3E}
+.pgdot[data-tone=success]::after{content:'✓'}
+.pgdot[data-tone=error]{color:#C23038}
+.pgdot[data-tone=error]::after{content:'!'}
+.pgdot[data-tone=ask]{color:#0448A6}
+.pgdot[data-tone=ask]::after{content:'?'}
+
 .btn{
   display:inline-flex; align-items:center; gap:8px;
   height:40px; padding:0 18px; border-radius:var(--r2);
@@ -374,7 +407,7 @@ section:first-of-type{border-top:0}
 /* popup 预制件 */
 .pop{width:314px; border:1px solid var(--line-2); border-radius:14px; background:var(--surface); box-shadow:var(--shadow-pop); overflow:hidden; font-size:13px}
 .pop-head{display:flex; align-items:center; gap:9px; padding:11px 13px; border-bottom:1px solid var(--line)}
-.pop-head img{width:24px; height:24px; border-radius:7px}
+.pop-head img{height:30px; width:auto; border-radius:0}
 .pop-head b{font-size:13px; font-weight:600}
 .pop-head .g{margin-left:auto; font-family:var(--font-mono); font-size:10px; color:var(--ink-3)}
 .pop-body{padding:6px 13px 10px}
@@ -518,7 +551,7 @@ section:first-of-type{border-top:0}
       </div>
     </div>
     <div class="cover-art">
-      <img class="enter" src="assets/mascot-hero@2x.png" alt="采媒灵吉祥物：一只圆头机器人，蓝色面罩，手里拿着一份文档" width="345" height="233">
+      <img class="enter" src="assets/mascot-full.png" alt="采媒灵吉祥物：一只圆头机器人，蓝色面罩，手里举着一份文档" width="330" height="269">
     </div>
   </div>
 </section>
@@ -800,7 +833,7 @@ section:first-of-type{border-top:0}
         <div class="rad" style="border-radius:8px">8</div>
         <div class="rad" style="border-radius:12px">12</div>
         <div class="rad" style="border-radius:18px">18</div>
-        <div class="rad" style="border-radius:28px">28</div>
+        <div class="rad">28</div>
       </div>
       <p style="font-size:12.5px; color:var(--ink-3); margin-top:14px; line-height:1.7">输入框与按钮 12，卡片 18，浮层 28。吉祥物本身是圆的，界面不能再比它更圆。</p>
     </div>
@@ -944,11 +977,15 @@ section:first-of-type{border-top:0}
   </div>
 
   <div class="cgroup">
-    <div class="cgroup-head"><h3>空状态与浮窗</h3><span>EMPTY · POPUP</span></div>
+    <div class="cgroup-head"><h3>空状态与浮窗</h3><span>EMPTY · POPUP · v2.9.1</span></div>
+    <p style="font-size:12.5px; color:var(--ink-3); line-height:1.85; margin:0 0 18px; max-width:78ch">
+      <b style="color:var(--ink-2)">已落地（v2.9.1）</b>：popup 在不支持的网站与浏览器内部页会摆出左边这套空状态——吉祥物 104px、一句标题、一句解释、一个<b>「查看支持的站点」</b>出口（落到设置页 <span class="num">#sites</span>）。设置行与底部状态一起收起，<b>不留能点但没用的开关</b>。<br>
+      <b style="color:var(--ink-2)">纸色也接进代码了</b>：popup、浮窗、提示条统一换成本文档定义的那套纸色（底 <span class="num">#F7F6F2</span> / 次级面 <span class="num">#F1EFE8</span> / 发丝线 <span class="num">#E1DCD1</span> / 正文字 <span class="num">#111820</span>），深色另有暖黑一套。<span class="num">#f5f5f5</span> / <span class="num">#6d5ce7</span> 这些旧灰蓝旧紫已全部清掉，契约测试会盯着它们不许回来。
+    </p>
     <div class="stage" style="gap:34px; align-items:flex-start">
       <div style="flex:1; min-width:240px">
         <div class="empty">
-          <img src="assets/mascot-hero.png" alt="" aria-hidden="true">
+          <img src="assets/mascot-full.png" alt="" aria-hidden="true" style="width:132px; height:auto">
           <b>这个页面还没有可提取的内容</b>
           <span>打开条目详情页，采媒灵会自动认出它属于哪一类。</span>
           <button class="btn btn-secondary" style="margin-top:6px">查看支持的站点</button>
@@ -956,7 +993,7 @@ section:first-of-type{border-top:0}
       </div>
       <div class="pop">
         <div class="pop-head">
-          <img src="assets/state-1.png" alt="">
+          <img src="assets/mascot-button.png" alt="">
           <b>豆瓣读书</b>
           <span class="g">⚙</span>
         </div>
@@ -967,7 +1004,7 @@ section:first-of-type{border-top:0}
           <div class="pop-sub" style="padding:2px 0 8px 0"><span>复制格式</span><span>Notion</span></div>
           <div class="pop-row"><span>显示提取按钮</span><button class="switch" role="switch" aria-checked="true" aria-label="显示提取按钮"></button></div>
         </div>
-        <div class="pop-foot"><span>本站已单独设置 · <a href="#components">恢复默认</a></span><span class="num">v2.8.4</span></div>
+        <div class="pop-foot"><span>本站已单独设置 · <a href="#components">恢复默认</a></span><span class="num">v2.9.1</span></div>
       </div>
     </div>
   </div>
@@ -980,44 +1017,131 @@ section:first-of-type{border-top:0}
     <h2>吉祥物</h2>
     <span class="shead-en">Mascot</span>
     <span class="shead-rule"></span>
-    <span class="shead-note">原样使用 · 4 态</span>
+    <span class="shead-note">插画母版 · 状态角标 · 应用图标</span>
   </header>
-  <p class="slead">它是这套系统里唯一允许「软」的东西，所以必须<b>原样使用</b>：不改色、不加描边、不旋转、不裁掉天线。四个状态对应四种情绪，只在需要缓和语气的地方出现——成功、等待、不确定、失败。</p>
+  <p class="slead">它是这套系统里唯一允许「软」的东西。形象是<b>一幅插画</b>：圆头机器人举着一份文档——「采集」这个动作本身就在画面里，所以它不能被裁成只剩一张脸。v2.8.6 定稿后<b>只有这一张形象</b>、一套素材，四个状态不再各画一张表情，改由下方的<b>状态角标</b>表达。这条取舍的理由很实在：表情需要四张同姿势的图才能严丝合缝地互换，而「举着文件」的姿态一旦改动就成套不成立；角标只加一枚 18px 的圆点，不碰形象，成本低且永不脱节。</p>
 
-  <div class="states">
+  <div class="states" style="grid-template-columns:1.35fr 1fr 1fr 1fr">
     <figure class="state" style="margin:0">
-      <img src="assets/state-1.png" alt="吉祥物正常状态">
-      <b>正常</b>
-      <span>默认、空闲、列表为空</span>
-      <em>IDLE</em>
+      <img src="assets/mascot-full.png" style="height:104px" alt="吉祥物完整形象：圆头机器人举着一份文档">
+      <b>完整形象</b>
+      <span>母版，用于空状态、介绍页</span>
+      <em>FULL</em>
     </figure>
     <figure class="state" style="margin:0">
-      <img src="assets/state-2.png" alt="吉祥物加油状态">
-      <b>加油</b>
-      <span>提取成功、已复制</span>
-      <em>SUCCESS</em>
+      <img src="assets/mascot-button.png" style="height:104px" alt="按钮用头像：已抠成透明底">
+      <b>按钮版</b>
+      <span>同一张图，抠透明底后随按钮出现</span>
+      <em>BUTTON</em>
     </figure>
-    <figure class="state" style="margin:0">
-      <img src="assets/state-3.png" alt="吉祥物疑问状态">
-      <b>疑问</b>
+    <figure class="state" style="margin:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start">
+      <div style="height:104px; display:flex; align-items:center; gap:12px">
+        <div class="pgdot" data-tone="success"></div>
+        <div class="pgdot" data-tone="error"></div>
+      </div>
+      <b>结果角标</b>
+      <span>成功 ✓ / 失败 !</span>
+      <em>SUCCESS · ERROR</em>
+    </figure>
+    <figure class="state" style="margin:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start">
+      <div style="height:104px; display:flex; align-items:center">
+        <div class="pgdot" data-tone="ask"></div>
+      </div>
+      <b>疑问角标</b>
       <span>等待确认、需要选择</span>
       <em>ASK</em>
-    </figure>
-    <figure class="state" style="margin:0">
-      <img src="assets/state-4.png" alt="吉祥物困惑状态">
-      <b>困惑</b>
-      <span>抓取失败、页面不支持</span>
-      <em>ERROR</em>
     </figure>
   </div>
 
   <div class="sizes">
-    <figure><img src="assets/mascot-hero.png" style="width:128px" alt="128 像素"><figcaption>128 × 128</figcaption></figure>
-    <figure><img src="assets/mascot-hero.png" style="width:48px" alt="48 像素"><figcaption>48 × 48</figcaption></figure>
-    <figure><img src="assets/mascot-hero.png" style="width:32px" alt="32 像素"><figcaption>32 × 32</figcaption></figure>
-    <figure><img src="assets/mascot-hero.png" style="width:16px" alt="16 像素"><figcaption>16 × 16</figcaption></figure>
-    <div style="margin-left:auto; max-width:280px; font-size:12.5px; color:var(--ink-3); line-height:1.7">
-      下限 <b style="color:var(--ink-2)">24px</b>：再小就只剩一团蓝。<br>四周留白 ≥ 身高的 <b style="color:var(--ink-2)">1/4</b>，否则像被裁进框里。
+    <figure><img src="assets/mascot-full.png" style="width:180px" alt="180 像素"><figcaption>180</figcaption></figure>
+    <figure><img src="assets/mascot-button.png" style="width:96px" alt="96 像素"><figcaption>96</figcaption></figure>
+    <figure><img src="assets/mascot-button.png" style="width:48px" alt="48 像素"><figcaption>48</figcaption></figure>
+    <div style="margin-left:auto; max-width:300px; font-size:12.5px; color:var(--ink-3); line-height:1.7">
+      母版：<span class="num">icons/mascot/mascot.png</span>（480×409，透明底）。<br>
+      界面里最小用 <b style="color:var(--ink-2)">48px</b>：再小就认不出纸和手，只剩一团蓝白。<br>
+      按钮里是唯一例外（80px），见下方「按钮里的吉祥物」。
+    </div>
+  </div>
+
+  <!-- 06-B 应用图标 -->
+  <div class="cgroup" style="margin-top:44px">
+    <div class="cgroup-head"><h3>应用图标</h3><span>APP ICON · 16 / 32 / 48 / 128 · v2.9.0</span></div>
+    <div class="stage" style="gap:28px; align-items:flex-end; flex-wrap:wrap">
+      <figure style="margin:0; text-align:center">
+        <img src="assets/icon128.png" width="128" height="128" alt="128 像素应用图标">
+        <figcaption style="font-size:12px; color:var(--ink-3); margin-top:8px">128 × 128<span style="display:block; opacity:.7">商店 / 详情页</span></figcaption>
+      </figure>
+      <figure style="margin:0; text-align:center">
+        <img src="assets/icon48.png" width="48" height="48" alt="48 像素应用图标">
+        <figcaption style="font-size:12px; color:var(--ink-3); margin-top:8px">48 × 48<span style="display:block; opacity:.7">扩展管理页</span></figcaption>
+      </figure>
+      <figure style="margin:0; text-align:center">
+        <img src="assets/icon32.png" width="32" height="32" alt="32 像素应用图标">
+        <figcaption style="font-size:12px; color:var(--ink-3); margin-top:8px">32 × 32<span style="display:block; opacity:.7">工具栏 2x</span></figcaption>
+      </figure>
+      <figure style="margin:0; text-align:center">
+        <img src="assets/icon16.png" width="16" height="16" alt="16 像素应用图标">
+        <figcaption style="font-size:12px; color:var(--ink-3); margin-top:8px">16 × 16<span style="display:block; opacity:.7">工具栏</span></figcaption>
+      </figure>
+      <div style="flex:1; min-width:230px; font-size:12.5px; color:var(--ink-3); line-height:1.8">
+        <b style="color:var(--ink-2)">构成</b>：主蓝圆角方底（<span class="num">#3D8BFF → #1668E6</span>）+ 吉祥物本体。天线是识别点，任何尺寸都不删。<br>
+        <b style="color:var(--ink-2)">唯一素材</b>：<span class="num">icons/mascot/mascot.png</span> 直接合成，不再另画矢量版——图标里的机器人就是按钮上那个。<br>
+        <b style="color:var(--ink-2)">两套裁切</b>：48/128 用完整构图（头 + 手里那张纸，占宽 94%）；16/32 改「头部方裁」（占宽 98%）——16px 下那张纸只会糊成一坨灰斑，裁到脸才能认出眼睛。<br>
+        <b style="color:var(--ink-2)">安全区</b>：四角圆角 30/128，不做投影、不加描边。<br>
+        <b style="color:var(--ink-2)">生成</b>：<span class="num">python scripts/make-icons.py</span>（<span class="num">--preview</span> 出工具栏模拟图），母版换图后重跑即可。
+      </div>
+    </div>
+    <div class="stage" style="background:var(--ink); border-radius:14px; padding:14px 20px; margin-top:14px; display:flex; gap:18px; align-items:center">
+      <span style="font-size:12px; color:#9aa0a6; margin-right:6px">深色工具栏</span>
+      <img src="assets/icon16.png" width="16" height="16" alt="">
+      <img src="assets/icon32.png" width="32" height="32" alt="">
+      <img src="assets/icon48.png" width="48" height="48" alt="">
+      <span style="font-size:12px; color:#9aa0a6; margin-left:auto">16 / 32 / 48 在深色底上仍可辨</span>
+    </div>
+  </div>
+
+  <!-- 06-C 按钮里的吉祥物 -->
+  <div class="cgroup" style="margin-top:44px">
+    <div class="cgroup-head"><h3>按钮里的吉祥物</h3><span>PAGE BUTTON · v2.8.6</span></div>
+    <p class="slead" style="margin-top:0">页面右上角那颗提取按钮，<b>左侧轮廓就是吉祥物本体</b>：头像 80px、透明底、比 48px 的按钮高出上下各 10px，把左端的圆角整片盖住。它不垫白色圆底——白圆会让头像像贴纸，把头像直接放到蓝底上，靠深蓝描边（<span class="num">#0B3C8F</span>）自己立轮廓。<b>状态不靠换表情</b>，而是在文字右侧挂一枚 18px 的白圆角标：成功 ✓、失败 !、疑问 ?。白圆在绿/红/蓝三种底上都最高对比，符号再用语义色点明情绪；用形状编码而不只靠颜色，色觉差异的用户同样分得清。</p>
+
+    <div class="stage" style="gap:24px; flex-wrap:wrap; align-items:center">
+      <span class="pgbtn" style="--bg:#056BF4"><img src="assets/mascot-button.png" alt="">提取</span>
+      <span class="pgbtn" style="--bg:#0A4FCB"><img src="assets/mascot-button.png" alt="">提取中</span>
+      <span class="pgbtn" style="--bg:#12A150"><img src="assets/mascot-button.png" alt="">完成<span class="pgbadge" data-tone="success"></span></span>
+      <span class="pgbtn" style="--bg:#E5484D"><img src="assets/mascot-button.png" alt="">重试<span class="pgbadge" data-tone="error"></span></span>
+      <span class="pgbtn" style="--bg:#9AA0A6"><img src="assets/mascot-button.png" alt="" style="filter:grayscale(1) opacity(.55)">提取</span>
+    </div>
+
+    <div class="stage" style="background:#15191F; border-radius:14px; padding:16px 22px; margin-top:12px; display:flex; gap:22px; align-items:center">
+      <span style="font-size:12px; color:#9aa0a6; width:56px">深色页</span>
+      <span class="pgbtn" style="--bg:#056BF4"><img src="assets/mascot-button.png" alt="">提取</span>
+      <span class="pgbtn" style="--bg:#12A150"><img src="assets/mascot-button.png" alt="">完成<span class="pgbadge" data-tone="success"></span></span>
+      <span style="font-size:12px; color:#9aa0a6; margin-left:auto">蓝底 + 白机身 + 深蓝描边，三种底色都不需要额外的衬底</span>
+    </div>
+
+    <div class="dodont" style="margin-top:22px">
+      <div class="dd dd-yes">
+        <h4><i aria-hidden="true">✓</i>这样做</h4>
+        <ul>
+          <li>头像用 80px、<span class="num">margin-left:-18px</span>，让头压住按钮左边界</li>
+          <li>按钮左端用 <span class="num">8px</span> 直边，右端 <span class="num">26px</span> 圆角，左直边被头像整片盖住</li>
+          <li>用 <span class="num">background-image</span> 承载（不用 <span class="num">&lt;img&gt;</span>），站点对 img 的全局样式碰不到它</li>
+          <li>状态只加角标，不动形象——换状态时按钮几何必须完全不变</li>
+          <li>角标符号用 <span class="num">::after</span> 生成，按钮的 <span class="num">textContent</span> 保持「完成」两个字</li>
+        </ul>
+      </div>
+      <div class="dd dd-no">
+        <h4><i aria-hidden="true">✕</i>不要这样</h4>
+        <ul>
+          <li>给头像垫白色圆底或任何衬底，那会把它变回一枚贴纸</li>
+          <li>给按钮加 <span class="num">overflow:hidden</span>，会把溢出上下沿的头切一刀</li>
+          <li>把头缩回按钮内（≤48px），左端又会露出蓝色圆弧和豁口</li>
+          <li>用四张表情图来表达状态——姿势必须完全一致才对得上，成本高且一旦重画就成套不成立</li>
+          <li>角标贴在按钮右下角：右端 26px 圆角会把圆切掉一块，看着永远像歪的</li>
+        </ul>
+      </div>
     </div>
   </div>
 
@@ -1025,26 +1149,79 @@ section:first-of-type{border-top:0}
     <div class="dd dd-yes">
       <h4><i aria-hidden="true">✓</i>这样做</h4>
       <ul>
-        <li>保持原始配色与比例，从设计板直接导出 PNG</li>
+        <li>直接用 <span class="num">icons/mascot/mascot.png</span> 母版，保持配色与比例</li>
         <li>让它单独站一处留白，旁边不放第二个视觉重点</li>
         <li>空状态与成功反馈，用它替代一句干巴巴的提示</li>
-        <li>透明背景叠在纸面上，允许它自带的柔和投影</li>
+        <li>透明背景直接叠在纸面或蓝底上，不加衬底</li>
       </ul>
     </div>
     <div class="dd dd-no">
       <h4><i aria-hidden="true">✕</i>不要这样</h4>
       <ul>
-        <li>改色、加描边、加滤镜、旋转或镜像</li>
+        <li>改色、追加描边、加滤镜、旋转或镜像</li>
         <li>裁掉天线或手里的文档——那是「采集」的语义</li>
-        <li>铺满整屏当背景，或在按钮里当图标</li>
-        <li>和第四个表情同时出现在一屏（情绪会打架）</li>
+        <li>缩到 48px 以下贴在文字前当小图标（按钮里请用 80px 成套规范；<b>逐帖小按钮是唯一例外</b>，28px，见下方）</li>
+        <li>同一屏出现两枚角标（两个结论会互相抵消）</li>
       </ul>
+    </div>
+  </div>
+
+  <!-- 06-D 逐帖小按钮 -->
+  <div class="cgroup" style="margin-top:44px">
+    <div class="cgroup-head"><h3>逐帖小按钮</h3><span>FEED BUTTON · v2.8.9</span></div>
+    <p class="slead" style="margin-top:0">Instagram、X、微博的每条帖子上挂一颗 <b>28px</b> 的小按钮。它是全套系统里<b>唯一不带底盘</b>的按钮：吉祥物直接站在页面的白底、深底或灰底上，靠母版自带的深蓝描边立轮廓——28px 的方块底下再垫一块颜色，就会退化成「应用图标」。图放在 <span class="num">background-image</span> 里，按母版比例缩到 <span class="num">30×25.6px</span>（28px 容器左右各裁掉 1px 透明留白，画面无损），换算出<b>头约 20px</b>，刚好认得出脸和手里那张纸。状态用<b>背光</b>表达：成功时整个人后面亮一块浅绿，失败时浅红，<b>绝不铺实心色</b>——实心色会把白机身整个吞掉。</p>
+
+    <div class="stage" style="gap:26px; flex-wrap:wrap; align-items:center">
+      <span style="font-size:12px; color:var(--ink-3); width:52px">白底页</span>
+      <button style="width:28px;height:28px;border:0;padding:0;border-radius:9px;background:url(assets/mascot-full.png) center/30px 24.5px no-repeat;cursor:pointer"></button>
+      <span style="font-size:12px; color:var(--ink-3)">待命</span>
+      <button style="width:28px;height:28px;border:0;padding:0;border-radius:9px;background:rgba(29,155,240,.14) url(assets/mascot-full.png) center/30px 24.5px no-repeat;cursor:pointer"></button>
+      <span style="font-size:12px; color:var(--ink-3)">悬停</span>
+      <button style="width:28px;height:28px;border:0;padding:0;border-radius:9px;background:rgba(0,186,124,.20) url(assets/mascot-full.png) center/30px 24.5px no-repeat;cursor:pointer"></button>
+      <span style="font-size:12px; color:var(--ink-3)">成功</span>
+      <button style="width:28px;height:28px;border:0;padding:0;border-radius:9px;background:rgba(244,33,46,.18) url(assets/mascot-full.png) center/30px 24.5px no-repeat;cursor:pointer"></button>
+      <span style="font-size:12px; color:var(--ink-3)">失败</span>
+    </div>
+
+    <div class="stage" style="background:#15202b; border-radius:14px; padding:16px 22px; margin-top:12px; display:flex; gap:26px; align-items:center; flex-wrap:wrap">
+      <span style="font-size:12px; color:#9aa7b4; width:52px">深底页</span>
+      <button style="width:28px;height:28px;border:0;padding:0;border-radius:9px;background:url(assets/mascot-full.png) center/30px 24.5px no-repeat;cursor:pointer"></button>
+      <span style="font-size:12px; color:#9aa7b4">待命</span>
+      <button style="width:28px;height:28px;border:0;padding:0;border-radius:9px;background:rgba(29,155,240,.20) url(assets/mascot-full.png) center/30px 24.5px no-repeat;cursor:pointer"></button>
+      <span style="font-size:12px; color:#9aa7b4">悬停</span>
+      <button style="width:28px;height:28px;border:0;padding:0;border-radius:9px;background:rgba(244,33,46,.18) url(assets/mascot-full.png) center/30px 24.5px no-repeat;cursor:pointer"></button>
+      <span style="font-size:12px; color:#9aa7b4">失败</span>
+      <span style="font-size:12px; color:#9aa7b4; margin-left:auto">白机身 + 深蓝描边，在白底与深底上都不需要衬底</span>
+    </div>
+
+    <div class="dodont" style="margin-top:22px">
+      <div class="dd dd-yes">
+        <h4><i aria-hidden="true">✓</i>这样做</h4>
+        <ul>
+          <li>容器 <span class="num">28px</span> 正方形，图 <span class="num">30×25.6</span>（按母版 480:409，头 ≈20px）</li>
+          <li>用 <span class="num">background-image</span> 承载，并在 manifest 登记 <span class="num">web_accessible_resources</span></li>
+          <li>状态只改 <span class="num">background-color</span>，形象与几何完全不动</li>
+          <li>背光用 <span class="num">rgba(…,.20)</span> 这一档透明度——浅到能看出底色，深到能看出「亮了」</li>
+          <li><b>位置按当前行的锚点现量</b>：站在「⋯ / ⌄」左边 <span class="num">6px</span>、与它垂直居中；同一行还有「关注」这类按钮时继续往左让（IG 的「关注」、微博的「⌄」都靠这条避开）</li>
+          <li>位置<b>每轮扫描重算一次</b>（头部控件常常后加载），算出没变就不写样式，避免白白触发重排</li>
+        </ul>
+      </div>
+      <div class="dd dd-no">
+        <h4><i aria-hidden="true">✕</i>不要这样</h4>
+        <ul>
+          <li>给 28px 的按钮垫白色或灰色底盘——会变回一枚应用图标</li>
+          <li>状态用 <span class="num">.95</span> 这种实心绿/红——白机身直接消失</li>
+          <li>用 <span class="num">&lt;img&gt;</span> 放图：站点的 <span class="num">max-width</span> / <span class="num">object-fit</span> 会把头像改烂</li>
+          <li>忘记登记 <span class="num">web_accessible_resources</span>——页面上是一片空白，jsdom 还测不出来</li>
+          <li>位置写死一个 <span class="num">right</span> 就完事：IG 头部那颗「关注」会被整颗压住（真机重叠 <span class="num">26px</span>），微博那颗「⌄」会被压得只剩一道边</li>
+        </ul>
+      </div>
     </div>
   </div>
 
   <figure class="board-fig">
     <img src="assets/design-board.jpg" alt="采媒灵 ClipMate 原始设计板：图标、状态、按钮、分类、提示条与吉祥物">
-    <figcaption><b>原始设计板</b>所有素材以此为准；本页的吉祥物、四态表情均从这张板裁出，未做任何改色。</figcaption>
+    <figcaption><b>原始设计板</b>原初参照。v2.8.6 定稿后正式母版改为重绘工具产出的透明 PNG：造型与原稿一致，边缘干净、无白底。</figcaption>
   </figure>
 </section>
 
@@ -1102,7 +1279,7 @@ section:first-of-type{border-top:0}
 </main>
 
 <footer class="foot">
-  <img src="assets/state-1.png" alt="">
+  <img src="assets/mascot-button.png" alt="">
   <span>采媒灵 ClipMate · 设计系统 v1.0</span>
   <span style="opacity:.6">纸、墨、一条发丝线</span>
   <span class="r">2026.11</span>

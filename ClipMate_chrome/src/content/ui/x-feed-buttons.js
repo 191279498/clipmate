@@ -47,7 +47,7 @@
   var STYLE_ID = 'clipmate-x-feed-style';
   var SCAN_DELAY = 260;                  // X 静止时 3 秒 0 次变更，滚动时一批一批来
   var MIN_POSTS = 2;                     // 少于这个数就是单条详情视图，不挂
-  var BTN_SIZE = 26;
+  var BTN_SIZE = 28;                     // v2.8.8：26 → 28，给头像留出 20px 的头
 
   /** 「⋯」方框尺寸（实测 19×20，竖向按 20 算居中） */
   var CARET_H = 20;
@@ -58,11 +58,28 @@
   /** 横向避让：跟紧邻控件留的间隙 */
   var SIDE_GAP = 6;
 
-  var ICON_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" '
-    + 'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
-    + '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>'
-    + '<polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/>'
-    + '<line x1="16" y1="17" x2="8" y2="17"/></svg>';
+  /**
+   * v2.8.8：按钮里换成吉祥物，不再画文档线稿。
+   *
+   * 为什么是 background-image 而不是 <img>：站点对 img 的全局规则
+   * （max-width / object-fit / border-radius / display）会把它改烂；
+   * 而 28px 的容器里放 30px 宽的图、让左边 1px 透明边被裁掉，是无损的
+   * ——母版左右各有 19px 透明留白，裁的正是这段空白。
+   */
+  var MASCOT_REL = 'icons/mascot/mascot.png';
+  var MASCOT_W = 30;
+  var MASCOT_H = 25.6;                   // 母版 480×409，按比例
+
+  /** 取扩展内资源绝对地址；没有扩展运行时（单测/资源缺失）返回空串，走透明降级 */
+  function mascotUrl() {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.runtime &&
+          typeof chrome.runtime.getURL === 'function') {
+        return chrome.runtime.getURL(MASCOT_REL);
+      }
+    } catch (e) { /* 测试环境没有 runtime */ }
+    return '';
+  }
 
   /**
    * 固定兜底位置：只有当前这张卡找不到「⋯」时才用。
@@ -83,21 +100,23 @@
     if (document.getElementById(STYLE_ID)) return;
     var style = document.createElement('style');
     style.id = STYLE_ID;
+    var url = mascotUrl();
     style.textContent = ''
       + '.' + BTN_CLASS + '{'
       + 'position:absolute;top:' + LAYOUT.top + 'px;right:' + LAYOUT.right + 'px;'
-      + 'width:' + BTN_SIZE + 'px;height:' + BTN_SIZE + 'px;padding:0;margin:0;border:none;border-radius:7px;'
-      + 'display:flex;align-items:center;justify-content:center;cursor:pointer;'
-      // X 有浅色/深色两套主题：半透明灰 + 中性次要色，两边都看得见
-      + 'background:rgba(127,127,127,.14);color:#71767b;z-index:9;'
-      + 'transition:background .15s ease,color .15s ease,transform .12s ease;'
-      + 'box-shadow:0 1px 2px rgba(0,0,0,.08);}'
-      + '.' + BTN_CLASS + ':hover{background:rgba(29,155,240,.16);color:#1d9bf0;transform:scale(1.06);}'
+      + 'width:' + BTN_SIZE + 'px;height:' + BTN_SIZE + 'px;padding:0;margin:0;border:none;border-radius:9px;'
+      + 'display:block;cursor:pointer;z-index:9;'
+      // v2.8.8：不再垫底盘，吉祥物直接站在页面上（拖影只在 hover / 成功 / 失败时亮）
+      + 'background-color:transparent;'
+      + 'background-image:' + (url ? 'url("' + url + '")' : 'none') + ';'
+      + 'background-repeat:no-repeat;background-position:center;'
+      + 'background-size:' + MASCOT_W + 'px ' + MASCOT_H + 'px;'
+      + 'transition:background-color .15s ease,transform .12s ease,opacity .15s ease;}'
+      + '.' + BTN_CLASS + ':hover{background-color:rgba(29,155,240,.14);transform:scale(1.08);}'
       + '.' + BTN_CLASS + ':active{transform:scale(.95);}'
-      + '.' + BTN_CLASS + '[data-state="busy"]{opacity:.55;cursor:default;}'
-      + '.' + BTN_CLASS + '[data-state="ok"]{background:rgba(0,186,124,.18);color:#00ba7c;}'
-      + '.' + BTN_CLASS + '[data-state="fail"]{background:rgba(244,33,46,.16);color:#f4212e;}'
-      + '.' + BTN_CLASS + ' svg{pointer-events:none;}';
+      + '.' + BTN_CLASS + '[data-state="busy"]{opacity:.45;cursor:default;}'
+      + '.' + BTN_CLASS + '[data-state="ok"]{background-color:rgba(0,186,124,.20);}'
+      + '.' + BTN_CLASS + '[data-state="fail"]{background-color:rgba(244,33,46,.18);}';
     (document.head || document.documentElement).appendChild(style);
   }
 
@@ -395,7 +414,7 @@
         btn.setAttribute('data-state', 'idle');
         btn.title = '提取这条';
         btn.setAttribute('aria-label', '提取这条');
-        btn.innerHTML = ICON_SVG;
+        // v2.8.8：不再塞 SVG，形象由 CSS 的 background-image 承载
 
         // 定位锚点：X 的 article 本来就是 relative，但只在确实 static 时才改，
         // 免得多余写样式，也留个标记好还原

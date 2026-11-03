@@ -114,34 +114,32 @@
       if (!document.head || document.getElementById(STYLE_ID)) return;
       var style = document.createElement('style');
       style.id = STYLE_ID;
+      var url = mascotUrl();
       // 全部挂在 `.clipmate-ig-feed-btn` 上，类名带前缀，不与页面样式重叠。
       // 尺寸/定位用 !important：IG 有全局 `button { all: unset }` 一类的重置，
       // 不加会被抹平（真机踩过同类）。
       style.textContent = [
         '.' + BTN_CLASS + '{',
-        // 定位按真机量出来的：帖子右上角「⋯」占 x≈435~459（article 宽 470），
-        // 我们的按钮放它左边 5px 处（right:40px、宽 26px → 占 404~430），
-        // 既不压「⋯」，也不碰到 header 下方那个浮动按钮（真机 y=45 起）。
+        // 兜底定位：真机里「⋯」在帖子右上角，右边留 40px 正好贴在它左边。
+        // 但头部常有一颗「关注」按钮夹在中间 —— 实际位置由 _place() 按几何算并
+        // 以 !important 行内样式覆盖，这里的 40px 只在还没量到时生效。
         '  position:absolute !important; top:12px !important; right:40px !important;',
-        '  width:26px !important; height:26px !important; padding:0 !important; margin:0 !important;',
-        '  display:flex !important; align-items:center !important; justify-content:center !important;',
-        '  box-sizing:border-box !important; border:none !important; border-radius:8px !important;',
-        '  background:rgba(0,0,0,.55) !important; color:#fff !important; cursor:pointer !important;',
-        '  opacity:.55 !important; transition:opacity .15s,background .15s,transform .15s !important;',
+        '  width:28px !important; height:28px !important; padding:0 !important; margin:0 !important;',
+        '  display:block !important; box-sizing:border-box !important;',
+        '  border:none !important; border-radius:9px !important; cursor:pointer !important;',
+        // v2.8.8：不垫底盘，吉祥物直接站在帖子上（状态时才亮一块淡色）
+        '  background-color:transparent !important;',
+        '  background-image:' + (url ? 'url("' + url + '")' : 'none') + ' !important;',
+        '  background-repeat:no-repeat !important; background-position:center !important;',
+        '  background-size:' + MASCOT_W + 'px ' + MASCOT_H + 'px !important;',
+        '  opacity:.72 !important; transition:opacity .15s,background-color .15s,transform .15s !important;',
         '  z-index:5 !important; line-height:0 !important;',
         '}',
-        '.' + BTN_CLASS + ':hover{opacity:1 !important; transform:scale(1.06) !important;}',
+        '.' + BTN_CLASS + ':hover{opacity:1 !important; background-color:rgba(0,0,0,.05) !important; transform:scale(1.08) !important;}',
         '[data-clipmate-ig-post]:hover .' + BTN_CLASS + '{opacity:.95 !important;}',
-        '.' + BTN_CLASS + '.is-busy{cursor:progress !important; opacity:1 !important;}',
-        '.' + BTN_CLASS + '.is-ok{background:rgba(22,163,74,.95) !important; opacity:1 !important;}',
-        '.' + BTN_CLASS + '.is-err{background:rgba(220,38,38,.95) !important; opacity:1 !important;}',
-        '.' + BTN_CLASS + ' svg{display:block !important; pointer-events:none !important;}',
-        '.' + BTN_CLASS + ' .clipmate-ig-spin{',
-        '  width:14px; height:14px; box-sizing:border-box;',
-        '  border:2px solid rgba(255,255,255,.45); border-top-color:#fff; border-radius:50%;',
-        '  animation:clipmateIgSpin .7s linear infinite;',
-        '}',
-        '@keyframes clipmateIgSpin{to{transform:rotate(360deg);}}'
+        '.' + BTN_CLASS + '.is-busy{cursor:progress !important; opacity:.35 !important;}',
+        '.' + BTN_CLASS + '.is-ok{background-color:rgba(22,163,74,.20) !important; opacity:1 !important;}',
+        '.' + BTN_CLASS + '.is-err{background-color:rgba(220,38,38,.18) !important; opacity:1 !important;}'
       ].join('\n');
       document.head.appendChild(style);
     } catch (e) { /* 样式失败只是难看，不阻断功能 */ }
@@ -158,11 +156,27 @@
   // 二、按钮本体
   // ==========================================================================
 
-  var ICON_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" '
-    + 'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
-    + '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>'
-    + '<polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/>'
-    + '<line x1="16" y1="17" x2="8" y2="17"/></svg>';
+  /**
+   * v2.8.8：按钮里换成吉祥物，不再画文档线稿（三站同一套）。
+   *
+   * 用 background-image 而不是 <img>：IG 对 img 有全局重置
+   * （`max-width:100%` / `object-fit` / `border-radius`），会把头像改烂。
+   * 28px 容器里放 30px 宽的图，左右各裁 1px —— 母版左右各有 19px 透明留白，
+   * 裁掉的正是这段空白，画面无损。
+   */
+  var MASCOT_REL = 'icons/mascot/mascot.png';
+  var MASCOT_W = 30;
+  var MASCOT_H = 25.6;                   // 母版 480×409，按比例
+
+  function mascotUrl() {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.runtime &&
+          typeof chrome.runtime.getURL === 'function') {
+        return chrome.runtime.getURL(MASCOT_REL);
+      }
+    } catch (e) { /* 测试环境没有 runtime */ }
+    return '';
+  }
 
   class InstagramFeedButtons {
     /**
@@ -302,6 +316,8 @@
             article.setAttribute(POST_ATTR, code);
             existing.setAttribute('data-code', code);
           }
+          // 关注按钮是后加载的：每轮扫描重摆一次，摆到该在的位置就立刻返回
+          this._place(existing, article);
           continue;
         }
         this._attach(article, code);
@@ -335,7 +351,7 @@
         btn.setAttribute('data-code', code);
         btn.title = '提取这条';
         btn.setAttribute('aria-label', '提取这条');
-        btn.innerHTML = ICON_SVG;
+        // v2.8.8：不再塞 SVG，形象由 CSS 的 background-image 承载
 
         // 定位锚点：只有原本是 static 才改，改过的留标记好还原
         try {
@@ -360,9 +376,58 @@
 
         article.appendChild(btn);
         this._buttons.push(btn);
+        this._place(btn, article);
       } catch (e) {
         log('挂按钮失败：' + (e && e.message));
       }
+    }
+
+    /**
+     * 把按钮摆到「⋯」左边，并给「关注 / 已关注」这类头部按钮让位。
+     *
+     * 真机实测（2026-11-02）：帖子头部除了「⋯」还常常有一颗 60px 宽的关注按钮，
+     * 两者之间只有 8px。若一律写死 `right:40px`，按钮会整块压在关注按钮上
+     * （实测关注 599~659、我们 633~661，重叠 26px）。
+     *
+     * 所以这里按几何算：右边界 = 「同一行、在⋯左边、离⋯不超过 90px」这批控件里
+     * 最靠左的那颗，再往左让 6px。没有关注按钮时结果正好等于 CSS 默认的 40px。
+     */
+    _place(btn, article) {
+      try {
+        var ar = article.getBoundingClientRect();
+        if (!ar || !ar.width) return;
+
+        // 「⋯」：aria-label 随语言变，中英文都认
+        var menus = article.querySelectorAll(
+          '[aria-label="更多选项" i], [aria-label="More options" i]'
+        );
+        var menuRect = null;
+        for (var m = 0; m < menus.length; m++) {
+          var mr = menus[m].getBoundingClientRect();
+          // 只认头部那颗：顶部不超出 article 顶部 90px
+          if (mr.width && mr.top - ar.top < 90) { menuRect = mr; break; }
+        }
+        if (!menuRect) return;   // 找不到就沿用 CSS 的 40px
+
+        var limitLeft = menuRect.left;   // 不能越过的基准
+        var cands = article.querySelectorAll('button, [role="button"]');
+        for (var i = 0; i < cands.length; i++) {
+          var el = cands[i];
+          if (el === btn || (el.contains && el.contains(btn))) continue;
+          var q = el.getBoundingClientRect();
+          if (!q.width || q.width > 200) continue;        // 整块可点区域不算
+          if (q.right > menuRect.left + 2) continue;       // 只认「⋯」左边的
+          if (menuRect.left - q.left > 90) continue;       // 离太远（头像）不算
+          if (q.left < limitLeft) limitLeft = q.left;
+        }
+
+        var right = Math.round(ar.right - limitLeft + 6);
+        if (btn.getAttribute('data-right') !== String(right)) {
+          btn.setAttribute('data-right', String(right));
+          // CSS 里那条是 !important，必须同样以 important 写才能覆盖
+          btn.style.setProperty('right', right + 'px', 'important');
+        }
+      } catch (e) { /* 量不到就沿用 CSS 默认位置 */ }
     }
 
     _detach(article, btn) {
@@ -397,11 +462,8 @@
       try {
         btn.classList.remove('is-busy', 'is-ok', 'is-err');
         if (state) btn.classList.add(state);
-        if (state === 'is-busy') {
-          btn.innerHTML = '<span class="clipmate-ig-spin"></span>';
-        } else {
-          btn.innerHTML = ICON_SVG;
-        }
+        // v2.8.8：形象由 CSS 的 background-image 承载，状态只切 class
+        //（原来这里换 spinner / 换回 SVGSVG，现在连子节点都不需要）
         btn.title = (state === 'is-ok') ? '已提取'
           : (state === 'is-err' ? '提取失败，可再点一次' : '提取这条');
       } catch (e) { /* 视觉失败不影响提取 */ }

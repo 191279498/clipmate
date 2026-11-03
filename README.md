@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="设计系统/assets/mascot-hero.png" width="150" alt="采媒灵 ClipMate 吉祥物">
+  <img src="设计系统/assets/mascot-full.png" width="150" alt="采媒灵 ClipMate 吉祥物">
 </p>
 
 <h1 align="center">采媒灵 ClipMate</h1>
@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img alt="version" src="https://img.shields.io/badge/version-2.8.4-056BF4">
+  <img alt="version" src="https://img.shields.io/badge/version-2.9.1-056BF4">
   <img alt="manifest" src="https://img.shields.io/badge/Manifest-V3-056BF4">
   <img alt="license" src="https://img.shields.io/badge/license-MIT-111820">
   <img alt="sites" src="https://img.shields.io/badge/sites-23-1FB6FF">
@@ -120,7 +120,7 @@ node settings-page.test.js # 设置页契约测试
 
 **[`设计系统/ClipMate_设计系统_v1.html`](设计系统/ClipMate_设计系统_v1.html)**（浏览器直接打开，支持浅色 / 深色）
 
-吉祥物与状态表情为本项目原创素材，请勿在未授权的情况下用于其他项目。
+吉祥物形象与状态角标为本项目原创素材，请勿在未授权的情况下用于其他项目。
 
 ## 许可
 

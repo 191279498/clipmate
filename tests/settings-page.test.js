@@ -190,7 +190,7 @@ function boot() {
 
   win.chrome = {
     runtime: {
-      getManifest: () => ({ version: '2.8.4' }),
+      getManifest: () => ({ version: '2.8.5' }),
       sendMessage: (msg) => {
         sent.push(JSON.parse(JSON.stringify(msg)));
         if (msg.action === 'getConfig') return Promise.resolve({ config: JSON.parse(JSON.stringify(state.config)) });
@@ -266,7 +266,7 @@ async function main() {
   eq('通用页渲染 10 项', doc.querySelectorAll('#generalGroups .row').length, 10);
   eq('站点页渲染 23 个站', doc.querySelectorAll('.site').length, 23);
   eq('关于页站点数', doc.getElementById('aboutSiteCount').textContent, '23 个');
-  eq('版本号显示', doc.getElementById('brandVersion').textContent, 'v2.8.4');
+  eq('版本号显示', doc.getElementById('brandVersion').textContent, 'v2.8.5');
 
   // 站点专属开关只挂在对应站上
   const douyin = doc.querySelector('.site[data-domain="www.douyin.com"]');
@@ -436,7 +436,7 @@ async function main() {
 
   const payload = page.buildExportPayload();
   eq('导出标明是设置文件', payload.kind, 'settings');
-  eq('导出带扩展版本', payload.version, '2.8.4');
+  eq('导出带扩展版本', payload.version, '2.8.5');
   ok('导出内容含 config', !!payload.config);
   ok('导出不含缓存 / 提取历史（都是机器生成的）',
     !Object.prototype.hasOwnProperty.call(payload, 'extractedData') &&
@@ -446,7 +446,7 @@ async function main() {
   eq('字符串拒绝导入', page.validateImport('abc').ok, false);
   eq('没有可识别项的拒绝', page.validateImport({ config: { foo: 1 } }).ok, false);
   const v1 = page.validateImport({
-    app: 'clipmate', kind: 'settings', version: '2.8.4',
+    app: 'clipmate', kind: 'settings', version: '2.8.5',
     config: { siteOverrides: { 'x.com': { showButton: false } }, features: { douyinModal: false } }
   });
   eq('认出本页导出的文件', v1.ok, true);

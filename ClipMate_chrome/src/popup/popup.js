@@ -114,12 +114,14 @@ class PopupManager {
 
     const nameEl = document.getElementById('siteName');
     const hostEl = document.getElementById('siteHost');
-    const noteEl = document.getElementById('siteNote');
 
     if (!host) {
       nameEl.textContent = '本站设置';
       nameEl.classList.add('is-plain');
-      this._disableSiteCard('当前页面不支持单独设置（浏览器内部页面不算网站）');
+      this._showEmpty(
+        '这里没有可提取的内容',
+        '采媒灵只在普通网页上工作，浏览器自己的页面读不到。'
+      );
       return;
     }
 
@@ -130,22 +132,36 @@ class PopupManager {
     if (this.site) {
       nameEl.textContent = this.site.name;
     } else {
-      // 没收录的站：用域名当标题，并说明它不会被提取
+      // 没收录的站：用域名当标题，摆空状态而不是一排点不动的开关
       nameEl.textContent = this.parentDomain || host;
-      noteEl.textContent = '扩展到还没支持这个网站，设置能存下来，但页面上不会出现提取按钮。';
-      noteEl.hidden = false;
+      // 标题写的已经是域名了，第二行再写一遍只是重复
+      hostEl.textContent = '';
+      this._showEmpty(
+        '这个页面还没有可提取的内容',
+        '打开条目详情页，采媒灵会自动认出它属于哪一类。'
+      );
+      return;
     }
 
     this.render();
   }
 
-  _disableSiteCard(reason) {
-    const note = document.getElementById('siteNote');
-    note.textContent = reason;
-    note.hidden = false;
-    // 内部页连「改什么」都没有，整块设置行直接收起来，只留一句话
+  /**
+   * 空状态（v2.9.1）：没东西可提取时，不摆一排灰掉的开关。
+   * 只留「一句话 + 一个出口」——标题栏仍写着当前站，读的人知道自己在哪、能去哪。
+   */
+  _showEmpty(title, desc) {
+    const box = document.getElementById('popEmpty');
+    const titleEl = document.getElementById('popEmptyTitle');
+    const descEl = document.getElementById('popEmptyDesc');
+    if (titleEl) titleEl.textContent = title;
+    if (descEl) descEl.textContent = desc;
+    if (box) box.hidden = false;
+    // 设置行与底部状态一起收起：留着只会让人以为「能改，只是没显示」
     document.getElementById('siteRows').hidden = true;
     document.getElementById('footState').hidden = true;
+    const note = document.getElementById('siteNote');
+    if (note) note.hidden = true;
   }
 
   /** 本站自己写下的那条规则（没有 / null 都当没有） */
@@ -340,6 +356,22 @@ class PopupManager {
     const openBtn = document.getElementById('openOptions');
     if (openBtn) {
       openBtn.addEventListener('click', () => this.openOptionsPage());
+    }
+
+    const sitesBtn = document.getElementById('openSites');
+    if (sitesBtn) {
+      sitesBtn.addEventListener('click', () => this.openSitesPage());
+    }
+  }
+
+  /** 空状态里的出口：直接落到设置页的「支持站点」分区 */
+  openSitesPage() {
+    const base = WBR.runtime.getURL('src/options/options.html');
+    try {
+      WBR.tabs.create({ url: base + '#sites' });
+      window.close();
+    } catch (e) {
+      this.showError('打不开设置页：' + (e && e.message ? e.message : '未知错误'));
     }
   }
 

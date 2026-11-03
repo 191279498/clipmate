@@ -137,7 +137,7 @@ console.log('\nB. 样式表');
 
   const editRule = CSS.match(/\.floating-window-header\.is-edit-mode\s*\{[^}]*\}/);
   ok('样式表里有 .floating-window-header.is-edit-mode 规则', !!editRule);
-  ok('编辑态底色是浅橙 #fff3e0', !!editRule && /#fff3e0/i.test(editRule[0]),
+  ok('编辑态底色是琥珀纸 #FDF3D6（v2.9.1 米纸色板）', !!editRule && /#FDF3D6/i.test(editRule[0]),
     editRule ? editRule[0].replace(/\s+/g, ' ') : '');
 
   // shadow 内不允许写 !important（会压死 JS 内联的悬停/折叠效果）

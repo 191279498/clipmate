@@ -31,6 +31,14 @@
 
     <div class="pop-note" id="siteNote" hidden></div>
 
+    <!-- v2.9.1：这个页面没有可提取的东西时，不再只留一句灰字 —— 变成「吉祥物 + 一句话 + 出口」 -->
+    <div class="pop-empty" id="popEmpty" hidden>
+      <img class="pop-empty-art" id="popEmptyArt" src="../../icons/mascot/mascot.png" alt="采媒灵吉祥物" draggable="false">
+      <p class="pop-empty-title" id="popEmptyTitle">这个页面还没有可提取的内容</p>
+      <p class="pop-empty-desc" id="popEmptyDesc">打开条目详情页，采媒灵会自动认出它属于哪一类。</p>
+      <button type="button" class="pop-empty-link" id="openSites">查看支持的站点</button>
+    </div>
+
     <main class="pop-rows" id="siteRows">
       <label class="row">
         <span class="row-label">自动提取</span>

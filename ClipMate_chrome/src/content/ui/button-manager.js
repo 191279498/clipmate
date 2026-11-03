@@ -1,5 +1,56 @@
 // 提取按钮管理器
 class ButtonManager {
+  /** v2.8.5：按钮文字。只有四个地方用到，集中在这里，改文案不用翻全文。 */
+  get LABEL_IDLE() { return '提取'; }
+  get LABEL_BUSY() { return '提取中'; }
+  get LABEL_OK() { return '完成'; }
+  get LABEL_BAD() { return '重试'; }
+
+  /**
+   * 吉祥物形象（icons/mascot/mascot.png）—— 只有这一张脸。
+   *
+   * v2.8.6 定稿：表情不再随状态更换，状态改由右下角的角标表达（见 _BADGE）。
+   * 头像本身是插画（小机器人举着一张纸），生动感来自那个「举文件」的动作，
+   * 换成只剩一张正脸反而变呆板；而四张表情素材要另出，暂时没有。
+   * 现在的分工：头像负责「这是什么产品」，角标负责「这一次成功还是失败」。
+   *
+   * 素材来自重绘工具出的透明 PNG：已泛洪抠掉棋盘格背景、清掉 JPEG 碎白点、
+   * 边缘做了半透明羽化，叠在蓝底/绿底/红底上都不会有白边。
+   *
+   * 页面里的元素用 background-image 引用，不是 <img>：
+   * 站点对 img 的全局规则（max-width / object-fit / border-radius / display）
+   * 会把这个头像改烂，background 只是背景图，碰不到。
+   *
+   * ⚠️ 以后接四态表情：把这里改成 { normal, success, error } 三张即可，
+   *    _mascotUrl(state) 与 _renderButton 已经带着 state 参数，不用改调用点。
+   */
+  get _MASCOT() {
+    return 'icons/mascot/mascot.png';
+  }
+
+  /**
+   * 哪些状态下挂角标（v2.8.6）。
+   * normal 不挂 —— 待命是常态，常态不需要提示。
+   * 符号（✓ / ! / ?）写在 CSS 里，用 ::after 生成而不是塞文本节点：
+   *   ① 按钮的 textContent 保持「完成」「重试」两个字，不被符号污染；
+   *   ② 装饰性符号不进无障碍树，读屏不会念出「完成 对勾」。
+   */
+  get _BADGE_STATES() {
+    return ['success', 'error', 'ask'];
+  }
+
+  /** 取扩展内资源的绝对地址；没有扩展运行时（单测 / 资源缺失）返回空串走线稿降级 */
+  _mascotUrl() {
+    const rel = this._MASCOT;
+    try {
+      if (typeof chrome !== 'undefined' && chrome.runtime &&
+          typeof chrome.runtime.getURL === 'function') {
+        return chrome.runtime.getURL(rel);
+      }
+    } catch (e) { /* 测试环境没有 runtime */ }
+    return '';
+  }
+
   constructor() {
     this.button = null;
     this.isLoading = false;
@@ -38,16 +89,9 @@ class ButtonManager {
   createButton() {
     this.button = document.createElement('button');
     this.button.className = 'media-extractor-button';
-    this.button.innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <polyline points="14,2 14,8 20,8"/>
-        <line x1="16" y1="13" x2="8" y2="13"/>
-        <line x1="16" y1="17" x2="8" y2="17"/>
-        <polyline points="10,9 9,9 8,9"/>
-      </svg>
-      提取信息
-    `;
+    // v2.8.5：图标换成吉祥物头像，文字从「提取信息」缩成「提取」
+    //   —— 头像本身承载了「这是什么」的识别成本，四个状态各有表情，见 _renderButton
+    this._renderButton('normal', this.LABEL_IDLE);
     this.button.title = '扩展正在初始化，稍等一下再点';
     // v2.5.60：创建即置灰，等点击动作接上之后再放开
     this.button.disabled = true;
@@ -318,7 +362,7 @@ class ButtonManager {
     if (loading) {
       this.button.classList.remove('success', 'error', 'pending');
       this.button.classList.add('loading');
-      this._renderButton(null, '提取中...', true);
+      this._renderButton('normal', this.LABEL_BUSY);
       // v2.5.92：提取中不再 disabled。
       // disabled 的按钮在 Chrome 里连 click / mousedown 都不派发，用户点下去毫无反应，
       // 以为坏了就继续点，全被静默吞掉 —— 这也是「要点好几次」的一大来源。
@@ -335,7 +379,7 @@ class ButtonManager {
     if (!this.button) return;
     this.button.classList.remove('loading', 'error');
     this.button.classList.add('success');
-    this._renderButton(this._ICON_CHECK, '提取完成', false);
+    this._renderButton('success', this.LABEL_OK);
     this.button.title = '点击再次提取，拖动可移动按钮位置';
     this._restoreButtonSoon();
   }
@@ -345,36 +389,28 @@ class ButtonManager {
     if (!this.button) return;
     this.button.classList.remove('loading', 'success');
     this.button.classList.add('error');
-    this._renderButton(this._ICON_X, '提取失败', false);
+    this._renderButton('error', this.LABEL_BAD);
     // 失败后允许立刻重试，不像成功态那样等 3 秒
     this.button.disabled = !this.isReady;
     this.button.title = '点击重试，拖动可移动按钮位置';
     this._restoreButtonSoon();
   }
 
-  /** 3 秒后恢复成初始的「提取信息」外观（成功/失败共用） */
+  /** 3 秒后恢复成初始外观（成功/失败共用） */
   _restoreButtonSoon() {
     if (this._restoreTimer) clearTimeout(this._restoreTimer);
     this._restoreTimer = setTimeout(() => {
       this._restoreTimer = null;
       if (!this.button) return;
       this.button.classList.remove('success', 'error');
-      this._renderButton(this._ICON_DOC, '提取信息', false);
+      this._renderButton('normal', this.LABEL_IDLE);
       // v2.5.60：还没就绪的按钮不能借这个定时器放开
       this.button.disabled = !this.isReady;
       this.button.title = this.isReady ? '点击提取页面媒体信息，拖动可移动按钮位置' : '扩展正在初始化，稍等一下再点';
     }, 3000);
   }
 
-  /** 图标形状定义：[标签, 属性] */
-  get _ICON_CHECK() {
-    return [['polyline', { points: '20,6 9,17 4,12' }]];
-  }
-
-  get _ICON_X() {
-    return [['line', { x1: '18', y1: '6', x2: '6', y2: '18' }], ['line', { x1: '6', y1: '6', x2: '18', y2: '18' }]];
-  }
-
+  /** 降级用线稿图标（只在拿不到扩展资源时出现） */
   get _ICON_DOC() {
     return [
       ['path', { d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z' }],
@@ -403,18 +439,46 @@ class ButtonManager {
     return svg;
   }
 
-  /** 重绘按钮内容：图标（可选）+ 文字 */
-  _renderButton(iconShapes, label, withSpinner) {
+  /**
+   * 重绘按钮内容：吉祥物头像 + 文字 + 状态角标（v2.8.6）
+   *
+   * 结构固定为 <span.clipmate-mascot-ring><span.clipmate-mascot></span></span>
+   * + 文本节点 + [<span.clipmate-badge>符号</span>]，角标只有成功/失败/疑问时才有。
+   * 头像在所有状态下都是同一张图，状态改由角标表达（理由见 _MASCOT 注释）。
+   * 拿不到扩展资源时退回线稿文档图标，绝不让按钮变成空白方块。
+   */
+  _renderButton(state, label) {
     if (!this.button) return;
     this.button.textContent = '';
-    if (withSpinner) {
-      const spinner = document.createElement('div');
-      spinner.className = 'loading-spinner';
-      this.button.appendChild(spinner);
-    } else if (iconShapes) {
-      this.button.appendChild(this._makeIcon(iconShapes));
+
+    const ring = document.createElement('span');
+    ring.className = 'clipmate-mascot-ring';
+
+    const face = document.createElement('span');
+    face.className = 'clipmate-mascot';
+    face.setAttribute('data-state', state);
+
+    const url = this._mascotUrl();
+    if (url) {
+      face.style.backgroundImage = 'url("' + url + '")';
+    } else {
+      face.appendChild(this._makeIcon(this._ICON_DOC));
+      face.classList.add('is-fallback');
     }
-    this.button.appendChild(document.createTextNode(' ' + label));
+
+    ring.appendChild(face);
+    this.button.appendChild(ring);
+    this.button.appendChild(document.createTextNode(label));
+
+    // 角标：纯装饰，不参与命中（CSS 里 pointer-events:none），点了还是按钮本身。
+    // 符号由 .clipmate-badge[data-tone] 的 ::after 提供，DOM 里不放文字。
+    if (this._BADGE_STATES.indexOf(state) !== -1) {
+      const dot = document.createElement('span');
+      dot.className = 'clipmate-badge';
+      dot.setAttribute('data-tone', state);
+      dot.setAttribute('aria-hidden', 'true');
+      this.button.appendChild(dot);
+    }
   }
 
   /** 显示/隐藏按钮（对应 popup 的「显示提取按钮」开关，v2.5.45 接线） */

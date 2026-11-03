@@ -93,7 +93,7 @@ function boot(tabUrl, configPatch) {
 
   win.chrome = {
     runtime: {
-      getManifest: () => ({ version: '2.8.4' }),
+      getManifest: () => ({ version: '2.8.5' }),
       getURL: (p) => 'chrome-extension://abc/' + p,
       openOptionsPage: () => { throw new Error('不该再用 openOptionsPage（拿不到当前域名）'); },
       sendMessage: (msg) => {
@@ -195,7 +195,7 @@ async function main() {
   ok('页面实例已创建', !!inst.page);
   eq('站点名识别为抖音', doc.getElementById('siteName').textContent, '抖音');
   eq('域名显示', doc.getElementById('siteHost').textContent, 'www.douyin.com');
-  eq('版本号显示', doc.getElementById('popVersion').textContent, 'v2.8.4');
+  eq('版本号显示', doc.getElementById('popVersion').textContent, 'v2.8.5');
   eq('五个控件都在', doc.querySelectorAll('#siteRows input, #siteRows select').length, 5);
   eq('底部默认不说话（既没改过、也不继承别的规则）',
     doc.getElementById('footState').hidden, true);
@@ -329,9 +329,14 @@ async function main() {
   const internal = boot('chrome://extensions/');
   await tick(120);
   eq('内部页标题是「本站设置」', internal.doc.getElementById('siteName').textContent, '本站设置');
-  ok('内部页提示「不支持单独设置」',
-    internal.doc.getElementById('siteNote').textContent.indexOf('不支持单独设置') !== -1,
-    internal.doc.getElementById('siteNote').textContent);
+  ok('内部页不再只留一句灰字（提示条收起）',
+    internal.doc.getElementById('siteNote').hidden === true);
+  eq('内部页摆出空状态', internal.doc.getElementById('popEmpty').hidden, false);
+  eq('内部页空状态标题说清「这里没东西」',
+    internal.doc.getElementById('popEmptyTitle').textContent, '这里没有可提取的内容');
+  ok('内部页空状态解释了为什么（浏览器自己的页面读不到）',
+    internal.doc.getElementById('popEmptyDesc').textContent.indexOf('浏览器自己的页面') !== -1,
+    internal.doc.getElementById('popEmptyDesc').textContent);
   eq('内部页把整块设置行收起来（不留五个灰开关）',
     internal.doc.getElementById('siteRows').hidden, true);
   internal.doc.getElementById('openOptions').click();
@@ -342,12 +347,37 @@ async function main() {
   ok('内部页不会拼出 focus=undefined',
     String(internal.created[0].url).indexOf('undefined') === -1);
 
-  // 没收录的站：留提示，但设置仍然能存
+  // 没收录的站：v2.9.1 起不再摆一排点不动的开关，改摆空状态 + 出口
   const unknown = boot('https://example.org/a');
   await tick(120);
   eq('未收录站点名用域名', unknown.doc.getElementById('siteName').textContent, 'example.org');
-  eq('未收录站给出提示', unknown.doc.getElementById('siteNote').hidden, false);
-  eq('未收录站设置行仍然显示', unknown.doc.getElementById('siteRows').hidden, false);
+  eq('未收录站摆出空状态', unknown.doc.getElementById('popEmpty').hidden, false);
+  eq('未收录站空状态用设计稿那句话',
+    unknown.doc.getElementById('popEmptyTitle').textContent, '这个页面还没有可提取的内容');
+  ok('未收录站空状态告诉用户下一步（打开条目详情页）',
+    unknown.doc.getElementById('popEmptyDesc').textContent.indexOf('条目详情页') !== -1,
+    unknown.doc.getElementById('popEmptyDesc').textContent);
+  eq('未收录站不再留一行灰提示（空状态已说明）',
+    unknown.doc.getElementById('siteNote').hidden, true);
+  eq('未收录站不再摆一排点不动的开关',
+    unknown.doc.getElementById('siteRows').hidden, true);
+  eq('未收录站底部状态一起收起',
+    unknown.doc.getElementById('footState').hidden, true);
+
+  // 空状态的出口：落到设置页的「支持站点」分区
+  unknown.doc.getElementById('openSites').click();
+  await tick(40);
+  eq('空状态出口落到支持站点分区',
+    unknown.created[0] && unknown.created[0].url,
+    'chrome-extension://abc/src/options/options.html#sites');
+  ok('点完出口关掉 popup', unknown.wasClosed());
+
+  // 空状态里的吉祥物：路径要能真的指到扩展包内那张母版（裂图 jsdom 看不出来）
+  const artSrc = unknown.doc.getElementById('popEmptyArt').getAttribute('src');
+  eq('空状态头像指向吉祥物母版', artSrc, '../../icons/mascot/mascot.png');
+  ok('吉祥物母版文件真的在包里',
+    fs.existsSync(path.resolve(POPUP_DIR, artSrc)),
+    path.resolve(POPUP_DIR, artSrc));
 
   /* ============ 六、主题仍是「读配置」，界面上不再有开关 ============ */
   section('六、主题：跟着 config.theme 走，界面上没有开关');

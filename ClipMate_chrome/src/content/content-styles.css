@@ -36,22 +36,22 @@
   justify-content: space-between;
   align-items: center;
   padding: 2px 4px;
-  color: #000;
+  color: #111820;
 }
 
 .modal-title {
   margin: 0;
   font-size: 14px;
-  color: #000;
+  color: #111820;
 }
 
 .modal-close {
   background: none;
-  border: 1px solid #000;
+  border: 1px solid #CBC5B7;
   font-size: 14px;
   cursor: pointer;
   padding: 2px 6px;
-  color: #000;
+  color: #111820;
 }
 
 /* 模态窗口内容 */
@@ -66,7 +66,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
-  color: #000;
+  color: #111820;
 }
 
 .data-table th,
@@ -75,10 +75,10 @@
 .responsive-table td {
   padding: 2px;
   text-align: left;
-  border: 1px solid #000;
+  border: 1px solid #CBC5B7;
   vertical-align: top;
   word-break: break-word;
-  color: #000;
+  color: #111820;
 }
 
 /* 纵向表格样式 */
@@ -90,11 +90,11 @@
 /* 按钮基础样式 - 极简 */
 .btn {
   padding: 4px 8px;
-  border: 1px solid #000;
+  border: 1px solid #CBC5B7;
   background: none;
   cursor: pointer;
   font-size: 12px;
-  color: #000;
+  color: #111820;
 }
 
 /* 按钮容器 */
@@ -109,21 +109,21 @@
 .data-field {
   padding: 2px 4px;
   display: block;
-  color: #000;
+  color: #111820;
 }
 
 /* 表头编辑器样式 */
 .header-editor {
   width: 100%;
   padding: 2px 4px;
-  border: 1px solid #000;
+  border: 1px solid #CBC5B7;
   font-size: 12px;
   outline: none;
 }
 
 /* 字段编辑样式 */
 .field-editor {
-  border: 1px solid #000;
+  border: 1px solid #CBC5B7;
   padding: 2px 4px;
   font-size: 12px;
   outline: none;
@@ -182,21 +182,21 @@
 }
 
 .clipmate-notice--page.clipmate-notice--success {
-  background: #eaf3de !important;
-  border-left: 4px solid #639922 !important;
-  color: #27500a !important;
+  background: #EAF7F0 !important;
+  border-left: 4px solid #0E7A3E !important;
+  color: #0B5A2E !important;
 }
 
 .clipmate-notice--page.clipmate-notice--error {
-  background: #fcebeb !important;
-  border-left: 4px solid #a32d2d !important;
-  color: #501313 !important;
+  background: #FDECEC !important;
+  border-left: 4px solid #B42318 !important;
+  color: #8C1D16 !important;
 }
 
 .clipmate-notice--page.clipmate-notice--info {
-  background: #e6f1fb !important;
-  border-left: 4px solid #185fa5 !important;
-  color: #042c53 !important;
+  background: #EEF4FF !important;
+  border-left: 4px solid #056BF4 !important;
+  color: #0448A6 !important;
 }
 
 .clipmate-notice--page .clipmate-notice-icon {
@@ -259,14 +259,14 @@
 .clipmate-notice--page .clipmate-notice-detail {
   margin-top: 6px !important;
   padding: 6px 8px !important;
-  background: rgba(0, 0, 0, 0.045) !important;
+  background: rgba(17, 24, 32, 0.04) !important;
   border-radius: 4px !important;
   font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace !important;
   font-size: 11px !important;
   font-weight: 400 !important;
   line-height: 1.5 !important;
   letter-spacing: normal !important;
-  color: #444 !important;
+  color: #6B7278 !important;
   white-space: pre-wrap !important;
   word-break: break-word !important;
   max-height: 108px !important;
@@ -279,10 +279,10 @@
   display: block !important;
   margin-top: 6px !important;
   padding: 2px 8px !important;
-  border: 1px solid #c9c9c9 !important;
+  border: 1px solid #D5CFC1 !important;
   border-radius: 4px !important;
-  background: #fff !important;
-  color: #333 !important;
+  background: #FFFFFF !important;
+  color: #111820 !important;
   font-family: inherit !important;
   font-size: 11px !important;
   font-weight: 400 !important;
@@ -292,7 +292,7 @@
 }
 
 .clipmate-notice--page .clipmate-notice-detail-copy:hover {
-  background: #f2f2f2 !important;
+  background: #F1EFE8 !important;
 }
 
 @keyframes clipmate-notice-in {
@@ -324,15 +324,20 @@ button.media-extractor-button {
   top: 20px;
   right: 20px;
   z-index: 2147483647;
-  border: 2px solid #4285f4;
-  background: #4285f4;
+  border: 2px solid #056bf4;
+  background: #056bf4;
   color: white;
-  padding: 12px 20px;
+  /* v2.8.6：头像撑满左端并向外溢出，按钮本体只从它右侧开始。
+     左端圆角收成 8px 直边，由头像整片盖住（详见下方「吉祥物头像」一节）。 */
+  padding: 0 32px 0 0;
+  gap: 10px;
   font-size: 16px;
   font-weight: bold;
   cursor: move;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.4);
+  border-radius: 8px 26px 26px 8px;
+  /* 头像要溢出按钮上下沿，按钮绝不能裁切子元素 */
+  overflow: visible;
+  box-shadow: 0 4px 12px rgba(5, 107, 244, 0.4);
   /* 只过渡颜色：left/top/transform 一旦进入过渡，拖动就会「追帧」。
      这一条必须是 !important —— 本文件是用户级样式表，不加 !important 就连
      站点自身的 `button{transition:...}`（作者级普通）都压不住。JS 从不写 transition，安全。 */
@@ -361,9 +366,9 @@ button.media-extractor-button {
 
 /* 悬浮感只改颜色和阴影，不动几何 —— 按钮绝不能在指针下面挪位置 */
 .media-extractor-button:hover {
-  background: #3367d6;
-  border-color: #3367d6;
-  box-shadow: 0 6px 16px rgba(66, 133, 244, 0.6);
+  background: #0458cc;
+  border-color: #0458cc;
+  box-shadow: 0 6px 16px rgba(5, 107, 244, 0.55);
 }
 
 .media-extractor-button:active {
@@ -379,7 +384,7 @@ button.media-extractor-button {
 .media-extractor-button.dragging {
   opacity: 0.9;
   cursor: grabbing;
-  box-shadow: 0 8px 20px rgba(66, 133, 244, 0.5);
+  box-shadow: 0 8px 20px rgba(5, 107, 244, 0.45);
   transition: none !important;
   /* 只在拖动期间提示合成层，平时不留常驻层，避免多站同时吃显存 */
   will-change: transform;
@@ -403,51 +408,152 @@ button.media-extractor-button {
 
 /* 加载状态样式 */
 .media-extractor-button.loading {
-  background: #3367d6;
-  border-color: #3367d6;
+  background: #0a4fcb;
+  border-color: #0a4fcb;
   opacity: 0.9;
 }
 
-/* 加载动画 */
-.loading-spinner {
-  display: inline-block;
-  width: 18px;
-  height: 18px;
-  margin-right: 8px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+/* ---------- v2.8.6 吉祥物头像（透明底 · 撑满按钮左端）----------
+   1) 去掉 v2.8.5 那个「白色圆底」。那层白圆是为了让白色机身从蓝底里浮出来，
+      代价是给吉祥物套了个盘子：圆和头的轮廓各走各的，看着像贴纸而不是按钮的一部分。
+      现在头像直接透明叠在按钮上，靠重绘时加深的深蓝描边（#0B3C8F）自己立住轮廓。
+   2) 头像是插画原图（小机器人举着一张纸），不是正方形，宽高比 1.19:1。
+      容器给 80px 见方 + background-size:contain，实际绘制 80×67，
+      比按钮 48px 高，上下各溢出约 10px —— 这是故意的：
+      头像撑满后，按钮左端的圆角被整个盖住，左侧轮廓由吉祥物本体构成，
+      而不是「蓝胶囊旁边站了个机器人」。
+      ⚠️ 溢出量必须小于浮窗间距（modal-window.js 的 gap，现为 12px），
+         否则浮窗会压住它的下巴。
+   3) 按钮左端改成 8px 直边（不再是 25px 半圆）。半圆会在头像身后露出一段蓝弧，
+      在头顶与下巴处形成豁口；直边被头像整片压住，交界只剩一条干净的竖线。
+   4) .clipmate-mascot 用 background-image 承载图片，不是 <img>：
+      站点对 img 的全局样式（max-width:100% / object-fit / border-radius /
+      vertical-align）会把这个头像压扁或切成圆角方块，背景图不受这些规则影响。
+   5) 头像在四个状态下都是同一张图，状态改由下方的「状态角标」表达。
+   ⚠️ 改头像尺寸要同步改三处：这里、button 的 padding-right(32px，让给角标)、
+      margin-left(-18px)、以及 .media-extractor-button 的 gap(10px)。
+      否则头像会压到文字上，或者角标会压住文字。 */
+button.media-extractor-button .clipmate-mascot-ring {
+  width: 80px;
+  height: 80px;
+  margin-left: -18px;
+  background: none;
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  /* 必须 visible：头像要溢出按钮上下沿。个别站点给 button 设 overflow:hidden，
+     不写这条头像会被切成一刀齐。 */
+  overflow: visible !important;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+button.media-extractor-button .clipmate-mascot {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: contain;
+  /* 头像会比按钮高，溢出部分不该抢走按钮本体的点击判定 */
+  pointer-events: none;
+}
+
+/* 提取中：头像左右轻晃。只动 transform，不触发布局，也不吃 GPU 常驻层。
+   动画只存在于「提取中」这几秒，成功后立刻停 —— 绝不常驻，
+   否则十几个标签页同时开着会一直掉帧。 */
+.media-extractor-button.loading .clipmate-mascot {
+  animation: clipmate-nod 1.1s ease-in-out infinite;
+}
+
+@keyframes clipmate-nod {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(4deg); }
+}
+
+/* ---------- v2.8.6 状态角标 ----------
+   成功 / 失败 / 疑问时，在文字右侧挂一枚 18px 白圆角标；待命态不挂。
+   为什么是「文字右侧垂直居中」而不是贴在按钮右下角：
+     按钮右端是 26px 圆角，角标贴在角上会被圆弧切掉一块、看着歪；
+     骑在边线上又像掉出去的小球。放在文字右侧、上下居中，留白最均匀。
+   为什么白圆 + 深色符号：
+     按钮本身成功变绿、失败变红，角标若也用状态色就糊在一起；
+     白圆在绿/红/蓝三种底上都最高对比，符号再用语义色点明情绪。
+   符号用形状编码（✓ / ! / ?）而不只靠颜色 —— 色觉差异的用户同样分辨得出。 */
+button.media-extractor-button .clipmate-badge {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #0448a6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  /* 角标只是装饰，点它也该触发按钮本身 */
+  pointer-events: none;
+  /* 出现时弹一下，让「有结果了」被眼角余光抓到 */
+  animation: clipmate-badge-pop 0.22s cubic-bezier(0.3, 1.4, 0.6, 1) both;
+}
+
+/* 符号用 ::after 生成，不写成文本节点：按钮的 textContent 要干净，
+   装饰符号也不该进无障碍树。字形用几何感强的等宽字体，勾和感叹号不歪。 */
+button.media-extractor-button .clipmate-badge::after {
+  content: '?';
+}
+
+button.media-extractor-button .clipmate-badge[data-tone='success'] { color: #0e7a3e; }
+button.media-extractor-button .clipmate-badge[data-tone='success']::after { content: '✓'; }
+button.media-extractor-button .clipmate-badge[data-tone='error'] { color: #c23038; }
+button.media-extractor-button .clipmate-badge[data-tone='error']::after { content: '!'; }
+button.media-extractor-button .clipmate-badge[data-tone='ask'] { color: #0448a6; }
+button.media-extractor-button .clipmate-badge[data-tone='ask']::after { content: '?'; }
+
+/* 动画里必须重写 translateY(-50%)，否则弹入过程会先掉到按钮下半截 */
+@keyframes clipmate-badge-pop {
+  0% { transform: translateY(-50%) scale(0.35); opacity: 0; }
+  100% { transform: translateY(-50%) scale(1); opacity: 1; }
+}
+
+/* 未就绪（pending）：把头像去色压暗，和置灰的按钮底一致 */
+.media-extractor-button.pending .clipmate-mascot {
+  filter: grayscale(1) opacity(0.55);
 }
 
 /* 成功状态样式 */
 .media-extractor-button.success {
-  background: #34a853;
-  border-color: #34a853;
-  box-shadow: 0 4px 12px rgba(52, 168, 83, 0.4);
+  background: #12a150;
+  border-color: #12a150;
+  box-shadow: 0 4px 12px rgba(18, 161, 80, 0.4);
 }
 
 .media-extractor-button.success:hover {
-  background: #2d8e47;
-  border-color: #2d8e47;
-  box-shadow: 0 6px 16px rgba(52, 168, 83, 0.6);
+  background: #0e7a3e;
+  border-color: #0e7a3e;
+  box-shadow: 0 6px 16px rgba(18, 161, 80, 0.55);
 }
 
 /* 失败状态样式（v2.5.45：原来失败也走 success，按钮会亮成绿色「提取完成」） */
 .media-extractor-button.error {
-  background: #d93025;
-  border-color: #d93025;
-  box-shadow: 0 4px 12px rgba(217, 48, 37, 0.4);
+  background: #e5484d;
+  border-color: #e5484d;
+  box-shadow: 0 4px 12px rgba(229, 72, 77, 0.4);
 }
 
 .media-extractor-button.error:hover {
-  background: #b7271d;
-  border-color: #b7271d;
-  box-shadow: 0 6px 16px rgba(217, 48, 37, 0.6);
+  background: #b42318;
+  border-color: #b42318;
+  box-shadow: 0 6px 16px rgba(229, 72, 77, 0.55);
 }
 
 /* 拖拽排序相关样式 */
@@ -456,7 +562,7 @@ button.media-extractor-button {
 }
 
 .sortable-chosen {
-  background: #e0e0e0;
+  background: #E8E4D9;
 }
 
 /* ==========================================================================
@@ -488,13 +594,13 @@ button.media-extractor-button {
   font-style: normal !important;
   font-variant: normal !important;
   line-height: 1.3 !important;
-  color: #000 !important;
+  color: #111820 !important;
   letter-spacing: normal !important;
   word-spacing: normal !important;
   text-align: left !important;
   text-transform: none !important;
   box-sizing: border-box !important;
-  background-color: #fff !important;
+  background-color: #F7F6F2 !important;
   border-radius: 8px !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
 }

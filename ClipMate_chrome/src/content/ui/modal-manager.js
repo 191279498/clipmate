@@ -217,21 +217,44 @@ class ModalManager {
       b.textContent = glyph;
       b.title = tip;
       b.className = 'floating-window-title-button is-icon';
-      b.style.cssText = 'background:#e0e0e0;color:#333;border:none;border-radius:4px;cursor:pointer;transition:all 0.2s;';
+      b.style.cssText = 'background:transparent;color:#6b7278;border:none;border-radius:4px;cursor:pointer;transition:all 0.2s;';
       return b;
     };
 
-    // 文字按钮：外观跟在用的「复制Notion」等保持一致
-    const makeTextButton = (id, text, tip, onClick) => {
+    /* 文字按钮（v2.8.5 加 tone 档位）
+       原来所有按钮一律 #e0e0e0 底、#333 字，九个按钮长得一模一样，
+       用户扫过去找不到落点。现在分三档，靠底色和字色拉开层级：
+         primary 实心蓝   —— 全窗只留一个，给最高频的「复制 Markdown」
+         accent  浅蓝底   —— 复制组和补齐网址，同一档，视觉上连成一排
+         ghost   无底色   —— 编辑 / 重置排序等低频项，退到背景里 */
+    /* primary（实心蓝）不放进这张表：全窗只有「复制 Markdown」一个主按钮，
+       它需要自己的字重和点击逻辑，单独建（见下方 copyMarkdownBtn）。
+       放进表里会变成一个没人用的档位，下次谁改这里会以为改得动主按钮。 */
+    const TONE = {
+      accent: 'background:#EEF4FF;color:#0448A6;',
+      ghost: 'background:transparent;color:#6b7278;'
+    };
+
+    const makeTextButton = (id, text, tip, onClick, tone = 'accent') => {
       const b = document.createElement('button');
       b.id = id;
       b.type = 'button';
       b.textContent = text;
       if (tip) b.title = tip;
       b.className = 'floating-window-title-button';
-      b.style.cssText = 'padding:4px 8px;font-size:12px;background:#e0e0e0;color:#333;border:none;border-radius:4px;cursor:pointer;transition:all 0.2s;';
+      b.style.cssText = 'padding:4px 8px;font-size:12px;' + (TONE[tone] || TONE.accent) +
+        'border:none;border-radius:4px;cursor:pointer;transition:all 0.2s;';
       b.addEventListener('click', onClick);
       return b;
+    };
+
+    /* 细线分隔：把高频区和低频区分开。
+       必须是真元素 —— 按钮区是 flex-wrap，伪元素折行时会挂在最后那个按钮的尾巴上。 */
+    const makeTitleDivider = () => {
+      const d = document.createElement('span');
+      d.className = 'floating-window-title-divider';
+      d.setAttribute('aria-hidden', 'true');
+      return d;
     };
 
     // 最小化（B3）—— 编辑模式下也留着：编辑到一半想腾地方看网页同样需要
@@ -263,13 +286,15 @@ class ModalManager {
       async () => {
         const ok = await this.copyDataAsPlainText();
         this._flashCopyButton('copyPlainText', ok, '复制纯文本');
-      }
+      },
+      'accent'
     );
 
     // 重置排序：清掉「这个媒体类型」保存的字段顺序，回到默认（会弹提示说明）
     const makeResetOrderBtn = () => makeTextButton(
       'resetFieldOrderBtn', '重置排序', '把这个媒体类型保存的字段顺序恢复成默认',
-      () => this.resetFieldOrder()
+      () => this.resetFieldOrder(),
+      'ghost'
     );
 
     // 补齐网址：影视页 + 豆瓣书籍页才给。
@@ -281,7 +306,8 @@ class ModalManager {
       isBook
         ? '到 Goodreads（按 ISBN 精确查）和番组计划找这本书的网址（已有值不覆盖）'
         : '到豆瓣 / IMDb / 番组计划 / TMDB 找这一条的网址（已有值不覆盖）',
-      () => this.fillCrossSiteLinks()
+      () => this.fillCrossSiteLinks(),
+      'accent'
     );
 
     // 所有图标按钮统一的悬停效果（和文字按钮一样用 opacity，不改底色）
@@ -304,8 +330,8 @@ class ModalManager {
     toggleDisplayModeBtn.style.cssText = `
       padding: 4px 8px;
       font-size: 12px;
-      background: #e0e0e0;
-      color: #333;
+      background: transparent;
+      color: #6b7278;
       border: none;
       border-radius: 4px;
       cursor: pointer;
@@ -322,15 +348,19 @@ class ModalManager {
     };
     
     // 添加悬停效果
+    /* v2.8.5：原来悬停把底色改成 #d0d0d0，是九个按钮里唯一一个「悬停变色块」的，
+       改成和其它按钮一样的透明度反馈，避免它又跳出层级。 */
     toggleDisplayModeBtn.addEventListener('mouseenter', function() {
-      this.style.background = '#d0d0d0';
+      this.style.opacity = '0.65';
     });
-    
+
     toggleDisplayModeBtn.addEventListener('mouseleave', function() {
-      this.style.background = '#e0e0e0';
+      this.style.opacity = '1';
     });
     
-    buttons.push(toggleDisplayModeBtn);
+    /* v2.8.5：横向/纵向切换从「永远第一个」改成跟着低频组走。
+       它排第一的时候，用户打开浮窗第一眼看到的是「横向」，
+       而真正天天点的复制按钮被挤到中段。 */
     
     if (this.isEditMode) {
       // 编辑模式下的按钮
@@ -382,18 +412,20 @@ class ModalManager {
       `;
       confirmBtn.addEventListener('click', () => this.confirmEdit());
       
-      buttons.push(resetOrderBtn, cancelBtn, confirmBtn, bindIconHover(makeMinimizeBtn()));
+      buttons.push(toggleDisplayModeBtn, resetOrderBtn, cancelBtn, confirmBtn, bindIconHover(makeMinimizeBtn()));
     } else {
       // 非编辑模式下的按钮
       const enterEditModeBtn = document.createElement('button');
       enterEditModeBtn.id = 'enterEditMode';
       enterEditModeBtn.textContent = '编辑';
       enterEditModeBtn.className = 'floating-window-title-button';
+      /* v2.8.5：「编辑」从实心蓝降到 ghost —— 主色全窗只留给最高频的复制 Markdown。
+         编辑本身不改变数据内容，只是换个查看方式，配不上主按钮的颜色。 */
       enterEditModeBtn.style.cssText = `
         padding: 4px 8px;
         font-size: 12px;
-        background: #2196f3;
-        color: white;
+        background: transparent;
+        color: #6b7278;
         border: none;
         border-radius: 4px;
         cursor: pointer;
@@ -409,8 +441,8 @@ class ModalManager {
       copyDataBtn.style.cssText = `
         padding: 4px 8px;
         font-size: 12px;
-        background: #e0e0e0;
-        color: #333;
+        background: #EEF4FF;
+        color: #0448a6;
         border: none;
         border-radius: 4px;
         cursor: pointer;
@@ -427,11 +459,15 @@ class ModalManager {
       copyMarkdownBtn.textContent = '复制Markdown';
       copyMarkdownBtn.title = '复制为Markdown表格格式';
       copyMarkdownBtn.className = 'floating-window-title-button';
+      /* v2.8.5：最高频动作，全窗唯一的实心蓝主按钮。
+         高频按钮必须长得跟其它按钮不一样，否则「排序」只解决了一半问题 ——
+         位置对了，眼睛还是要一个个读文字。 */
       copyMarkdownBtn.style.cssText = `
         padding: 4px 8px;
         font-size: 12px;
-        background: #e0e0e0;
-        color: #333;
+        background: #056bf4;
+        color: #ffffff;
+        font-weight: 600;
         border: none;
         border-radius: 4px;
         cursor: pointer;
@@ -455,13 +491,23 @@ class ModalManager {
       const canCrossSite = (isMediaPage || isBookUrlPage) &&
         typeof this.fillCrossSiteLinks === 'function';
 
+      /* v2.8.5：按实际使用频率重排。
+         用户给的频次：复制 Markdown > 复制 Notion > 复制纯文本，豆瓣书籍页常点补齐网址，
+         其余几乎不用。所以分三档：
+           第一档 三种复制  —— 连成一排，Markdown 实心蓝当主按钮（最高频）
+           第二档 补齐网址  —— 只在有那一格的页面出现，紧跟复制组
+           第三档 编辑 / 搜索 / 横向 / 重置排序 / 最小化 —— 细线之后，无底色，退到背景里
+         一条铁律：这条细线是真元素，不是伪元素 —— 按钮区是 flex-wrap 的，
+         伪元素折行时会挂在最后一个按钮尾巴上，分隔线会跑到行中间去。 */
       buttons.push(
-        enterEditModeBtn,
-        copyDataBtn,
         copyMarkdownBtn,
+        copyDataBtn,
         makePlainTextBtn(),
         ...(canCrossSite ? [makeCrossSiteBtn(isBookUrlPage)] : []),
+        makeTitleDivider(),
+        enterEditModeBtn,
         bindIconHover(makeSearchBtn()),
+        toggleDisplayModeBtn,
         makeResetOrderBtn(),
         bindIconHover(makeMinimizeBtn())
       );
@@ -513,22 +559,32 @@ class ModalManager {
       if (!this._copyFlashTimers) this._copyFlashTimers = {};
       if (this._copyFlashTimers[btnId]) clearTimeout(this._copyFlashTimers[btnId]);
 
-      // 原底色只在第一次记；内联 background 设为 '' 不会还原 cssText 里的值，所以要存下来
+      // 原底色 / 原字色只在第一次记；内联 background 设为 '' 不会还原 cssText 里的值，所以要存下来。
+      // v2.8.5 补字色：复制 Markdown 现在是白字蓝底，如果只记底色、还原时硬写 #333，
+      // 复制一次之后它就变成蓝底深灰字，看起来像被禁用。
       if (!btn.dataset.idleBackground) {
         btn.dataset.idleBackground = btn.style.background || 'rgb(224, 224, 224)';
       }
+      if (!btn.dataset.idleColor) {
+        btn.dataset.idleColor = btn.style.color || 'rgb(51, 51, 51)';
+      }
+      if (!btn.dataset.idleWeight) {
+        btn.dataset.idleWeight = btn.style.fontWeight || '';
+      }
       const idleBg = btn.dataset.idleBackground;
+      const idleColor = btn.dataset.idleColor;
+      const idleWeight = btn.dataset.idleWeight;
 
       btn.textContent = ok ? '已复制 ✓' : '复制失败';
-      btn.style.background = ok ? '#eaf3de' : '#fcebeb';
-      btn.style.color = ok ? '#567d1f' : '#a32d2d';
+      btn.style.background = ok ? '#EAF7F0' : '#FDECEC';
+      btn.style.color = ok ? '#0B5A2E' : '#B42318';
       btn.style.fontWeight = '600';
 
       this._copyFlashTimers[btnId] = setTimeout(() => {
         btn.textContent = idleText;
         btn.style.background = idleBg;
-        btn.style.color = '#333';
-        btn.style.fontWeight = '';
+        btn.style.color = idleColor;
+        btn.style.fontWeight = idleWeight;
         delete this._copyFlashTimers[btnId];
       }, ok ? 2000 : 1500);
     } catch (e) {

@@ -19,7 +19,7 @@
   const BARE_URL_RE = /(?:https?:\/\/|ftp:\/\/|www\.)[^\s<>"'，。；！？、）】」』]+|(?<![\w@.\/-])(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,10}(?:\/[^\s<>"'，。；！？、）】」』]*)?/g;
 
   /** 链接样式：与「网址」列、社交「URL」保持同一套观感 */
-  const LINK_STYLE = 'color:#0066cc;text-decoration:underline;';
+  const LINK_STYLE = 'color:#056BF4;text-decoration:underline;';
 
   global.ModalTableMixin = {
 
@@ -116,7 +116,7 @@
       // 且 isUrl() 已限定 http(s)/ftp(s) 或纯域名形态，不会出现 javascript: 之类的注入。
       if (mediaType === 'person' && fieldName === '网址') {
         if (this.isUrl(displayValue)) {
-          return `<a href="${displayValue}" target="_blank" rel="noopener noreferrer" style="color:#0066cc;text-decoration:underline;">${displayValue}</a>`;
+          return `<a href="${displayValue}" target="_blank" rel="noopener noreferrer" style="color:#056BF4;text-decoration:underline;">${displayValue}</a>`;
         }
         return `<span class="data-field">${displayValue}</span>`;
       }
@@ -137,9 +137,9 @@
         // 社交类的「URL」显示成「点击访问」
         const isVisitLink = (mediaType === 'social' && fieldName === 'URL');
         if (isVisitLink) {
-          return `<a href="${displayValue}" target="_blank" rel="noopener noreferrer" style="color: #0066cc; text-decoration: underline;" title="${displayValue}">点击访问</a>`;
+          return `<a href="${displayValue}" target="_blank" rel="noopener noreferrer" style="color: #056BF4; text-decoration: underline;" title="${displayValue}">点击访问</a>`;
         }
-        return `<a href="${displayValue}" target="_blank" rel="noopener noreferrer" style="color: #0066cc; text-decoration: underline;">${displayValue}</a>`;
+        return `<a href="${displayValue}" target="_blank" rel="noopener noreferrer" style="color: #056BF4; text-decoration: underline;">${displayValue}</a>`;
       }
       if (fieldName === '发布日期' && displayValue) {
         return `<span class="data-field" style="font-family: monospace; white-space: nowrap;">${displayValue}</span>`;

@@ -29,12 +29,25 @@
   var STYLE_ID = 'clipmate-weibo-feed-style';
   var SCAN_DELAY = 220;                  // 微博滚动加载很密，比 IG 稍长一点
   var MIN_POSTS = 2;                     // 少于这个数就是详情页，不挂
+  var BTN_SIZE = 28;                     // v2.8.8：26 → 28，给头像留出 20px 的头
 
-  var ICON_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" '
-    + 'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
-    + '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>'
-    + '<polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/>'
-    + '<line x1="16" y1="17" x2="8" y2="17"/></svg>';
+  /**
+   * v2.8.8：按钮里换成吉祥物，不再画文档线稿（与 X / IG 同一套）。
+   * 图用 background-image 而不是 <img>：站点对 img 的全局样式会把它改烂。
+   */
+  var MASCOT_REL = 'icons/mascot/mascot.png';
+  var MASCOT_W = 30;
+  var MASCOT_H = 25.6;                   // 母版 480×409，按比例
+
+  function mascotUrl() {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.runtime &&
+          typeof chrome.runtime.getURL === 'function') {
+        return chrome.runtime.getURL(MASCOT_REL);
+      }
+    } catch (e) { /* 测试环境没有 runtime */ }
+    return '';
+  }
 
   /**
    * 各套页面的落点（实测几何，不是猜的）
@@ -68,22 +81,25 @@
     if (document.getElementById(STYLE_ID)) return;
     var site = (global.WeiboFeedContext && global.WeiboFeedContext.getSite()) || 'desktop';
     var pos = LAYOUT[site] || LAYOUT.desktop;
+    var url = mascotUrl();
     var style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = ''
       + '.' + BTN_CLASS + '{'
       + 'position:absolute;top:' + pos.top + 'px;right:' + pos.right + 'px;'
-      + 'width:26px;height:26px;padding:0;margin:0;border:none;border-radius:7px;'
-      + 'display:flex;align-items:center;justify-content:center;cursor:pointer;'
-      + 'background:rgba(0,0,0,.055);color:#5a5a5a;z-index:9;'
-      + 'transition:background .15s ease,color .15s ease,transform .12s ease;'
-      + 'box-shadow:0 1px 2px rgba(0,0,0,.06);}'
-      + '.' + BTN_CLASS + ':hover{background:rgba(255,130,0,.14);color:#ff8200;transform:scale(1.06);}'
+      + 'width:' + BTN_SIZE + 'px;height:' + BTN_SIZE + 'px;padding:0;margin:0;border:none;border-radius:9px;'
+      + 'display:block;cursor:pointer;z-index:9;'
+      // v2.8.8：不垫底盘，吉祥物直接站在页面上
+      + 'background-color:transparent;'
+      + 'background-image:' + (url ? 'url("' + url + '")' : 'none') + ';'
+      + 'background-repeat:no-repeat;background-position:center;'
+      + 'background-size:' + MASCOT_W + 'px ' + MASCOT_H + 'px;'
+      + 'transition:background-color .15s ease,transform .12s ease,opacity .15s ease;}'
+      + '.' + BTN_CLASS + ':hover{background-color:rgba(255,130,0,.14);transform:scale(1.08);}'
       + '.' + BTN_CLASS + ':active{transform:scale(.95);}'
-      + '.' + BTN_CLASS + '[data-state="busy"]{opacity:.55;cursor:default;}'
-      + '.' + BTN_CLASS + '[data-state="ok"]{background:rgba(52,168,83,.16);color:#34a853;}'
-      + '.' + BTN_CLASS + '[data-state="fail"]{background:rgba(217,48,37,.14);color:#d93025;}'
-      + '.' + BTN_CLASS + ' svg{pointer-events:none;}';
+      + '.' + BTN_CLASS + '[data-state="busy"]{opacity:.45;cursor:default;}'
+      + '.' + BTN_CLASS + '[data-state="ok"]{background-color:rgba(52,168,83,.20);}'
+      + '.' + BTN_CLASS + '[data-state="fail"]{background-color:rgba(217,48,37,.18);}';
     (document.head || document.documentElement).appendChild(style);
   }
 
@@ -255,6 +271,8 @@
           existing.setAttribute('data-mid', post.mid);
           container.setAttribute(POST_ATTR, post.mid);
         }
+        // 头部控件是后挂的：每轮重摆一次，摆到位就立刻返回
+        this._place(existing, container);
         return;
       }
       this._attach(container, post);
@@ -280,8 +298,8 @@
         var mr = menu.getBoundingClientRect();
         var cr = container.getBoundingClientRect();
         if (!mr.height) return null;
-        // 26px 的按钮竖向居中对齐到「⋯」上
-        return Math.round(mr.top - cr.top + (mr.height - 26) / 2);
+        // 28px 的按钮竖向居中对齐到「⋯」上
+        return Math.round(mr.top - cr.top + (mr.height - BTN_SIZE) / 2);
       } catch (e) {
         return null;
       }
@@ -296,7 +314,7 @@
         btn.setAttribute('data-state', 'idle');
         btn.title = '提取这条';
         btn.setAttribute('aria-label', '提取这条');
-        btn.innerHTML = ICON_SVG;
+        // v2.8.8：不再塞 SVG，形象由 CSS 的 background-image 承载
 
         // 定位锚点：只有原本是 static 才改，改过的留标记好还原
         try {
@@ -324,14 +342,56 @@
           ev.stopPropagation();
         });
 
-        // 搜索页：逐卡对齐到自己的「⋯」（算不出来就沿用 CSS 里的固定值）
-        var anchTop = this._anchorTop(container);
-        if (anchTop != null) btn.style.top = anchTop + 'px';
-
         container.appendChild(btn);
         this._buttons.push(btn);
+
+        // 摆位：优先按卡片**自己**右上角那颗「⌄ / ⋯」量（桌面页、搜索页都能用）；
+        // 量不到才退回「搜索页算 top + CSS 固定值」这条老路。
+        if (!this._place(btn, container)) {
+          var anchTop = this._anchorTop(container);
+          if (anchTop != null) btn.style.top = anchTop + 'px';
+        }
       } catch (e) {
         log('[WeiboFeedButtons] 挂按钮失败: ' + (e && e.message));
+      }
+    }
+
+    /**
+     * 按卡片右上角的「⌄ / ⋯」摆位：按钮站在它左边 6px、垂直居中对齐。
+     *
+     * 为什么不能写死 right：真机实测（2026-11-02）微博首页卡片右上角那颗「⌄」
+     * 占 x=842~866，而 LAYOUT.desktop 的 `right:17` 让按钮右边缘落在 865 ——
+     * 按钮整颗压在箭头上，看起来像从箭头下面掉出来的一块。
+     *
+     * @param {HTMLElement} btn  我们的按钮
+     * @param {HTMLElement} container 卡片容器
+     * @returns {boolean} 量到了并摆好 → true
+     */
+    _place(btn, container) {
+      try {
+        var cr = container.getBoundingClientRect();
+        if (!cr || !cr.width) return false;
+
+        // `.woo-pop-wrap` 是「⌄」外层（类名带哈希，只认前缀）；`.menu` 是搜索页的「⋯」
+        var anchor = container.querySelector('.woo-pop-wrap')
+          || container.querySelector('.woo-pop-ctrl')
+          || container.querySelector('.menu');
+        if (!anchor) return false;
+
+        var ar = anchor.getBoundingClientRect();
+        if (!ar.width || ar.top - cr.top > 70) return false;   // 只认头部那颗
+
+        var right = Math.round(cr.right - ar.left + 6);
+        var top = Math.round(ar.top - cr.top + (ar.height - BTN_SIZE) / 2);
+
+        if (btn.getAttribute('data-pos') !== right + '/' + top) {
+          btn.setAttribute('data-pos', right + '/' + top);
+          btn.style.right = right + 'px';
+          btn.style.top = top + 'px';
+        }
+        return true;
+      } catch (e) {
+        return false;
       }
     }
 

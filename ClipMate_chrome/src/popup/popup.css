@@ -15,8 +15,8 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Roboto, sans-serif;
   font-size: 13px;
   line-height: 1.5;
-  color: #374151;
-  background: #ffffff;
+  color: #111820;
+  background: #F7F6F2;
   width: 320px !important;
   min-width: 320px !important;
   max-width: 320px !important;
@@ -26,7 +26,7 @@ body {
   user-select: none;
   -webkit-user-select: none;
   scrollbar-width: thin;
-  scrollbar-color: #d1d5db transparent;
+  scrollbar-color: #CBC5B7 transparent;
   visibility: hidden; /* 首帧渲染完成后由 init 打开，避免半截界面闪一下 */
 }
 
@@ -43,7 +43,7 @@ body {
   justify-content: space-between;
   gap: 8px;
   padding: 10px 12px 9px;
-  border-bottom: 1px solid #f1f2f4;
+  border-bottom: 1px solid #E1DCD1;
 }
 
 .pop-id {
@@ -55,20 +55,20 @@ body {
 .pop-name {
   font-size: 14px;
   font-weight: 600;
-  color: #111827;
+  color: #111820;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .pop-name.is-plain {
-  color: #6b7280;
+  color: #6B7278;
   font-weight: 500;
 }
 
 .pop-host {
   font-size: 11px;
-  color: #9ca3af;
+  color: #8A8578;
   font-family: ui-monospace, Menlo, Consolas, monospace;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -88,16 +88,16 @@ body {
 
 .pop-ver {
   font-size: 10.5px;
-  color: #c3c8d0;
+  color: #B4AE9F;
 }
 
 .icon-btn {
   width: 26px;
   height: 26px;
-  border: 1px solid #e8eaee;
-  background: #fff;
+  border: 1px solid #E1DCD1;
+  background: #FFFFFF;
   border-radius: 7px;
-  color: #6b7280;
+  color: #6B7278;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -107,20 +107,81 @@ body {
 }
 
 .icon-btn:hover {
-  background: #f9fafb;
-  color: #4c1d95;
-  border-color: #ddd6fe;
+  background: #F1EFE8;
+  color: #0448A6;
+  border-color: #CBC5B7;
 }
 
 /* ===== 提示条（不支持的站 / 浏览器内部页） ===== */
 .pop-note {
   margin: 9px 12px 0;
   padding: 6px 8px;
-  background: #fef3c7;
-  color: #92400e;
+  background: #FBF0D2;
+  color: #7A4A08;
   font-size: 11.5px;
   line-height: 1.5;
   border-radius: 6px;
+}
+
+/* ===== 空状态（v2.9.1）：吉祥物 + 一句话 + 一个出口 =====
+ *
+ * 出现的两种场合：不支持的网站（有域名、没收录）、浏览器内部页（连域名都没有）。
+ * 两者共用一套版式，只换文案 —— 版式相同才让人一眼认出「这是同一类情况」。
+ */
+.pop-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px 22px 26px;
+}
+
+.pop-empty[hidden] {
+  display: none !important;
+}
+
+.pop-empty-art {
+  width: 104px;
+  height: auto;
+  margin: 2px 0 10px;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+.pop-empty-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #111820;
+  line-height: 1.45;
+}
+
+.pop-empty-desc {
+  margin-top: 5px;
+  max-width: 248px;
+  font-size: 11.5px;
+  line-height: 1.65;
+  color: #6B7278;
+  /* 两行时让长短均匀，避免末行只剩「一类。」这种孤字（不支持的浏览器忽略这条） */
+  text-wrap: balance;
+}
+
+.pop-empty-link {
+  margin-top: 14px;
+  padding: 6px 14px;
+  border: 1px solid #E1DCD1;
+  border-radius: 8px;
+  background: #FFFFFF;
+  font-family: inherit;
+  font-size: 12px;
+  color: #0448A6;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.pop-empty-link:hover {
+  background: #F1EFE8;
+  border-color: #CBC5B7;
 }
 
 /* ===== 设置行 ===== */
@@ -140,13 +201,13 @@ body {
   gap: 10px;
   padding: 10px 12px;
   font-size: 13px;
-  color: #1f2937;
+  color: #111820;
   cursor: pointer;
-  border-bottom: 1px solid #f6f7f9;
+  border-bottom: 1px solid #EDE9DF;
 }
 
 .row:hover {
-  background: #fafbfc;
+  background: #F1EFE8;
 }
 
 .row-label {
@@ -162,8 +223,8 @@ body {
   gap: 10px;
   padding: 0 12px 9px 22px;
   font-size: 12px;
-  color: #6b7280;
-  border-bottom: 1px solid #f6f7f9;
+  color: #6B7278;
+  border-bottom: 1px solid #EDE9DF;
 }
 
 .sub[hidden] {
@@ -184,7 +245,7 @@ body {
 
 .sub-range {
   width: 96px;
-  accent-color: #6d5ce7;
+  accent-color: #056BF4;
   cursor: pointer;
 }
 
@@ -194,7 +255,7 @@ body {
   -webkit-appearance: none;
   height: 3px;
   border-radius: 2px;
-  background: #3a4356;
+  background: #3A3730;
 }
 
 .theme-dark .sub-range::-webkit-slider-thumb {
@@ -204,7 +265,7 @@ body {
   height: 12px;
   border: 0;
   border-radius: 50%;
-  background: #a78bfa;
+  background: #8FB6FF;
   cursor: pointer;
 }
 
@@ -213,50 +274,50 @@ body {
   height: 12px;
   border: 0;
   border-radius: 50%;
-  background: #a78bfa;
+  background: #8FB6FF;
   cursor: pointer;
 }
 
 .theme-dark .sub-range::-moz-range-track {
   height: 3px;
   border-radius: 2px;
-  background: #3a4356;
+  background: #3A3730;
 }
 
 .sub-val {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
-  color: #4c1d95;
+  color: #0448A6;
   min-width: 14px;
   text-align: right;
 }
 
 .sub-unit {
-  color: #9ca3af;
+  color: #9A958A;
 }
 
 .sub-select {
   appearance: none;
   -webkit-appearance: none;
-  border: 1px solid #e8eaee;
+  border: 1px solid #E1DCD1;
   border-radius: 6px;
-  background: #fff;
-  color: #374151;
+  background: #FFFFFF;
+  color: #111820;
   font-family: inherit;
   font-size: 12px;
   padding: 3px 20px 3px 8px;
   cursor: pointer;
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6' viewBox='0 0 9 6'%3E%3Cpath d='M1 1l3.5 3.5L8 1' fill='none' stroke='%239ca3af' stroke-width='1.3' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6' viewBox='0 0 9 6'%3E%3Cpath d='M1 1l3.5 3.5L8 1' fill='none' stroke='%236B7278' stroke-width='1.3' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 7px center;
 }
 
 .sub-select:hover {
-  border-color: #ddd6fe;
+  border-color: #CBC5B7;
 }
 
 .sub-hint {
-  color: #b45309;
+  color: #7A4A08;
   font-size: 11.5px;
   padding-top: 6px;
 }
@@ -270,7 +331,7 @@ body {
   width: 34px;
   height: 20px;
   border-radius: 10px;
-  background: #d8dbe1;
+  background: #D6D0C2;
   cursor: pointer;
   transition: background 0.16s ease;
   margin: 0;
@@ -284,12 +345,12 @@ body {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #fff;
+  background: #FFFFFF;
   transition: transform 0.16s ease;
 }
 
 .sw:checked {
-  background: #6d5ce7;
+  background: #056BF4;
 }
 
 .sw:checked::after {
@@ -310,7 +371,7 @@ body {
   min-height: 30px;
   padding: 7px 12px;
   font-size: 11px;
-  color: #9ca3af;
+  color: #9A958A;
 }
 
 .foot-state {
@@ -333,14 +394,14 @@ body {
   padding: 0;
   font-family: inherit;
   font-size: 11px;
-  color: #6d5ce7;
+  color: #0448A6;
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 .link-btn:hover {
-  color: #4c1d95;
+  color: #056BF4;
 }
 
 .link-btn[hidden] {
@@ -350,7 +411,7 @@ body {
 .saved-tip {
   flex: 0 0 auto;
   margin-left: auto;
-  color: #10b981;
+  color: #0E7A3E;
   opacity: 0;
   transition: opacity 0.25s ease;
   white-space: nowrap;
@@ -363,74 +424,93 @@ body {
 /* ===== 深色主题 ===== */
 body.theme-dark {
   color-scheme: dark; /* 让原生控件（滑块轨道、下拉框、滚动条）跟着变深，否则滑轨是一片白 */
-  color: #e5e7eb;
-  background: #1b2130;
+  color: #EDE9E0;
+  background: #191817;
 }
 
 .theme-dark .pop-head,
 .theme-dark .row,
 .theme-dark .sub {
-  border-bottom-color: #262d3d;
+  border-bottom-color: #33302A;
 }
 
 .theme-dark .pop-name {
-  color: #f3f4f6;
+  color: #F5F1E8;
 }
 
 .theme-dark .pop-name.is-plain {
-  color: #9ca3af;
+  color: #A39C8E;
 }
 
 .theme-dark .row {
-  color: #e5e7eb;
+  color: #EDE9E0;
 }
 
 .theme-dark .row:hover {
-  background: #202737;
+  background: #222120;
 }
 
 .theme-dark .sub {
-  color: #9ca3af;
+  color: #A39C8E;
 }
 
 .theme-dark .icon-btn {
-  background: #232b3c;
-  border-color: #2f3849;
-  color: #9ca3af;
+  background: #222120;
+  border-color: #33302A;
+  color: #A39C8E;
 }
 
 .theme-dark .icon-btn:hover {
-  color: #c7d2fe;
-  border-color: #4338ca;
+  color: #8FB6FF;
+  border-color: #2C4A7A;
 }
 
 .theme-dark .sw {
-  background: #3f4757;
+  background: #3A3730;
 }
 
 .theme-dark .sw:checked {
-  background: #7c3aed;
+  background: #2A6BE0;
 }
 
 .theme-dark .sub-select {
-  background-color: #232b3c;
-  border-color: #2f3849;
-  color: #e5e7eb;
+  background-color: #222120;
+  border-color: #33302A;
+  color: #EDE9E0;
 }
 
 .theme-dark .sub-val {
-  color: #c7d2fe;
+  color: #8FB6FF;
 }
 
 .theme-dark .pop-note {
-  background: #3a2a10;
-  color: #fcd34d;
+  background: #2E2412;
+  color: #E8C46A;
 }
 
 .theme-dark .foot-state {
-  color: #6b7280;
+  color: #7C7669;
 }
 
 .theme-dark .sub-hint {
-  color: #fbbf24;
+  color: #E8C46A;
+}
+
+.theme-dark .pop-empty-title {
+  color: #F5F1E8;
+}
+
+.theme-dark .pop-empty-desc {
+  color: #A39C8E;
+}
+
+.theme-dark .pop-empty-link {
+  background: #222120;
+  border-color: #33302A;
+  color: #8FB6FF;
+}
+
+.theme-dark .pop-empty-link:hover {
+  background: #2A2724;
+  border-color: #3D3932;
 }

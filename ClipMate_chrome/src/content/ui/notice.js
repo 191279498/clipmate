@@ -31,9 +31,9 @@
   // 刻意不用 innerHTML 拼 SVG 字符串 —— 全部走 createElementNS 构建，
   // 既避开 web-ext lint 的「Unsafe assignment to innerHTML」警告，也不给外部注入留任何缝隙。
   var ICON_SPEC = {
-    success: { fill: '#639922', path: 'M5 9.3l2.6 2.6L13.2 6', dots: [] },
-    error: { fill: '#A32D2D', path: 'M6.3 6.3l5.4 5.4M11.7 6.3l-5.4 5.4', dots: [] },
-    info: { fill: '#185FA5', path: 'M9 8.2v5.2', dots: [{ cx: 9, cy: 5.6, r: 1.15 }] }
+    success: { fill: '#0E7A3E', path: 'M5 9.3l2.6 2.6L13.2 6', dots: [] },
+    error: { fill: '#B42318', path: 'M6.3 6.3l5.4 5.4M11.7 6.3l-5.4 5.4', dots: [] },
+    info: { fill: '#0448A6', path: 'M9 8.2v5.2', dots: [{ cx: 9, cy: 5.6, r: 1.15 }] }
   };
 
   /**

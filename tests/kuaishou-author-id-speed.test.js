@@ -483,7 +483,7 @@ function section6() {
   });
 
   // manifest 版本
-  eq('[版本] manifest 版本已升到 2.8.4', MANIFEST.version, '2.8.4');
+  eq('[版本] manifest 版本已升到 2.9.1', MANIFEST.version, '2.9.1');
 }
 
 /* ======================== 主流程 ======================== */
