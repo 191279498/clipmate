@@ -271,6 +271,10 @@
       if (document.body) {
         document.body.appendChild(root);
         this._pageRoot = root;
+        // v2.9.3：深色站点上提示条也换暖黑，和浮窗、按钮保持一致
+        if (window.SiteTheme && window.SiteTheme.shared) {
+          try { window.SiteTheme.shared.attach(root); } catch (e) { /* 判定失败就保持浅色 */ }
+        }
       }
     },
 

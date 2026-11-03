@@ -81,9 +81,9 @@ class MediaFloatingWindow {
       min-width: ${this.minWidth}px;
       min-height: ${this.minHeight}px;
       z-index: ${this.zIndex};
-      background: white;
+      background: var(--cm-bg, #F7F6F2);
       border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 20px var(--cm-shadow-a30, rgba(0, 0, 0, 0.3));
       display: none;
       flex-direction: column;
       overflow: hidden;
@@ -92,7 +92,7 @@ class MediaFloatingWindow {
       font-size: 12px;
       font-weight: 400;
       line-height: 1.3;
-      color: #000;
+      color: var(--cm-ink, #111820);
       letter-spacing: normal;
       text-align: left;
       user-select: text;
@@ -125,6 +125,17 @@ class MediaFloatingWindow {
     this.headerElement = document.createElement('div');
     this.headerElement.className = 'floating-window-header';
 
+    /* v2.9.2：标题栏最左边站一只吉祥物的头（20px）。
+       标题文字 v2.5.93 起是隐藏的，左边原本整片空白；这一小块让窗口有「是谁在给你看
+       这份表」的落点，一眼能认出是自己的窗口，而不是网页自带的弹层。
+       用 background-image 不用 <img>：与按钮头像保持同一套做法，资源缺失时只是空白，
+       不会在页面里出现一个破图标方块。 */
+    this.brandElement = document.createElement('div');
+    this.brandElement.className = 'floating-window-brand';
+    this.brandElement.setAttribute('aria-hidden', 'true');
+    const brandUrl = this._mascotFaceUrl();
+    if (brandUrl) this.brandElement.style.backgroundImage = 'url("' + brandUrl + '")';
+
     /* v2.5.93：标题文字不再显示。
        原来「媒体信息预览」六个字固定占 120px（.floating-window-title 的 min-width），
        把右边一排工具栏硬生生挤成两行。它只是说明性文字，没有任何功能，
@@ -156,7 +167,8 @@ class MediaFloatingWindow {
     this.titleBarButtons = document.createElement('div');
     this.titleBarButtons.className = 'floating-window-title-buttons';
 
-    // 组装标题栏
+    // 组装标题栏（v2.9.2：最左边先放吉祥物头）
+    this.headerElement.appendChild(this.brandElement);
     this.headerElement.appendChild(this.titleElement);
     this.headerElement.appendChild(this.titleBarButtons);
     this.headerElement.appendChild(this.closeButton);
@@ -597,6 +609,20 @@ class MediaFloatingWindow {
   /**
    * 设置悬浮窗标题
    */
+  /**
+   * 标题栏那只头像的地址（v2.9.2）。
+   * 拿不到扩展运行时（单测 / 资源缺失）返回空串，头像位就留空 —— 不留破图标方块。
+   */
+  _mascotFaceUrl() {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.runtime &&
+          typeof chrome.runtime.getURL === 'function') {
+        return chrome.runtime.getURL('icons/mascot/face-idle.svg');
+      }
+    } catch (e) { /* 测试环境没有 runtime */ }
+    return '';
+  }
+
   setTitle(title) {
     this.title = title;
     this.titleElement.textContent = title;
@@ -624,6 +650,12 @@ class MediaFloatingWindow {
     this.windowElement.style.display = 'flex';
     document.body.appendChild(this.windowElement);
     this.isShown = true;
+
+    // v2.9.3：深色站点上整窗换暖黑。挂一次就够 —— attach 会记住回调，
+    // 之后站点/系统换主题由它自己更新；元素被移出页面时它会自注销，不会越积越多。
+    if (!this._detachTheme && typeof SiteTheme !== 'undefined' && SiteTheme.shared) {
+      this._detachTheme = SiteTheme.shared.attach(this.windowElement);
+    }
 
     // v2.5.47：每次显示都是完整窗口，不继承上一次的最小化状态。
     // 如果上次是最小化着被关掉的，子元素身上还留着 display:none，这里一并还回去。

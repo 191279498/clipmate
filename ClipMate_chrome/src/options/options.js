@@ -385,7 +385,15 @@ class SettingsPage {
 
     host.textContent = '';
     if (!catalog.length) {
-      host.appendChild(el('div', 'empty', '没有匹配的站点'));
+      // v2.9.2：空结果时让吉祥物举着放大镜找一下，比一行灰字更像「我找过了，没有」
+      var box = el('div', 'empty');
+      var art = el('img', 'empty-art');
+      art.src = '../../icons/mascot/hero-search.svg';
+      art.alt = '';
+      art.draggable = false;
+      box.appendChild(art);
+      box.appendChild(el('div', null, '没有匹配的站点'));
+      host.appendChild(box);
       this.renderCount(0);
       return;
     }

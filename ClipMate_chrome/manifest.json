@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "采媒灵",
   "short_name": "采媒灵",
-  "version": "2.9.1",
+  "version": "2.9.3",
   "description": "从多个媒体网站提取结构化信息，支持书籍、影视、游戏的统一字段映射",
   "minimum_chrome_version": "116",
   "permissions": [
@@ -218,6 +218,7 @@
         "src/content/extractors/metacritic-game.js",
         "src/content/extractors/xiaoheihe-game.js",
         "src/content/extractors/mobygames-game.js",
+        "src/content/ui/site-theme.js",
         "src/content/ui/floating-window-styles.js",
         "src/content/ui/notice.js",
         "src/content/ui/floating-window.js",

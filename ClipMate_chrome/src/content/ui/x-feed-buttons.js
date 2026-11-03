@@ -66,19 +66,27 @@
    * 而 28px 的容器里放 30px 宽的图、让左边 1px 透明边被裁掉，是无损的
    * ——母版左右各有 19px 透明留白，裁的正是这段空白。
    */
-  var MASCOT_REL = 'icons/mascot/mascot.png';
-  var MASCOT_W = 30;
-  var MASCOT_H = 25.6;                   // 母版 480×409，按比例
+  /* v2.9.2：28px 的小按钮只能用「头部特写」，全身像缩到这个尺寸只剩一团白。
+     素材自带 6% 内边距（拆图时加的），所以 31px 的框里实际只画出约 29px 的头。 */
+  var MASCOT_W = 31;
+  var MASCOT_H = 27.5;                   // face-idle 宽高比 1.129
 
-  /** 取扩展内资源绝对地址；没有扩展运行时（单测/资源缺失）返回空串，走透明降级 */
-  function mascotUrl() {
+  /** 取某形态的绝对地址；没有扩展运行时（单测/资源缺失）返回空串，走透明降级 */
+  function mascotUrl(name) {
+    var rel = 'icons/mascot/' + (name || 'face-idle') + '.svg';
     try {
       if (typeof chrome !== 'undefined' && chrome.runtime &&
           typeof chrome.runtime.getURL === 'function') {
-        return chrome.runtime.getURL(MASCOT_REL);
+        return chrome.runtime.getURL(rel);
       }
     } catch (e) { /* 测试环境没有 runtime */ }
     return '';
+  }
+
+  /** 生成「某状态换一张脸」的规则；拿不到资源时返回空串（保留待命那张） */
+  function faceRule(state, name) {
+    var u = mascotUrl(name);
+    return u ? '.' + BTN_CLASS + '[data-state="' + state + '"]{background-image:url("' + u + '");}' : '';
   }
 
   /**
@@ -116,7 +124,9 @@
       + '.' + BTN_CLASS + ':active{transform:scale(.95);}'
       + '.' + BTN_CLASS + '[data-state="busy"]{opacity:.45;cursor:default;}'
       + '.' + BTN_CLASS + '[data-state="ok"]{background-color:rgba(0,186,124,.20);}'
-      + '.' + BTN_CLASS + '[data-state="fail"]{background-color:rgba(244,33,46,.18);}';
+      + '.' + BTN_CLASS + '[data-state="fail"]{background-color:rgba(244,33,46,.18);}'
+      // v2.9.2：有结果时换一张脸 —— 待命和进行中都是平静脸，成功笑、失败呆
+      + faceRule('ok', 'face-happy') + faceRule('fail', 'face-blank');
     (document.head || document.documentElement).appendChild(style);
   }
 

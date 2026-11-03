@@ -42,3 +42,11 @@ GitHub公钥_复制这一行.txt
 # ---- popup 借壳预览（本地临时生成，含桩） ----
 tests/_popup-preview.html
 tests/_mini-btn-preview.html
+# 上一行只挡 _preview* 前缀，脚本生成的是 _xxx-preview.html（后缀不同），需单列。
+# 这两个分别由 scripts/make-options-preview.py / make-fw-preview.py 生成，不入库。
+# tests/_btn-preview.html 是手写的，没有脚本能再生，故意不列在这里。
+tests/_options-preview.html
+tests/_fw-preview.html
+
+# ---- 截图中间产物（3.4MB，随时可重生成） ----
+_shots/

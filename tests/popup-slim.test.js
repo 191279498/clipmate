@@ -374,8 +374,8 @@ async function main() {
 
   // 空状态里的吉祥物：路径要能真的指到扩展包内那张母版（裂图 jsdom 看不出来）
   const artSrc = unknown.doc.getElementById('popEmptyArt').getAttribute('src');
-  eq('空状态头像指向吉祥物母版', artSrc, '../../icons/mascot/mascot.png');
-  ok('吉祥物母版文件真的在包里',
+  eq('空状态头像是「探头看」的 hero-peek（没收录的站）', artSrc, '../../icons/mascot/hero-peek.svg');
+  ok('这张 SVG 真的在包里（裂图 jsdom 看不出来）',
     fs.existsSync(path.resolve(POPUP_DIR, artSrc)),
     path.resolve(POPUP_DIR, artSrc));
 

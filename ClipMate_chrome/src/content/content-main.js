@@ -76,6 +76,12 @@ class MediaExtractor {
     const startTime = performance.now();
     safeLog('🔍 ===== 媒体提取器初始化开始 =====');
 
+    // v2.9.3：先开站点明暗监听，再建按钮/浮窗 —— 反过来的话第一屏元素会先按浅色画一次，
+    // 判定回来后再变深，出现一闪。判定本身是同步的，开监听只是为后续变化做准备。
+    if (typeof SiteTheme !== 'undefined' && SiteTheme.shared) {
+      try { SiteTheme.shared.start(); } catch (e) { /* 判定不可用时一律按浅色 */ }
+    }
+
     // v2.8.0：任何入口改了设置都即时生效 —— 不再依赖 popup 发消息给「当前标签」。
     // 以前在设置页改站点设置，其他已打开的标签要刷新才生效，和「改完立即生效」的文案对不上。
     this._bindConfigWatcher();
@@ -666,7 +672,9 @@ class MediaExtractor {
       if (!this.autoExtract) return;
       // 浮窗已经开着就不重复提取，避免把用户正在看的内容刷掉
       if (this.modalManager && this.modalManager.isOpen) return;
-      Promise.resolve(this.handleExtract()).catch((e) => safeLog('[自动提取] 失败: ' + e.message));
+      // v2.9.2：带 auto 标记 —— 自动提取不弹「正在读取页面」的提示条，
+      // 用户没点任何东西，页面一打开就冒条子会像报错。
+      Promise.resolve(this.handleExtract({ auto: true })).catch((e) => safeLog('[自动提取] 失败: ' + e.message));
     }, delayMs);
   }
 
@@ -721,8 +729,8 @@ class MediaExtractor {
     }
 
     try {
-      // 显示加载状态
-      this.buttonManager.setLoading(true);
+      // 显示加载状态（v2.9.2：自动提取只改按钮，不弹陪伴提示条）
+      this.buttonManager.setLoading(true, { quiet: !!(opts && opts.auto) });
 
       // 检查缓存中是否有可用的提取结果
       let extractedData;

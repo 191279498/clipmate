@@ -79,6 +79,44 @@ function propIn(css, selector, prop) {
   return p ? p[1].trim() : null;
 }
 
+/**
+ * 把 var(--cm-x, 回退值) 还原成回退值。
+ *
+ * v2.9.3 起浮窗/按钮的颜色从写死改成走 --cm-* 变量（为了能整体切深色），
+ * 断言不能因此失效 —— 否则「改个变量名」就能让这条测试永远是绿的。
+ * 这里剥掉变量壳，比对的仍然是「最终会渲染成什么颜色」。
+ *
+ * 为什么手写括号计数而不是正则：回退值本身可能带括号，
+ * 例如 var(--cm-shadow-a30, rgba(0, 0, 0, 0.3))，正则会把 rgba 的 ) 当成结尾。
+ */
+function resolveVars(str) {
+  if (typeof str !== 'string') return str;
+  let out = str;
+  let guard = 0;
+  while (out.indexOf('var(') !== -1 && guard++ < 50) {
+    const start = out.lastIndexOf('var(');
+    let depth = 0;
+    let end = -1;
+    for (let i = start + 3; i < out.length; i++) {
+      if (out[i] === '(') depth++;
+      else if (out[i] === ')') { depth--; if (depth === 0) { end = i; break; } }
+    }
+    if (end === -1) break;
+    const inner = out.slice(start + 4, end);
+    let d = 0;
+    let comma = -1;
+    for (let i = 0; i < inner.length; i++) {
+      if (inner[i] === '(') d++;
+      else if (inner[i] === ')') d--;
+      else if (inner[i] === ',' && d === 0) { comma = i; break; }
+    }
+    if (comma === -1) break;                       // 没有回退值的 var 不动它
+    const fallbackValue = inner.slice(comma + 1).trim();
+    out = out.slice(0, start) + fallbackValue + out.slice(end + 1);
+  }
+  return out;
+}
+
 /* ============================================================
    一、文档里的 token 与代码里的实际值必须是同一个字符串
    ============================================================ */
@@ -94,22 +132,23 @@ ok('设计系统里能读到 --line', !!LINE, LINE);
 
 eq('popup 底色 = 文档 --paper', (propIn(POPUP_CSS, 'body', 'background') || '').toUpperCase(), PAPER);
 eq('浮窗内容区底色 = 文档 --paper',
-  (propIn(WIN, '.floating-window-content', 'background') || '').toUpperCase(), PAPER);
+  resolveVars(propIn(WIN, '.floating-window-content', 'background') || '').toUpperCase(), PAPER);
 eq('浮窗标题栏底色 = 文档 --surface-2',
-  (propIn(WIN, '.floating-window-header', 'background') || '').toUpperCase(), SURFACE2);
+  resolveVars(propIn(WIN, '.floating-window-header', 'background') || '').toUpperCase(), SURFACE2);
 eq('浮窗标题栏下边框 = 文档 --line',
-  (propIn(WIN, '.floating-window-header', 'border-bottom') || '').replace(/\s+/g, ' ').toUpperCase(),
+  resolveVars(propIn(WIN, '.floating-window-header', 'border-bottom') || '').replace(/\s+/g, ' ').toUpperCase(),
   '1PX SOLID ' + LINE);
 eq('浮窗正文字色 = 文档 --ink',
-  (propIn(WIN, '.floating-window-content', 'color') || '').toUpperCase(), INK);
+  resolveVars(propIn(WIN, '.floating-window-content', 'color') || '').toUpperCase(), INK);
 
 // 收起后的胶囊也是一张纸，不能退回纯白
 eq('胶囊底色 = 文档 --paper',
-  (propIn(WIN, '.floating-window-capsule', 'background') || '').toUpperCase(), PAPER);
+  resolveVars(propIn(WIN, '.floating-window-capsule', 'background') || '').toUpperCase(), PAPER);
 
 // 外层兜底容器（content-styles.css 里那条 !important）也要跟着，否则外层白底会盖住纸色
 ok('浮窗外层兜底背景也是纸色（content-styles.css）',
-  /\.media-floating-window\s*\{[^}]*background-color:\s*#F7F6F2/i.test(PAGE),
+  resolveVars(propIn(PAGE, '.media-floating-window', 'background-color') || '')
+    .replace(/\s*!important/gi, '').toUpperCase() === PAPER,
   (propIn(PAGE, '.media-floating-window', 'background-color') || ''));
 
 /* ============================================================
@@ -148,7 +187,8 @@ OLD_POPUP.forEach(([hex, label]) => {
 
 // 品牌蓝必须还是那一个（按钮主色不能被顺手改掉）
 ok('主按钮仍是品牌蓝 #056bf4（没被本轮换色带走）',
-  /button\.media-extractor-button\s*\{[^}]*background:\s*#056bf4/i.test(PAGE));
+  resolveVars(propIn(PAGE, '.media-extractor-button', 'background') || '').toUpperCase().indexOf('#056BF4') !== -1,
+  (propIn(PAGE, '.media-extractor-button', 'background') || ''));
 
 /* ============================================================
    三、同一语义在三处必须同色
@@ -183,10 +223,11 @@ ok('成功图标色与成功条左边线同色',
 section('四、popup 空状态（吉祥物 + 一句话 + 出口）');
 
 ok('popup.html 有 #popEmpty 容器', /id="popEmpty"/.test(POPUP_HTML));
-ok('空状态里有吉祥物 image', /class="pop-empty-art"[^>]*src="\.\.\/\.\.\/icons\/mascot\/mascot\.png"/.test(POPUP_HTML),
+ok('空状态里有吉祥物 image（v2.9.2 起是矢量形态）',
+  /class="pop-empty-art"[^>]*src="\.\.\/\.\.\/icons\/mascot\/[a-z-]+\.svg"/.test(POPUP_HTML),
   (POPUP_HTML.match(/pop-empty-art[^>]*/) || [''])[0]);
-ok('吉祥物母版文件存在',
-  fs.existsSync(path.join(CHROME, 'icons/mascot/mascot.png')));
+ok('吉祥物素材是 23 个矢量形态（旧 mascot.png 已退役）',
+  fs.readdirSync(path.join(CHROME, 'icons/mascot')).filter((f) => f.endsWith('.svg')).length === 23);
 ok('空状态标题用设计稿文案',
   /id="popEmptyTitle"[^>]*>这个页面还没有可提取的内容</.test(POPUP_HTML));
 ok('空状态有「查看支持的站点」出口', /id="openSites"[^>]*>查看支持的站点</.test(POPUP_HTML));
@@ -199,7 +240,10 @@ ok('css 里空状态描述做了两行均衡（text-wrap: balance）',
 ok('深色主题给空状态标题另配了亮色',
   /\.theme-dark\s+\.pop-empty-title\s*\{[^}]*color:\s*#F5F1E8/i.test(POPUP_CSS));
 
-ok('js 有 _showEmpty 方法', /_showEmpty\s*\(\s*title\s*,\s*desc\s*\)/.test(POPUP_JS));
+ok('js 有 _showEmpty 方法（v2.9.2 多了第三个参数：换用哪张图）',
+  /_showEmpty\s*\(\s*title\s*,\s*desc\s*,\s*art\s*\)/.test(POPUP_JS));
+ok('两种「空」用两张不同的图（内部页 face-blank / 没收录 hero-peek）',
+  /'face-blank'/.test(POPUP_JS) && /'hero-peek'/.test(POPUP_JS));
 ok('js 里内部页走空状态（浏览器自己的页面读不到）',
   /浏览器自己的页面读不到/.test(POPUP_JS));
 ok('js 里没收录的站走空状态', /这个页面还没有可提取的内容/.test(POPUP_JS));
@@ -211,12 +255,98 @@ ok('空状态出口指到设置页的 #sites', /'#sites'/.test(POPUP_JS));
 ok('旧的「不支持单独设置」灰字已移除', !/不支持单独设置/.test(POPUP_JS) && !/不支持单独设置/.test(POPUP_HTML));
 
 /* ============================================================
-   五、版本号
+   四·五、深色可切换（v2.9.3）
    ============================================================ */
-section('五、版本号');
+section('四·五、深色站点上整体换暖黑');
+
+// 变量层存在的理由就是「能整体切」，所以先确认颜色真的走了变量，不是又写死一份
+ok('浮窗底色走 --cm-bg 变量（不是写死）', /background:\s*var\(--cm-bg/.test(WIN));
+ok('页面按钮底色走 --cm-blue 变量', /background:\s*var\(--cm-blue/.test(PAGE));
+ok('深色组 .clipmate-dark 在页面样式里', /\.clipmate-dark\s*\{/.test(PAGE));
+
+const darkBlock = (/\.clipmate-dark\s*\{([^}]*)\}/.exec(PAGE) || [null, ''])[1];
+ok('深色底色是暖黑 #191817', /--cm-bg:\s*#191817/i.test(darkBlock), darkBlock.slice(0, 40));
+ok('深色正文字是暖白 #EDE9E0', /--cm-ink:\s*#EDE9E0/i.test(darkBlock));
+ok('深色强调色是浅蓝 #8FB6FF', /--cm-blue:\s*#8FB6FF/i.test(darkBlock));
+// 浅蓝底上必须是深字。复用 --cm-white 就会变成「浅蓝底 + 暖白字」，糊成一片
+ok('强调色上的文字在深色下反向变深', /--cm-on-accent:\s*#1[0-9a-f]{5}/i.test(darkBlock));
+
+/** 取某选择器块里定义的全部 --cm-* 变量名 */
+function varsIn(block) {
+  const names = new Set();
+  const re = /--cm-([a-z0-9-]+)\s*:/g;
+  let m;
+  while ((m = re.exec(block)) !== null) names.add(m[1]);
+  return names;
+}
+const rootVars = varsIn((/:root\s*\{([^}]*)\}/.exec(PAGE) || [null, ''])[1]);
+const darkVars = varsIn(darkBlock);
+const missingVars = [...rootVars].filter((v) => !darkVars.has(v));
+ok('深色组覆盖了全部 ' + rootVars.size + ' 个变量（少一个就在深色下露浅色）',
+  rootVars.size >= 35 && missingVars.length === 0, missingVars.join(', '));
+
+/* ---- 待命按钮在深色下必须「沉下去」，不能跟着强调色变亮 ----
+   这是本轮最容易做反的一处：--cm-blue 在深色下翻成浅蓝（那是给字和边用的），
+   按钮底要是也用它，黑色页面上就是一块亮蓝板，比原来的白底更刺眼。 */
+const btnRule = propIn(PAGE, 'button.media-extractor-button', 'background') || '';
+ok('待命按钮底色走 --cm-btn 专用变量（不跟 --cm-blue 变亮）',
+  /var\(--cm-btn,/.test(btnRule), btnRule);
+ok('深色下按钮底色是暖黑面 #222120',
+  /--cm-btn:\s*#222120/i.test(darkBlock));
+ok('深色下按钮字色是浅蓝 #8FB6FF',
+  /--cm-btn-ink:\s*#8FB6FF/i.test(darkBlock));
+ok('待命按钮字色也走变量', /color:\s*var\(--cm-btn-ink,/.test(PAGE));
+// 成功/失败是瞬态反馈，底保持亮色；但亮底上必须换成近黑字，否则浅色字糊在亮绿/亮红上
+ok('成功态显式给了字色（不继承按钮默认字色）',
+  /\.media-extractor-button\.success\s*\{[^}]*color:\s*var\(--cm-on-accent/.test(PAGE.replace(/\n/g, ' ')));
+ok('失败态显式给了字色',
+  /\.media-extractor-button\.error\s*\{[^}]*color:\s*var\(--cm-on-accent/.test(PAGE.replace(/\n/g, ' ')));
+
+// 判定模块必须真被加载，否则 .clipmate-dark 永远不会挂上去
+const MANIFEST_RAW = read(F.manifest);
+const jsList = (MANIFEST_RAW.match(/"src\/content\/ui\/[a-z-]+\.js"/g) || []);
+ok('site-theme.js 已登记进 content_scripts',
+  jsList.some((x) => x.indexOf('site-theme') !== -1), jsList.length + ' 个 ui 模块');
+const idxTheme = MANIFEST_RAW.indexOf('src/content/ui/site-theme.js');
+const idxFwStyles = MANIFEST_RAW.indexOf('src/content/ui/floating-window-styles.js');
+ok('site-theme.js 排在浮窗样式之前加载（按钮/浮窗创建时就能用）',
+  idxTheme !== -1 && idxFwStyles !== -1 && idxTheme < idxFwStyles);
+
+/* ============================================================
+   五、设置页也进纸色体系（v2.9.3）
+   ============================================================ */
+section('五、设置页配色');
+
+const OPT_CSS = read(path.join(SRC, 'options/options.css'));
+const optLight = (/:root\s*\{([^}]*)\}/.exec(OPT_CSS) || [null, ''])[1];
+const optDark = (/html\[data-theme="dark"\]\s*\{([^}]*)\}/.exec(OPT_CSS) || [null, ''])[1];
+const optForceLight = (/html\[data-theme="light"\]\s*\{([^}]*)\}/.exec(OPT_CSS) || [null, ''])[1];
+
+ok('设置页浅色底 = 纸色 #F7F6F2', /--bg:\s*#F7F6F2/i.test(optLight));
+ok('设置页强调色 = 品牌蓝 #056BF4', /--accent:\s*#056BF4/i.test(optLight));
+ok('设置页深色底 = 暖黑 #191817', /--bg:\s*#191817/i.test(optDark));
+ok('设置页深色正文字 = 暖白 #EDE9E0', /--ink:\s*#EDE9E0/i.test(optDark));
+// 这是本轮修掉的真 bug：只覆盖前 16 个变量的话，「系统深色 + 手动选浅色」
+// 会让 --danger 一直是粉色，浅底上「删除」这类字发飘
+ok('手动选浅色时把 --danger / --shadow 一起给回来',
+  /--danger:/.test(optForceLight) && /--shadow:/.test(optForceLight));
+ok('设置页三套变量个数一致（不会漏定义）',
+  varsIn(optLight).size === varsIn(optDark).size &&
+  varsIn(optLight).size === varsIn(optForceLight).size,
+  [varsIn(optLight).size, varsIn(optDark).size, varsIn(optForceLight).size].join(' / '));
+
+// 旧色名单：设置页原来那套紫灰必须清干净
+ok('设置页没有旧紫 #6b4ef2 残留', !/6b4ef2/i.test(OPT_CSS));
+ok('设置页没有旧浅紫 #9b8cff 残留', !/9b8cff/i.test(OPT_CSS));
+ok('设置页没有旧冷灰底 #f6f7f8 残留', !/f6f7f8/i.test(OPT_CSS));
+
+/* ============================================================
+   六、版本号
+   ============================================================ */
+section('六、版本号');
 
 const MANIFEST = JSON.parse(read(F.manifest));
-eq('manifest 版本是 2.9.1', MANIFEST.version, '2.9.1');
+eq('manifest 版本是 2.9.3', MANIFEST.version, '2.9.3');
 
 /* ============================================================
    汇总

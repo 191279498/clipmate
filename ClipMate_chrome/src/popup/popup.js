@@ -120,7 +120,8 @@ class PopupManager {
       nameEl.classList.add('is-plain');
       this._showEmpty(
         '这里没有可提取的内容',
-        '采媒灵只在普通网页上工作，浏览器自己的页面读不到。'
+        '采媒灵只在普通网页上工作，浏览器自己的页面读不到。',
+        'face-blank'
       );
       return;
     }
@@ -138,7 +139,8 @@ class PopupManager {
       hostEl.textContent = '';
       this._showEmpty(
         '这个页面还没有可提取的内容',
-        '打开条目详情页，采媒灵会自动认出它属于哪一类。'
+        '打开条目详情页，采媒灵会自动认出它属于哪一类。',
+        'hero-peek'
       );
       return;
     }
@@ -149,13 +151,22 @@ class PopupManager {
   /**
    * 空状态（v2.9.1）：没东西可提取时，不摆一排灰掉的开关。
    * 只留「一句话 + 一个出口」——标题栏仍写着当前站，读的人知道自己在哪、能去哪。
+   *
+   * v2.9.2：图跟着场景换（第三个参数）。两种「空」其实不是一回事：
+   *   浏览器内部页 —— 采媒灵根本伸不进去，一脸懵（face-blank）；
+   *   没收录的站   —— 它探头往外看，意思是「这站我还不认识」（hero-peek）。
+   *   同一张图撑两种场景，会让人以为是同一个原因。
    */
-  _showEmpty(title, desc) {
+  _showEmpty(title, desc, art) {
     const box = document.getElementById('popEmpty');
     const titleEl = document.getElementById('popEmptyTitle');
     const descEl = document.getElementById('popEmptyDesc');
+    const artEl = document.getElementById('popEmptyArt');
     if (titleEl) titleEl.textContent = title;
     if (descEl) descEl.textContent = desc;
+    if (artEl && art) {
+      artEl.src = '../../icons/mascot/' + art + '.svg';
+    }
     if (box) box.hidden = false;
     // 设置行与底部状态一起收起：留着只会让人以为「能改，只是没显示」
     document.getElementById('siteRows').hidden = true;

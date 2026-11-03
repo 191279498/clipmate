@@ -110,7 +110,13 @@ console.log('\nA. 标题文字不再显示');
 
   const head = sr.querySelector('.floating-window-header');
   eq('标题栏仍存在（拖窗把手）', !!head, true);
-  eq('标题栏子元素仍是 3 个（标题 + 按钮组 + 关闭）', head.children.length, 3);
+  // v2.9.2：最左边多了一只吉祥物头（品牌锚点），从 3 个变 4 个
+  eq('标题栏子元素是 4 个（吉祥物 + 标题 + 按钮组 + 关闭）', head.children.length, 4);
+  ok('第一个子元素是吉祥物（放最左，不许挤到按钮后面）',
+    !!head.children[0] && head.children[0].className === 'floating-window-brand',
+    head.children[0] && head.children[0].className);
+  eq('吉祥物对读屏隐藏（纯装饰）',
+    head.children[0] && head.children[0].getAttribute('aria-hidden'), 'true');
 
   // 真正决定「挤不挤」的是标题有没有宽度：display:none 的元素不参与 flex 排布
   let threw = null;

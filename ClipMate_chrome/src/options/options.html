@@ -12,6 +12,8 @@
     <!-- ============ 左侧导航 ============ -->
     <aside class="side">
       <div class="brand">
+        <!-- v2.9.2：品牌位放吉祥物的头（齿轮形态 —— 调设置的地方，它也在拧旋钮） -->
+        <img class="brand-face" src="../../icons/mascot/face-gear.svg" alt="" draggable="false">
         <span class="brand-name">采媒灵</span>
         <span class="brand-ver" id="brandVersion"></span>
       </div>
@@ -140,9 +142,14 @@
 
       <!-- ---------- 关于 ---------- -->
       <section class="tab" id="tab-about" hidden>
-        <header class="tab-head">
-          <h1>关于</h1>
-          <p class="lead">从多个媒体网站提取结构化信息，按统一字段输出。</p>
+        <header class="tab-head about-head">
+          <div>
+            <h1>关于</h1>
+            <p class="lead">从多个媒体网站提取结构化信息，按统一字段输出。</p>
+          </div>
+          <!-- v2.9.2：关于页放一尊全身像（挥手打招呼）。只有这一页适合放大的插画 ——
+               其它页都是要动手操作的表单，塞图会抢走注意力。 -->
+          <img class="about-art" src="../../icons/mascot/hero-wave.svg" alt="" draggable="false">
         </header>
 
         <div class="card">

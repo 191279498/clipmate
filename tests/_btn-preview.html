@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>页面内按钮 / 提示条 预览（v2.9.2）</title>
+<!--
+  借壳预览：直接引用扩展真实的 content-styles.css 和真实的头像文件。
+  为什么需要它：按钮是注入到第三方页面的，扩展页又无法自动化，
+  只能把真样式搬到普通 HTML 上按真尺寸（48px 按钮 / 28px 小按钮）看。
+  这里的定位覆盖（position:relative）只为把四个状态并排摆开，
+  不改变任何尺寸与配色。
+
+  v2.9.2 修：放大行原来用 transform:scale()，布局盒子不跟着变大 →
+  上一行的说明文字被下一行的头像压住（截图里看着像「被裁掉」）。
+  改用 css zoom（会真正参与布局），放大的行才有自己的空间。
+-->
+<link rel="stylesheet" href="../ClipMate_chrome/src/content/content-styles.css?v=295">
+<style>
+  html, body { margin: 0; }
+  body {
+    padding: 24px 28px 40px;
+    font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: #FFFFFF;
+    color: #111820;
+  }
+  body.dark { background: #15202B; color: #E7E9EA; }
+  h3 { font-size: 12px; font-weight: 600; color: #6B7278; margin: 34px 0 12px; letter-spacing: .04em; }
+  body.dark h3 { color: #8B98A5; }
+  h3:first-child { margin-top: 0; }
+
+  /* 头像会溢出按钮上下沿，所以：按钮顶部对齐、说明文字往下留出 20px */
+  .row { display: flex; align-items: flex-start; gap: 46px; flex-wrap: wrap; }
+  .cap { font-size: 11px; color: #8A8578; margin-top: 20px; white-space: nowrap; }
+  body.dark .cap { color: #94A3B0; }
+
+  /* 只为并排展示，把固定定位改回文档流；尺寸/颜色一个都不改 */
+  .stage button.media-extractor-button {
+    position: relative !important;
+    top: auto !important; right: auto !important; left: auto !important;
+    margin: 0 !important;
+  }
+  /* 提示条同理（它本来是 fixed 贴在右上角） */
+  .stage .clipmate-reading-hint {
+    position: relative !important;
+    top: auto !important; right: auto !important;
+    opacity: 1 !important; transform: none !important;
+  }
+  .bgband { padding: 18px; border-radius: 10px; background: #F1EFE8; }
+  body.dark .bgband { background: #1E2732; }
+
+  /* 放大行：zoom 加在每个格子上（会真正参与布局），不会压到上一行的说明文字。
+     排成两列——48px 的按钮放大 2.2 倍后一个就占 330px，一排放四个会挤出画布。 */
+  .zoom { display: grid; grid-template-columns: repeat(2, max-content); gap: 30px 54px; align-items: start; margin-top: 30px; }
+  .zoom > div { zoom: 2.2; }
+  .zoom .cap { margin-top: 22px; }
+  .zoom.four { grid-template-columns: repeat(4, max-content); }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <h3>主按钮 · 四态（真 48px，未放大）</h3>
+  <div class="row" id="main"></div>
+
+  <h3>主按钮 · 放大 2.2 倍（看头像细节）</h3>
+  <div class="row zoom" id="mainzoom"></div>
+
+  <h3>读取提示条（提取超过 700ms 才出现，不吃点击）</h3>
+  <div class="row" id="hint"></div>
+
+  <h3>逐帖小按钮 · 28px（真尺寸，未放大）</h3>
+  <div class="row bgband" id="mini"></div>
+
+  <h3>逐帖小按钮 · 放大 2.2 倍</h3>
+  <div class="row zoom four" id="minizoom"></div>
+
+</div>
+
+<script>
+  var DIR = '../ClipMate_chrome/icons/mascot/';
+  function url(n) { return 'url("' + DIR + n + '.svg")'; }
+
+  var STATES = [
+    { cls: '',            face: 'hero-doc',  label: '提取',   note: '待命' },
+    { cls: 'loading',     face: 'hero-doc',  label: '提取中', note: '提取中（头像左右轻晃）' },
+    { cls: 'success',     face: 'hero-done', label: '完成',   note: '成功', badge: 'success' },
+    { cls: 'error',       face: 'hero-cry',  label: '重试',   note: '失败', badge: 'error' }
+  ];
+
+  function makeBtn(s) {
+    var b = document.createElement('button');
+    b.className = 'media-extractor-button' + (s.cls ? ' ' + s.cls : '');
+    var ring = document.createElement('span');
+    ring.className = 'clipmate-mascot-ring';
+    var face = document.createElement('span');
+    face.className = 'clipmate-mascot';
+    face.setAttribute('data-state', s.cls || 'normal');
+    face.style.backgroundImage = url(s.face);
+    ring.appendChild(face);
+    b.appendChild(ring);
+    b.appendChild(document.createTextNode(s.label));
+    if (s.badge) {
+      var d = document.createElement('span');
+      d.className = 'clipmate-badge';
+      d.setAttribute('data-tone', s.badge);
+      d.setAttribute('aria-hidden', 'true');
+      b.appendChild(d);
+    }
+    var wrap = document.createElement('div');
+    wrap.appendChild(b);
+    var cap = document.createElement('div');
+    cap.className = 'cap';
+    cap.textContent = s.note;
+    wrap.appendChild(cap);
+    return wrap;
+  }
+
+  ['main', 'mainzoom'].forEach(function (id) {
+    var host = document.getElementById(id);
+    STATES.forEach(function (s) { host.appendChild(makeBtn(s)); });
+  });
+
+  // 读取提示条
+  (function () {
+    var box = document.createElement('div');
+    box.className = 'clipmate-reading-hint is-on';
+    var art = document.createElement('span');
+    art.className = 'clipmate-reading-art';
+    art.style.backgroundImage = url('face-busy');
+    var t = document.createElement('span');
+    t.className = 'clipmate-reading-text';
+    t.textContent = '正在读取页面…';
+    box.appendChild(art); box.appendChild(t);
+    document.getElementById('hint').appendChild(box);
+  })();
+
+  // 逐帖小按钮（结构照 x/weibo/ig，28px，图片 31×27.5 居中）
+  var MINI = [
+    { st: 'idle', face: 'face-idle',  note: '待命' },
+    { st: 'busy', face: 'face-idle',  note: '提取中（半透明）' },
+    { st: 'ok',   face: 'face-happy', note: '已提取' },
+    { st: 'fail', face: 'face-blank', note: '失败' }
+  ];
+  function gray(n) {
+    var b = document.createElement('button');
+    b.style.cssText = 'all:unset;display:inline-block;width:28px;height:28px;border-radius:9px;'
+      + 'background-repeat:no-repeat;background-position:center;background-size:31px 27.5px;'
+      + 'cursor:pointer;background-image:' + url(MINI[n].face) + ';';
+    if (MINI[n].st === 'busy') b.style.opacity = '.45';
+    if (MINI[n].st === 'ok') b.style.backgroundColor = 'rgba(0,186,124,.20)';
+    if (MINI[n].st === 'fail') b.style.backgroundColor = 'rgba(244,33,46,.18)';
+    var wrap = document.createElement('div');
+    wrap.appendChild(b);
+    var cap = document.createElement('div');
+    cap.className = 'cap';
+    cap.textContent = MINI[n].note;
+    wrap.appendChild(cap);
+    return wrap;
+  }
+  ['mini', 'minizoom'].forEach(function (id) {
+    var host = document.getElementById(id);
+    for (var i = 0; i < MINI.length; i++) host.appendChild(gray(i));
+  });
+
+  // ?dark=1 看深色站点上的表现。
+  // 真实运行时是 site-theme.js 判完页面底色后给根元素挂 .clipmate-dark，
+  // 预览页里没有 content script，只能手动挂一次来还原同样的结果。
+  if (new URLSearchParams(location.search).get('dark') === '1') {
+    document.body.classList.add('dark');
+    document.querySelectorAll('.media-extractor-button, .clipmate-reading-hint')
+      .forEach(function (el) { el.classList.add('clipmate-dark'); });
+  }
+</script>
+</body>
+</html>

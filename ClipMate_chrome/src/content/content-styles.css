@@ -1,5 +1,131 @@
 /* 媒体信息提取器样式 - 极简风格 */
 
+/* ============ 配色变量（v2.9.3）============
+ *
+ * 【为什么要这一层】
+ *   浮窗、页面按钮、提示条原来把色值写死在每条规则里，想加深色就得全表改一遍，
+ *   还会漏。抽成变量后：浅色在 :root 定义一次，深色只要给根元素挂 .clipmate-dark。
+ *
+ * 【为什么变量能进 Shadow DOM】
+ *   custom properties 沿继承链传播，会穿透 shadow 边界。浮窗宿主 .media-floating-window
+ *   在页面里、能给到 .clipmate-dark，影子树里的元素就都读得到同一组值。
+ *
+ * 【fallback 为什么都留一份】
+ *   所有使用处写成 var(--cm-x, 原色值)，这样万一变量没定义（极老浏览器、
+ *   或有人单独引某个规则），颜色自动退回改动前的样子，不会变成透明/黑色。
+ *
+ * 【为什么要 --cm-on-accent】
+ *   浅色时强调色是深蓝、上面配白字；深色时强调色变浅蓝，白字就读不出来了，
+ *   所以「强调色上的文字」必须跟着反向走，不能复用 --cm-white。
+ */
+:root {
+  --cm-bg: #F7F6F2;
+  --cm-surface: #F1EFE8;
+  --cm-white: #FFFFFF;
+  --cm-hover: #E8E4D9;
+  --cm-ink: #111820;
+  --cm-ink2: #6B7278;
+  --cm-ink3: #9aa0a6;
+  --cm-on-accent: #FFFFFF;
+  /* 实心按钮的「底 / 悬停底 / 字」。
+     为什么要单独一组、不复用 --cm-blue：
+     --cm-blue 在深色下会翻成浅蓝（那是给文字和边框用的），
+     但按钮要是也变浅蓝，在黑色页面上就是一块亮色板，比原来的白底还刺眼。
+     所以深色下按钮改成「暖黑面 + 浅蓝字 + 浅蓝边」——和浮窗同一套语言，不抢眼。
+     成功/失败态不跟这套走：它们是瞬态反馈，亮一点反而更容易被看到。 */
+  --cm-btn: #056BF4;
+  --cm-btn-hover: #0458CC;
+  --cm-btn-ink: #FFFFFF;
+  --cm-line: #E1DCD1;
+  --cm-line-mid: #D9D3C5;
+  --cm-line-soft: #D5CFC1;
+  --cm-line-faint: #C9C3B5;
+  --cm-line-strong: #CBC5B7;
+  --cm-blue: #056BF4;
+  --cm-blue-deep: #0448A6;
+  --cm-blue-soft: #EEF4FF;
+  --cm-blue-a16: rgba(5, 107, 244, 0.16);
+  --cm-blue-a40: rgba(5, 107, 244, 0.4);
+  --cm-blue-a45: rgba(5, 107, 244, 0.45);
+  --cm-blue-a55: rgba(5, 107, 244, 0.55);
+  --cm-ok: #0E7A3E;
+  --cm-ok-deep: #0B5A2E;
+  --cm-ok-bright: #12a150;
+  --cm-ok-soft: #EAF7F0;
+  --cm-ok-a40: rgba(18, 161, 80, 0.4);
+  --cm-ok-a55: rgba(18, 161, 80, 0.55);
+  --cm-err: #B42318;
+  --cm-err-deep: #8C1D16;
+  --cm-err-deep2: #c23038;
+  --cm-err-bright: #E0453C;
+  --cm-err-bright2: #e5484d;
+  --cm-err-soft: #FDECEC;
+  --cm-err-a40: rgba(229, 72, 77, 0.4);
+  --cm-err-a55: rgba(229, 72, 77, 0.55);
+  --cm-warn-soft: #FDF3D6;
+  --cm-warn-soft2: #FBF3CE;
+  --cm-warn-line: #E8C46A;
+  --cm-ink-a04: rgba(17, 24, 32, 0.04);
+  --cm-ink-a16: rgba(17, 24, 32, 0.16);
+  --cm-ink-a35: rgba(17, 24, 32, 0.35);
+  --cm-shadow-a12: rgba(0, 0, 0, 0.12);
+  --cm-shadow-a18: rgba(15, 23, 42, 0.18);
+  --cm-shadow-a30: rgba(0, 0, 0, 0.3);
+  --cm-shadow-a50: rgba(0, 0, 0, 0.5);
+}
+
+/* 暖黑。挂在浮窗宿主 / 提取按钮 / 提示条的根元素上，整棵子树一起变。
+   写在这条之后，同特异性靠顺序覆盖 :root。 */
+.clipmate-dark {
+  --cm-bg: #191817;
+  --cm-surface: #222120;
+  --cm-white: #1F1E1C;
+  --cm-hover: #2B2926;
+  --cm-ink: #EDE9E0;
+  --cm-ink2: #A39C8E;
+  --cm-ink3: #7A7468;
+  --cm-on-accent: #101418;
+  --cm-btn: #222120;
+  --cm-btn-hover: #2B2926;
+  --cm-btn-ink: #8FB6FF;
+  --cm-line: #33302A;
+  --cm-line-mid: #3F3B33;
+  --cm-line-soft: #423D34;
+  --cm-line-faint: #454036;
+  --cm-line-strong: #3A362E;
+  --cm-blue: #8FB6FF;
+  --cm-blue-deep: #B4CEFF;
+  --cm-blue-soft: #1E2A3D;
+  --cm-blue-a16: rgba(143, 182, 255, 0.20);
+  --cm-blue-a40: rgba(143, 182, 255, 0.45);
+  --cm-blue-a45: rgba(143, 182, 255, 0.50);
+  --cm-blue-a55: rgba(143, 182, 255, 0.60);
+  --cm-ok: #5FD08A;
+  --cm-ok-deep: #4CB878;
+  --cm-ok-bright: #4FCB86;
+  --cm-ok-soft: #16281D;
+  --cm-ok-a40: rgba(95, 208, 138, 0.4);
+  --cm-ok-a55: rgba(95, 208, 138, 0.55);
+  --cm-err: #F08A82;
+  --cm-err-deep: #FF9C94;
+  --cm-err-deep2: #E8706A;
+  --cm-err-bright: #F0726A;
+  --cm-err-bright2: #F0726A;
+  --cm-err-soft: #2E1A18;
+  --cm-err-a40: rgba(240, 114, 106, 0.4);
+  --cm-err-a55: rgba(240, 114, 106, 0.55);
+  --cm-warn-soft: #2E2513;
+  --cm-warn-soft2: #332A16;
+  --cm-warn-line: #6B5522;
+  --cm-ink-a04: rgba(255, 255, 255, 0.04);
+  --cm-ink-a16: rgba(0, 0, 0, 0.4);
+  --cm-ink-a35: rgba(0, 0, 0, 0.55);
+  --cm-shadow-a12: rgba(0, 0, 0, 0.4);
+  --cm-shadow-a18: rgba(0, 0, 0, 0.45);
+  --cm-shadow-a30: rgba(0, 0, 0, 0.6);
+  --cm-shadow-a50: rgba(0, 0, 0, 0.7);
+}
+
 /* 模态窗口基础样式 */
 .media-extractor-modal, .modal {
   position: fixed;
@@ -7,7 +133,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--cm-shadow-a50, rgba(0, 0, 0, 0.5));
   display: flex;
   justify-content: center;
   align-items: center;
@@ -20,7 +146,7 @@
 
 /* 模态内容容器 */
 .modal-content {
-  background: white;
+  background: var(--cm-white, #FFFFFF);
   width: 95%;
   max-width: 100%;
   max-height: 95vh;
@@ -36,22 +162,22 @@
   justify-content: space-between;
   align-items: center;
   padding: 2px 4px;
-  color: #111820;
+  color: var(--cm-ink, #111820);
 }
 
 .modal-title {
   margin: 0;
   font-size: 14px;
-  color: #111820;
+  color: var(--cm-ink, #111820);
 }
 
 .modal-close {
   background: none;
-  border: 1px solid #CBC5B7;
+  border: 1px solid var(--cm-line-strong, #CBC5B7);
   font-size: 14px;
   cursor: pointer;
   padding: 2px 6px;
-  color: #111820;
+  color: var(--cm-ink, #111820);
 }
 
 /* 模态窗口内容 */
@@ -66,7 +192,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
-  color: #111820;
+  color: var(--cm-ink, #111820);
 }
 
 .data-table th,
@@ -75,10 +201,10 @@
 .responsive-table td {
   padding: 2px;
   text-align: left;
-  border: 1px solid #CBC5B7;
+  border: 1px solid var(--cm-line-strong, #CBC5B7);
   vertical-align: top;
   word-break: break-word;
-  color: #111820;
+  color: var(--cm-ink, #111820);
 }
 
 /* 纵向表格样式 */
@@ -90,11 +216,11 @@
 /* 按钮基础样式 - 极简 */
 .btn {
   padding: 4px 8px;
-  border: 1px solid #CBC5B7;
+  border: 1px solid var(--cm-line-strong, #CBC5B7);
   background: none;
   cursor: pointer;
   font-size: 12px;
-  color: #111820;
+  color: var(--cm-ink, #111820);
 }
 
 /* 按钮容器 */
@@ -109,21 +235,21 @@
 .data-field {
   padding: 2px 4px;
   display: block;
-  color: #111820;
+  color: var(--cm-ink, #111820);
 }
 
 /* 表头编辑器样式 */
 .header-editor {
   width: 100%;
   padding: 2px 4px;
-  border: 1px solid #CBC5B7;
+  border: 1px solid var(--cm-line-strong, #CBC5B7);
   font-size: 12px;
   outline: none;
 }
 
 /* 字段编辑样式 */
 .field-editor {
-  border: 1px solid #CBC5B7;
+  border: 1px solid var(--cm-line-strong, #CBC5B7);
   padding: 2px 4px;
   font-size: 12px;
   outline: none;
@@ -168,7 +294,7 @@
   min-height: 40px !important;
   padding: 10px 14px !important;
   border-radius: 6px !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 2px 10px var(--cm-shadow-a12, rgba(0, 0, 0, 0.12)) !important;
   font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", Roboto, "Helvetica Neue", Arial, sans-serif !important;
   font-size: 14px !important;
   font-weight: 500 !important;
@@ -182,21 +308,21 @@
 }
 
 .clipmate-notice--page.clipmate-notice--success {
-  background: #EAF7F0 !important;
-  border-left: 4px solid #0E7A3E !important;
-  color: #0B5A2E !important;
+  background: var(--cm-ok-soft, #EAF7F0) !important;
+  border-left: 4px solid var(--cm-ok, #0E7A3E) !important;
+  color: var(--cm-ok-deep, #0B5A2E) !important;
 }
 
 .clipmate-notice--page.clipmate-notice--error {
-  background: #FDECEC !important;
-  border-left: 4px solid #B42318 !important;
-  color: #8C1D16 !important;
+  background: var(--cm-err-soft, #FDECEC) !important;
+  border-left: 4px solid var(--cm-err, #B42318) !important;
+  color: var(--cm-err-deep, #8C1D16) !important;
 }
 
 .clipmate-notice--page.clipmate-notice--info {
-  background: #EEF4FF !important;
-  border-left: 4px solid #056BF4 !important;
-  color: #0448A6 !important;
+  background: var(--cm-blue-soft, #EEF4FF) !important;
+  border-left: 4px solid var(--cm-blue, #056BF4) !important;
+  color: var(--cm-blue-deep, #0448A6) !important;
 }
 
 .clipmate-notice--page .clipmate-notice-icon {
@@ -259,14 +385,14 @@
 .clipmate-notice--page .clipmate-notice-detail {
   margin-top: 6px !important;
   padding: 6px 8px !important;
-  background: rgba(17, 24, 32, 0.04) !important;
+  background: var(--cm-ink-a04, rgba(17, 24, 32, 0.04)) !important;
   border-radius: 4px !important;
   font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace !important;
   font-size: 11px !important;
   font-weight: 400 !important;
   line-height: 1.5 !important;
   letter-spacing: normal !important;
-  color: #6B7278 !important;
+  color: var(--cm-ink2, #6B7278) !important;
   white-space: pre-wrap !important;
   word-break: break-word !important;
   max-height: 108px !important;
@@ -279,10 +405,10 @@
   display: block !important;
   margin-top: 6px !important;
   padding: 2px 8px !important;
-  border: 1px solid #D5CFC1 !important;
+  border: 1px solid var(--cm-line-soft, #D5CFC1) !important;
   border-radius: 4px !important;
-  background: #FFFFFF !important;
-  color: #111820 !important;
+  background: var(--cm-white, #FFFFFF) !important;
+  color: var(--cm-ink, #111820) !important;
   font-family: inherit !important;
   font-size: 11px !important;
   font-weight: 400 !important;
@@ -292,7 +418,7 @@
 }
 
 .clipmate-notice--page .clipmate-notice-detail-copy:hover {
-  background: #F1EFE8 !important;
+  background: var(--cm-surface, #F1EFE8) !important;
 }
 
 @keyframes clipmate-notice-in {
@@ -324,9 +450,9 @@ button.media-extractor-button {
   top: 20px;
   right: 20px;
   z-index: 2147483647;
-  border: 2px solid #056bf4;
-  background: #056bf4;
-  color: white;
+  border: 2px solid var(--cm-blue, #056BF4);
+  background: var(--cm-btn, #056BF4);
+  color: var(--cm-btn-ink, #FFFFFF);
   /* v2.8.6：头像撑满左端并向外溢出，按钮本体只从它右侧开始。
      左端圆角收成 8px 直边，由头像整片盖住（详见下方「吉祥物头像」一节）。 */
   padding: 0 32px 0 0;
@@ -337,7 +463,7 @@ button.media-extractor-button {
   border-radius: 8px 26px 26px 8px;
   /* 头像要溢出按钮上下沿，按钮绝不能裁切子元素 */
   overflow: visible;
-  box-shadow: 0 4px 12px rgba(5, 107, 244, 0.4);
+  box-shadow: 0 4px 12px var(--cm-blue-a40, rgba(5, 107, 244, 0.4));
   /* 只过渡颜色：left/top/transform 一旦进入过渡，拖动就会「追帧」。
      这一条必须是 !important —— 本文件是用户级样式表，不加 !important 就连
      站点自身的 `button{transition:...}`（作者级普通）都压不住。JS 从不写 transition，安全。 */
@@ -366,13 +492,13 @@ button.media-extractor-button {
 
 /* 悬浮感只改颜色和阴影，不动几何 —— 按钮绝不能在指针下面挪位置 */
 .media-extractor-button:hover {
-  background: #0458cc;
-  border-color: #0458cc;
-  box-shadow: 0 6px 16px rgba(5, 107, 244, 0.55);
+  background: var(--cm-btn-hover, #0458cc);
+  border-color: var(--cm-blue-deep, #0458cc);
+  box-shadow: 0 6px 16px var(--cm-blue-a55, rgba(5, 107, 244, 0.55));
 }
 
 .media-extractor-button:active {
-  box-shadow: 0 2px 8px rgba(66, 133, 244, 0.4);
+  box-shadow: 0 2px 8px var(--cm-blue-a40, rgba(66, 133, 244, 0.4));
 }
 
 /* 拖拽状态样式（v2.5.92）
@@ -384,7 +510,7 @@ button.media-extractor-button {
 .media-extractor-button.dragging {
   opacity: 0.9;
   cursor: grabbing;
-  box-shadow: 0 8px 20px rgba(5, 107, 244, 0.45);
+  box-shadow: 0 8px 20px var(--cm-blue-a45, rgba(5, 107, 244, 0.45));
   transition: none !important;
   /* 只在拖动期间提示合成层，平时不留常驻层，避免多站同时吃显存 */
   will-change: transform;
@@ -394,42 +520,45 @@ button.media-extractor-button {
    必须排在 .loading / .success / .error 之前：这几个状态和它同特异性，
    靠源码顺序让它们能盖住置灰色。 */
 .media-extractor-button.pending {
-  background: #9aa0a6;
-  border-color: #9aa0a6;
+  background: var(--cm-ink3, #9aa0a6);
+  border-color: var(--cm-ink3, #9aa0a6);
   box-shadow: none;
   cursor: progress;
 }
 
 .media-extractor-button.pending:hover {
-  background: #9aa0a6;
-  border-color: #9aa0a6;
+  background: var(--cm-ink3, #9aa0a6);
+  border-color: var(--cm-ink3, #9aa0a6);
   box-shadow: none;
 }
 
 /* 加载状态样式 */
 .media-extractor-button.loading {
-  background: #0a4fcb;
-  border-color: #0a4fcb;
+  background: var(--cm-btn-hover, #0a4fcb);
+  border-color: var(--cm-blue-deep, #0a4fcb);
   opacity: 0.9;
 }
 
-/* ---------- v2.8.6 吉祥物头像（透明底 · 撑满按钮左端）----------
+/* ---------- 吉祥物头像（透明底 · 撑满按钮左端）----------
    1) 去掉 v2.8.5 那个「白色圆底」。那层白圆是为了让白色机身从蓝底里浮出来，
       代价是给吉祥物套了个盘子：圆和头的轮廓各走各的，看着像贴纸而不是按钮的一部分。
-      现在头像直接透明叠在按钮上，靠重绘时加深的深蓝描边（#0B3C8F）自己立住轮廓。
-   2) 头像是插画原图（小机器人举着一张纸），不是正方形，宽高比 1.19:1。
-      容器给 80px 见方 + background-size:contain，实际绘制 80×67，
-      比按钮 48px 高，上下各溢出约 10px —— 这是故意的：
+      现在头像直接透明叠在按钮上，靠素材自带的深蓝描边（#0028BC）自己立住轮廓。
+   2) 素材是矢量全身像（v2.9.2 起），四个状态宽高比不同：0.985（哭）~1.099（举纸）。
+      容器给 80px 见方，尺寸按「高度」控制（background-size: auto 89%），
+      绘制高约 67px —— 比按钮 48px 高，上下各溢出约 9.5px。这是故意的：
       头像撑满后，按钮左端的圆角被整个盖住，左侧轮廓由吉祥物本体构成，
       而不是「蓝胶囊旁边站了个机器人」。
-      ⚠️ 溢出量必须小于浮窗间距（modal-window.js 的 gap，现为 12px），
-         否则浮窗会压住它的下巴。
+      ⚠️ 溢出量必须小于浮窗间距（modal-window.js 的 BTN_GAP，现为 12px），
+         否则浮窗会压住它的下巴。按高度控制就是为了守住这条：
+         若改成 contain（按宽度铺满 80px），1.099 的形态会画到 73px 高、溢出 12.4px 就破了。
+      ⚠️ 89% 这个数是「内容占容器 84% ÷ 素材自带 6% 内边距」算出来的。
+         素材是拆图时按 3% padding 生成的，viewBox 里有一圈空气，不能直接当 84% 用。
    3) 按钮左端改成 8px 直边（不再是 25px 半圆）。半圆会在头像身后露出一段蓝弧，
       在头顶与下巴处形成豁口；直边被头像整片压住，交界只剩一条干净的竖线。
    4) .clipmate-mascot 用 background-image 承载图片，不是 <img>：
       站点对 img 的全局样式（max-width:100% / object-fit / border-radius /
       vertical-align）会把这个头像压扁或切成圆角方块，背景图不受这些规则影响。
-   5) 头像在四个状态下都是同一张图，状态改由下方的「状态角标」表达。
+   5) 头像跟着状态换形态（举纸 / 抱绿勾 / 哭），下方角标继续用 ✓/! 标记结果。
    ⚠️ 改头像尺寸要同步改三处：这里、button 的 padding-right(32px，让给角标)、
       margin-left(-18px)、以及 .media-extractor-button 的 gap(10px)。
       否则头像会压到文字上，或者角标会压住文字。 */
@@ -456,7 +585,8 @@ button.media-extractor-button .clipmate-mascot {
   justify-content: center;
   background-repeat: no-repeat;
   background-position: center center;
-  background-size: contain;
+  /* 按高度控制，不按宽度：四个形态宽高比不同，按宽度算会让高瘦的那个溢出超标 */
+  background-size: auto 89%;
   /* 头像会比按钮高，溢出部分不该抢走按钮本体的点击判定 */
   pointer-events: none;
 }
@@ -490,8 +620,8 @@ button.media-extractor-button .clipmate-badge {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #ffffff;
-  color: #0448a6;
+  background: var(--cm-white, #FFFFFF);
+  color: var(--cm-blue-deep, #0448A6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -499,7 +629,7 @@ button.media-extractor-button .clipmate-badge {
   font-weight: 700;
   line-height: 1;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 3px var(--cm-shadow-a30, rgba(0, 0, 0, 0.3));
   /* 角标只是装饰，点它也该触发按钮本身 */
   pointer-events: none;
   /* 出现时弹一下，让「有结果了」被眼角余光抓到 */
@@ -512,17 +642,80 @@ button.media-extractor-button .clipmate-badge::after {
   content: '?';
 }
 
-button.media-extractor-button .clipmate-badge[data-tone='success'] { color: #0e7a3e; }
+button.media-extractor-button .clipmate-badge[data-tone='success'] { color: var(--cm-ok, #0E7A3E); }
 button.media-extractor-button .clipmate-badge[data-tone='success']::after { content: '✓'; }
-button.media-extractor-button .clipmate-badge[data-tone='error'] { color: #c23038; }
+button.media-extractor-button .clipmate-badge[data-tone='error'] { color: var(--cm-err-deep2, #c23038); }
 button.media-extractor-button .clipmate-badge[data-tone='error']::after { content: '!'; }
-button.media-extractor-button .clipmate-badge[data-tone='ask'] { color: #0448a6; }
+button.media-extractor-button .clipmate-badge[data-tone='ask'] { color: var(--cm-blue-deep, #0448A6); }
 button.media-extractor-button .clipmate-badge[data-tone='ask']::after { content: '?'; }
 
 /* 动画里必须重写 translateY(-50%)，否则弹入过程会先掉到按钮下半截 */
 @keyframes clipmate-badge-pop {
   0% { transform: translateY(-50%) scale(0.35); opacity: 0; }
   100% { transform: translateY(-50%) scale(1); opacity: 1; }
+}
+
+/* ---------- v2.9.2 慢提取的陪伴提示 ----------
+   提取通常 100~300ms，为它做全屏遮罩只会闪一下；真会卡住的是 TMDB 拉演职员表、
+   豆瓣影人翻页这类。所以延迟 700ms 才出现（时序由 button-manager 的 READING_WAIT 控制），
+   出现后只占右上角一小条，不盖页面、不吃点击。
+
+   为什么不盖页面：用户这时候往往还想看看页面上有什么、或者继续滚动，
+   一块半透明遮罩会让人以为「扩展把我的页面锁住了」，反而去点它。
+   pointer-events:none 让它彻底不存在于交互层。
+
+   位置跟着按钮的默认落点（top 20 + 按钮高 48 + 间距 8 = 76），
+   所以看起来像按钮自己吐出来的一句话，而不是另一套弹窗。 */
+.clipmate-reading-hint {
+  position: fixed;
+  top: 76px;
+  right: 20px;
+  z-index: 2147483646;      /* 比按钮低 1：按钮永远压在它上面，拖着按钮能盖住它 */
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 13px 6px 4px;
+  border: 1px solid var(--cm-line, #E1DCD1);
+  border-radius: 12px;
+  background: var(--cm-bg, #F7F6F2);
+  box-shadow: 0 6px 18px -8px var(--cm-ink-a35, rgba(17, 24, 32, 0.35));
+  font-family: system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', Roboto,
+    'Helvetica Neue', Arial, sans-serif !important;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--cm-ink, #111820);
+  letter-spacing: 0;
+  text-align: left;
+  pointer-events: none;     /* 完全不参与点击，页面该怎么滚还怎么滚 */
+  user-select: none;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.clipmate-reading-hint.is-on {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 头像用背景图，不用 <img>：与按钮头像同一套，站点对 img 的全局规则碰不到 */
+.clipmate-reading-art {
+  width: 30px;
+  height: 27px;
+  flex: none;
+  display: block;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: contain;
+}
+
+/* 尊重「减少动态效果」：不要那截滑入，直接淡入 */
+@media (prefers-reduced-motion: reduce) {
+  .clipmate-reading-hint {
+    transform: none;
+    transition: opacity 0.12s linear;
+  }
 }
 
 /* 未就绪（pending）：把头像去色压暗，和置灰的按钮底一致 */
@@ -532,28 +725,33 @@ button.media-extractor-button .clipmate-badge[data-tone='ask']::after { content:
 
 /* 成功状态样式 */
 .media-extractor-button.success {
-  background: #12a150;
-  border-color: #12a150;
-  box-shadow: 0 4px 12px rgba(18, 161, 80, 0.4);
+  background: var(--cm-ok-bright, #12a150);
+  border-color: var(--cm-ok-bright, #12a150);
+  /* 不写死 white：深色下这底是亮绿，白字会糊掉，要跟着 --cm-on-accent 翻成近黑 */
+  color: var(--cm-on-accent, #FFFFFF);
+  box-shadow: 0 4px 12px var(--cm-ok-a40, rgba(18, 161, 80, 0.4));
 }
 
 .media-extractor-button.success:hover {
-  background: #0e7a3e;
-  border-color: #0e7a3e;
-  box-shadow: 0 6px 16px rgba(18, 161, 80, 0.55);
+  background: var(--cm-ok, #0E7A3E);
+  color: var(--cm-on-accent, #FFFFFF);
+  border-color: var(--cm-ok, #0E7A3E);
+  box-shadow: 0 6px 16px var(--cm-ok-a55, rgba(18, 161, 80, 0.55));
 }
 
 /* 失败状态样式（v2.5.45：原来失败也走 success，按钮会亮成绿色「提取完成」） */
 .media-extractor-button.error {
-  background: #e5484d;
-  border-color: #e5484d;
-  box-shadow: 0 4px 12px rgba(229, 72, 77, 0.4);
+  background: var(--cm-err-bright2, #e5484d);
+  border-color: var(--cm-err-bright2, #e5484d);
+  color: var(--cm-on-accent, #FFFFFF);
+  box-shadow: 0 4px 12px var(--cm-err-a40, rgba(229, 72, 77, 0.4));
 }
 
 .media-extractor-button.error:hover {
-  background: #b42318;
-  border-color: #b42318;
-  box-shadow: 0 6px 16px rgba(229, 72, 77, 0.55);
+  background: var(--cm-err, #B42318);
+  color: var(--cm-on-accent, #FFFFFF);
+  border-color: var(--cm-err, #B42318);
+  box-shadow: 0 6px 16px var(--cm-err-a55, rgba(229, 72, 77, 0.55));
 }
 
 /* 拖拽排序相关样式 */
@@ -562,7 +760,7 @@ button.media-extractor-button .clipmate-badge[data-tone='ask']::after { content:
 }
 
 .sortable-chosen {
-  background: #E8E4D9;
+  background: var(--cm-hover, #E8E4D9);
 }
 
 /* ==========================================================================
@@ -594,15 +792,15 @@ button.media-extractor-button .clipmate-badge[data-tone='ask']::after { content:
   font-style: normal !important;
   font-variant: normal !important;
   line-height: 1.3 !important;
-  color: #111820 !important;
+  color: var(--cm-ink, #111820) !important;
   letter-spacing: normal !important;
   word-spacing: normal !important;
   text-align: left !important;
   text-transform: none !important;
   box-sizing: border-box !important;
-  background-color: #F7F6F2 !important;
+  background-color: var(--cm-bg, #F7F6F2) !important;
   border-radius: 8px !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 4px 20px var(--cm-shadow-a30, rgba(0, 0, 0, 0.3)) !important;
 }
 
 /* v2.5.47（B3）：最小化成胶囊时的外形。
@@ -615,7 +813,7 @@ button.media-extractor-button .clipmate-badge[data-tone='ask']::after { content:
  */
 .media-floating-window.is-minimized {
   border-radius: 18px !important;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18) !important;
+  box-shadow: 0 4px 14px var(--cm-shadow-a18, rgba(15, 23, 42, 0.18)) !important;
 }
 
 /* 2) 右上角「提取信息」按钮 */

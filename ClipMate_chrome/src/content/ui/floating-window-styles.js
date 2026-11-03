@@ -13,7 +13,16 @@
  *   折叠隐藏、拖拽缩放、最大化等动态效果。
  *
  * 【尺寸规范（v2.5.41 起全站统一，改这里就是改所有站点）】
- *   字号 12px ｜ 行高 1.3 ｜ 表头与内容同为常规体 400 ｜ 系统默认字体 ｜ 全白底极简
+ *   字号 12px ｜ 行高 1.3 ｜ 表头与内容同为常规体 400 ｜ 系统默认字体 ｜ 米纸底（v2.9.1 起）
+ *
+ * 【颜色为什么写 var(--cm-x, 原值) 而不是直接写色值（v2.9.3）】
+ *   深色站点上整窗要换暖黑。变量定义在页面侧的 content-styles.css（:root 给浅色、
+ *   .clipmate-dark 给深色），宿主 .media-floating-window 挂上这个类，
+ *   自定义属性会沿继承链穿透 shadow 边界，影子树里所有 var() 一起跟着变。
+ *   每处都留一份原色值作 fallback：万一变量没定义（极老浏览器、单独引某段样式），
+ *   颜色退回浅色版，不会变成透明或纯黑。
+ *   ⚠️ 新增颜色时请照着现有的语义取变量名（--cm-ink / --cm-line / --cm-blue …），
+ *      不要再直接写色值 —— 否则深色下那一处会保持浅色，成为白斑。
  *
  * 【字体为何用 inherit】
  *   字体由宿主元素（.media-floating-window）的内联样式 + content-styles.css 的 !important 加固共同钉死，
@@ -50,23 +59,40 @@
 
 /* ==================== 标题栏 ==================== */
 .floating-window-header {
-  background: #F1EFE8;
+  background: var(--cm-surface, #F1EFE8);
   padding: 10px 15px;
-  border-bottom: 1px solid #E1DCD1;
+  border-bottom: 1px solid var(--cm-line, #E1DCD1);
   border-top: none;
   border-left: none;
   border-right: none;
   cursor: move;
   display: flex;
-  justify-content: space-between;
+  /* v2.9.2：从 space-between 改成 flex-start —— 标题栏最左边多了一只吉祥物头，
+     三个可见子元素下 space-between 会把按钮组挤到正中间。改左对齐后由关闭按钮的
+     margin-left:auto 把它顶到最右，视觉结果与改动前一致。 */
+  justify-content: flex-start;
   align-items: center;
   user-select: none;
   font-size: 12px;
   font-weight: 400;
   line-height: 1.3;
-  color: #111820;
+  color: var(--cm-ink, #111820);
   position: relative;
   margin: 0;
+}
+
+/* v2.9.2：标题栏左侧的吉祥物头（20px）。
+   20px 是这只脸在这个尺寸下的可辨下限：再小眼睛和天线球会连成一块。
+   和按钮头像一样用 background-image，不用 <img>。 */
+.floating-window-brand {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  margin-right: 8px;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: contain;
+  pointer-events: none;
 }
 
 /* v2.5.93：标题文字隐藏，腾出 120px 给右侧工具栏。
@@ -81,8 +107,8 @@
    标题文字里的「 - 编辑模式」随标题一起消失，改用整条标题栏换底色。
    底色写在样式表、不写内联，保证退出编辑时 class 一去就恢复原色。 */
 .floating-window-header.is-edit-mode {
-  background: #FDF3D6;
-  border-bottom-color: #E8C46A;
+  background: var(--cm-warn-soft, #FDF3D6);
+  border-bottom-color: var(--cm-warn-line, #E8C46A);
 }
 
 .floating-window-title-buttons {
@@ -132,15 +158,15 @@
   flex: none;
   align-self: center;
   margin: 0 2px;
-  background: #CBC5B7;
+  background: var(--cm-line-strong, #CBC5B7);
 }
 .floating-window-close {
   width: 24px;
   height: 24px;
   min-width: 24px;
   border-radius: 50%;
-  background: #E8E4D9;
-  color: #6B7278;
+  background: var(--cm-hover, #E8E4D9);
+  color: var(--cm-ink2, #6B7278);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -153,6 +179,8 @@
   margin: 0;
   flex: 0 0 auto;
   text-align: center;
+  /* v2.9.2：标题栏改左对齐后，靠这条把关闭按钮顶到最右边 */
+  margin-left: auto;
   transition: all 0.2s;
 }
 
@@ -185,26 +213,26 @@
   width: 100%;
   border-radius: 0;
   border-left: 4px solid transparent;
-  border-bottom: 1px solid #E1DCD1;
+  border-bottom: 1px solid var(--cm-line, #E1DCD1);
   animation: clipmate-notice-in 180ms ease-out;
 }
 
 .clipmate-notice--success {
-  background: #EAF7F0;
-  border-left-color: #0E7A3E;
-  color: #0B5A2E;
+  background: var(--cm-ok-soft, #EAF7F0);
+  border-left-color: var(--cm-ok, #0E7A3E);
+  color: var(--cm-ok-deep, #0B5A2E);
 }
 
 .clipmate-notice--error {
-  background: #FDECEC;
-  border-left-color: #B42318;
-  color: #8C1D16;
+  background: var(--cm-err-soft, #FDECEC);
+  border-left-color: var(--cm-err, #B42318);
+  color: var(--cm-err-deep, #8C1D16);
 }
 
 .clipmate-notice--info {
-  background: #EEF4FF;
-  border-left-color: #056BF4;
-  color: #0448A6;
+  background: var(--cm-blue-soft, #EEF4FF);
+  border-left-color: var(--cm-blue, #056BF4);
+  color: var(--cm-blue-deep, #0448A6);
 }
 
 .clipmate-notice-icon {
@@ -277,13 +305,13 @@
 .clipmate-notice-detail {
   margin-top: 6px;
   padding: 6px 8px;
-  background: rgba(17, 24, 32, 0.04);
+  background: var(--cm-ink-a04, rgba(17, 24, 32, 0.04));
   border-radius: 4px;
   font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
   font-size: 11px;
   font-weight: 400;
   line-height: 1.5;
-  color: #6B7278;
+  color: var(--cm-ink2, #6B7278);
   white-space: pre-wrap;
   word-break: break-word;
   max-height: 108px;
@@ -296,10 +324,10 @@
   display: block;
   margin-top: 6px;
   padding: 2px 8px;
-  border: 1px solid #D5CFC1;
+  border: 1px solid var(--cm-line-soft, #D5CFC1);
   border-radius: 4px;
-  background: #FFFFFF;
-  color: #111820;
+  background: var(--cm-white, #FFFFFF);
+  color: var(--cm-ink, #111820);
   font-family: inherit;
   font-size: 11px;
   line-height: 1.6;
@@ -307,7 +335,7 @@
 }
 
 .clipmate-notice-detail-copy:hover {
-  background: #F1EFE8;
+  background: var(--cm-surface, #F1EFE8);
 }
 
 @keyframes clipmate-notice-in {
@@ -326,15 +354,15 @@
   flex: 1;
   padding: 15px;
   overflow: auto;
-  background: #F7F6F2;
+  background: var(--cm-bg, #F7F6F2);
   user-select: text;
   font-size: 12px;
   font-weight: 400;
   line-height: 1.3;
-  color: #111820;
+  color: var(--cm-ink, #111820);
   text-align: left;
   scrollbar-width: thin;
-  scrollbar-color: #CBC5B7 #F1EFE8;
+  scrollbar-color: var(--cm-line-strong, #CBC5B7) var(--cm-surface, #F1EFE8);
 }
 
 .floating-window-content::-webkit-scrollbar {
@@ -342,18 +370,18 @@
   height: 10px;
 }
 .floating-window-content::-webkit-scrollbar-thumb {
-  background: #CBC5B7;
+  background: var(--cm-line-strong, #CBC5B7);
   border-radius: 5px;
 }
 .floating-window-content::-webkit-scrollbar-track {
-  background: #F1EFE8;
+  background: var(--cm-surface, #F1EFE8);
 }
 
 /* ==================== 底部折叠手柄 / 缩放角 ==================== */
 .floating-window-collapse-handle {
   height: 20px;
-  background: #F1EFE8;
-  border-top: 1px solid #E1DCD1;
+  background: var(--cm-surface, #F1EFE8);
+  border-top: 1px solid var(--cm-line, #E1DCD1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -361,7 +389,7 @@
   font-size: 12px;
   font-weight: 400;
   line-height: 1;
-  color: #6B7278;
+  color: var(--cm-ink2, #6B7278);
   transition: all 0.2s;
   margin: 0;
   padding: 0;
@@ -375,7 +403,7 @@
   width: 15px;
   height: 15px;
   cursor: nwse-resize;
-  background: linear-gradient(135deg, transparent 50%, #C9C3B5 50%);
+  background: linear-gradient(135deg, transparent 50%, var(--cm-line-faint, #C9C3B5) 50%);
   border-bottom-right-radius: 8px;
 }
 
@@ -387,7 +415,7 @@
   font-size: 12px;
   font-weight: 400;
   line-height: 1.3;
-  color: #111820;
+  color: var(--cm-ink, #111820);
   text-align: left;
   table-layout: auto;
   margin: 0;
@@ -397,11 +425,11 @@
 .data-table td {
   padding: 2px;
   text-align: left;
-  border: 1px solid #D9D3C5;
+  border: 1px solid var(--cm-line-mid, #D9D3C5);
   vertical-align: top;
   word-break: break-word;
   overflow-wrap: break-word;
-  color: #111820;
+  color: var(--cm-ink, #111820);
   background: transparent;
   font-size: 12px;
   line-height: 1.3;
@@ -421,7 +449,7 @@
   text-align: right;
   position: sticky;
   left: 0;
-  background: #F1EFE8;
+  background: var(--cm-surface, #F1EFE8);
   z-index: 2;
 }
 
@@ -429,18 +457,18 @@
 .data-table.horizontal-table thead th {
   position: sticky;
   top: 0;
-  background: #F1EFE8;
+  background: var(--cm-surface, #F1EFE8);
   z-index: 3;
 }
 
 /* 行悬停高亮（v2.5.45）：23 列宽表格横向看容易串行 */
 .data-table tbody tr:hover td,
 .data-table tbody tr:hover th {
-  background: #F1EFE8;
+  background: var(--cm-surface, #F1EFE8);
 }
 
 .data-table a {
-  color: #056BF4;
+  color: var(--cm-blue, #056BF4);
   text-decoration: underline;
   font-size: 12px;
   line-height: 1.3;
@@ -450,7 +478,7 @@
 .data-field {
   padding: 2px 4px;
   display: block;
-  color: #111820;
+  color: var(--cm-ink, #111820);
   font-size: 12px;
   font-weight: 400;
   line-height: 1.3;
@@ -471,7 +499,7 @@
 .data-field-toggle {
   display: inline-block;
   margin-left: 6px;
-  color: #0448A6;
+  color: var(--cm-blue-deep, #0448A6);
   cursor: pointer;
   user-select: none;
   font-size: 12px;
@@ -483,7 +511,7 @@
 
 /* 点单元格复制后的短暂反馈（v2.5.45） */
 .data-table td.is-copied {
-  background: #EAF7F0;
+  background: var(--cm-ok-soft, #EAF7F0);
 }
 
 /* ==================== 编辑模式 ==================== */
@@ -491,12 +519,12 @@
 .field-editor {
   width: 100%;
   padding: 2px 4px;
-  border: 1px solid #CBC5B7;
+  border: 1px solid var(--cm-line-strong, #CBC5B7);
   font-size: 12px;
   font-weight: 400;
   line-height: 1.3;
-  color: #111820;
-  background: #FFFFFF;
+  color: var(--cm-ink, #111820);
+  background: var(--cm-white, #FFFFFF);
   outline: none;
   margin: 0;
   border-radius: 0;
@@ -517,7 +545,7 @@
 }
 
 .sortable-chosen {
-  background: #E8E4D9;
+  background: var(--cm-hover, #E8E4D9);
 }
 
 /* v2.5.45（B17）拖拽落点提示：
@@ -531,7 +559,7 @@
 .sortable-header.drop-after::after {
   content: "";
   position: absolute;
-  background: #056BF4;
+  background: var(--cm-blue, #056BF4);
   pointer-events: none;
   z-index: 5;
 }
@@ -576,13 +604,13 @@
 /* 旧式按钮类（保留兼容） */
 .btn {
   padding: 4px 8px;
-  border: 1px solid #CBC5B7;
+  border: 1px solid var(--cm-line-strong, #CBC5B7);
   background: none;
   cursor: pointer;
   font-size: 12px;
   font-weight: 400;
   line-height: 1.3;
-  color: #111820;
+  color: var(--cm-ink, #111820);
   border-radius: 0;
   margin: 0;
 }
@@ -599,7 +627,7 @@
   justify-content: center;
   gap: 6px;
   padding: 0 10px;
-  background: #F7F6F2;
+  background: var(--cm-bg, #F7F6F2);
   border-radius: inherit;
   cursor: pointer;
   user-select: none;
@@ -609,14 +637,14 @@
 .floating-window-capsule-icon {
   font-size: 12px;
   line-height: 1;
-  color: #0448A6;
+  color: var(--cm-blue-deep, #0448A6);
   flex: 0 0 auto;
 }
 
 .floating-window-capsule-name {
   font-size: 12px;
   line-height: 1;
-  color: #111820;
+  color: var(--cm-ink, #111820);
   white-space: nowrap;
   flex: 0 0 auto;
 }
@@ -624,14 +652,14 @@
 .floating-window-capsule-divider {
   width: 1px;
   height: 12px;
-  background: #CBC5B7;
+  background: var(--cm-line-strong, #CBC5B7);
   flex: 0 0 auto;
 }
 
 .floating-window-capsule-count {
   font-size: 12px;
   line-height: 1;
-  color: #6B7278;
+  color: var(--cm-ink2, #6B7278);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   flex: 0 0 auto;
@@ -645,7 +673,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #E0453C;
+  background: var(--cm-err-bright, #E0453C);
   display: none;
 }
 
@@ -660,8 +688,8 @@
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  background: #F1EFE8;
-  border-bottom: 1px solid #E1DCD1;
+  background: var(--cm-surface, #F1EFE8);
+  border-bottom: 1px solid var(--cm-line, #E1DCD1);
   flex: 0 0 auto;
   font-size: 12px;
   line-height: 1.3;
@@ -676,40 +704,40 @@
   min-width: 0;
   height: 24px;
   padding: 0 8px;
-  border: 1px solid #CBC5B7;
+  border: 1px solid var(--cm-line-strong, #CBC5B7);
   border-radius: 5px;
-  background: #FFFFFF;
+  background: var(--cm-white, #FFFFFF);
   font-family: inherit;
   font-size: 12px;
   font-weight: 400;
   line-height: 1.3;
-  color: #111820;
+  color: var(--cm-ink, #111820);
   outline: none;
   margin: 0;
 }
 
 .clipmate-search-input:focus {
-  border-color: #056BF4;
-  box-shadow: 0 0 0 2px rgba(5, 107, 244, 0.16);
+  border-color: var(--cm-blue, #056BF4);
+  box-shadow: 0 0 0 2px var(--cm-blue-a16, rgba(5, 107, 244, 0.16));
 }
 
 .clipmate-search-count {
-  color: #6B7278;
+  color: var(--cm-ink2, #6B7278);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   flex: 0 0 auto;
 }
 
 .clipmate-search-count.is-none {
-  color: #B42318;
+  color: var(--cm-err, #B42318);
   font-weight: 600;
 }
 
 .clipmate-search-filter,
 .clipmate-search-close {
-  border: 1px solid #CBC5B7;
-  background: #FFFFFF;
-  color: #111820;
+  border: 1px solid var(--cm-line-strong, #CBC5B7);
+  background: var(--cm-white, #FFFFFF);
+  color: var(--cm-ink, #111820);
   border-radius: 5px;
   font-family: inherit;
   font-size: 11.5px;
@@ -728,13 +756,13 @@
 
 .clipmate-search-filter:hover,
 .clipmate-search-close:hover {
-  background: #F1EFE8;
+  background: var(--cm-surface, #F1EFE8);
 }
 
 .clipmate-search-filter.is-active {
-  background: #056BF4;
-  border-color: #056BF4;
-  color: #FFFFFF;
+  background: var(--cm-blue, #056BF4);
+  border-color: var(--cm-blue, #056BF4);
+  color: var(--cm-on-accent, #FFFFFF);
 }
 
 /* 搜索命中 / 未命中。写在表格基础样式之后，同特异性下靠顺序取胜，
@@ -743,7 +771,7 @@
 .data-table tr.is-search-hit td,
 .data-table th.is-search-hit,
 .data-table td.is-search-hit {
-  background: #FBF3CE;
+  background: var(--cm-warn-soft2, #FBF3CE);
 }
 
 .data-table tr.is-search-dim {
@@ -769,10 +797,10 @@
   z-index: 10;
   min-width: 120px;
   padding: 4px;
-  background: #FFFFFF;
-  border: 1px solid #E1DCD1;
+  background: var(--cm-white, #FFFFFF);
+  border: 1px solid var(--cm-line, #E1DCD1);
   border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(17, 24, 32, 0.16);
+  box-shadow: 0 8px 24px var(--cm-ink-a16, rgba(17, 24, 32, 0.16));
 }
 
 .clipmate-title-menu button {
@@ -786,7 +814,7 @@
   font-size: 12px;
   font-weight: 400;
   line-height: 1.3;
-  color: #111820;
+  color: var(--cm-ink, #111820);
   text-align: left;
   cursor: pointer;
   white-space: nowrap;
@@ -794,7 +822,7 @@
 }
 
 .clipmate-title-menu button:hover {
-  background: #F1EFE8;
+  background: var(--cm-surface, #F1EFE8);
 }
 
 /* 图标按钮（🔍/⋯/—）：方形窄按钮，省标题栏位置 */

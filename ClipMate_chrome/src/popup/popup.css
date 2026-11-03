@@ -50,6 +50,23 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  /* v2.9.2：头部多了头像后，标题栏是 space-between —— 不撑开的话站名会被推到中间，
+     头像和站名之间空出一大片。撑满中间这一段，站名就紧跟头像。
+     min-width:0 保留：长域名要靠它才能正确省略。 */
+  flex: 1;
+}
+
+/* v2.9.2：头部左侧的吉祥物头。24px 是这只脸的辨识下限 —— 再小眼睛和天线球会合在一起。
+   用 <img> 而不是注入的 background-image：这里是扩展自己的页面，
+   没有站点的 img 全局样式来捣乱，img 更省事也能走 alt。 */
+.pop-face {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  margin-right: -1px;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
 }
 
 .pop-name {
@@ -140,9 +157,12 @@ body {
   display: none !important;
 }
 
+/* v2.9.2：按高度定尺寸 —— 两种形态的宽高比差得远（探头 0.70 / 呆住 1.13），
+   按宽度定会让空状态的高度一会儿高一截一会儿矮一截。 */
 .pop-empty-art {
-  width: 104px;
-  height: auto;
+  height: 96px;
+  width: auto;
+  max-width: 140px;
   margin: 2px 0 10px;
   user-select: none;
   -webkit-user-drag: none;

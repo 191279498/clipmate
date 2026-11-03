@@ -7,25 +7,39 @@ class ButtonManager {
   get LABEL_BAD() { return '重试'; }
 
   /**
-   * 吉祥物形象（icons/mascot/mascot.png）—— 只有这一张脸。
+   * 吉祥物形象 —— v2.9.2 起每态一张全身像（矢量 SVG）。
    *
-   * v2.8.6 定稿：表情不再随状态更换，状态改由右下角的角标表达（见 _BADGE）。
-   * 头像本身是插画（小机器人举着一张纸），生动感来自那个「举文件」的动作，
-   * 换成只剩一张正脸反而变呆板；而四张表情素材要另出，暂时没有。
-   * 现在的分工：头像负责「这是什么产品」，角标负责「这一次成功还是失败」。
+   * 分工变了：以前是「一张脸 + 角标」，现在头像本身也带情绪，
+   * 角标保留（它在绿底/红底上仍然是最快被眼角抓到的信号），
+   * 两层信息互不重复：头像说「它此刻在干什么」，角标说「这一次成没成」。
    *
-   * 素材来自重绘工具出的透明 PNG：已泛洪抠掉棋盘格背景、清掉 JPEG 碎白点、
-   * 边缘做了半透明羽化，叠在蓝底/绿底/红底上都不会有白边。
+   * 为什么用全身像而不是头部特写（用户 2026-11-03 选的 B 方案）：
+   *   头部特写在 48px 里最清楚，但只有五官、没有动作，四个状态差别太小；
+   *   全身像有「举纸 / 抱电脑 / 抱绿勾 / 哭」四个动作，一眼就知道在干嘛。
+   *   代价是人在 48px 里偏小 —— 已知并接受。
+   *
+   * 素材是用户 2026-11-03 给的矢量大合集拆出来的，每个文件自带 6 个渐变定义，
+   * 反复缩放不会糊；每个文件 4~15KB。
    *
    * 页面里的元素用 background-image 引用，不是 <img>：
    * 站点对 img 的全局规则（max-width / object-fit / border-radius / display）
    * 会把这个头像改烂，background 只是背景图，碰不到。
    *
-   * ⚠️ 以后接四态表情：把这里改成 { normal, success, error } 三张即可，
-   *    _mascotUrl(state) 与 _renderButton 已经带着 state 参数，不用改调用点。
+   * ⚠️ 新增状态时记得同时改 content-styles.css 里的头像尺寸：
+   *    四个形态宽高比不同（0.985~1.099），尺寸按「高度」控制才不会有的溢出过多。
    */
-  get _MASCOT() {
-    return 'icons/mascot/mascot.png';
+  get _MASCOT_BY_STATE() {
+    return {
+      normal: 'icons/mascot/hero-doc.svg',    // 举着一张纸：等着提取
+      success: 'icons/mascot/hero-done.svg',  // 抱着绿勾：提取完成
+      error: 'icons/mascot/hero-cry.svg',     // 哭：这一步没成
+      busy: 'icons/mascot/face-busy.svg',     // >_< ：读取提示条用（那个尺寸只能用头部）
+    };
+  }
+
+  /** 兜底形态：状态取值意外时不让头像空掉 */
+  get _MASCOT_FALLBACK() {
+    return 'icons/mascot/hero-doc.svg';
   }
 
   /**
@@ -40,8 +54,9 @@ class ButtonManager {
   }
 
   /** 取扩展内资源的绝对地址；没有扩展运行时（单测 / 资源缺失）返回空串走线稿降级 */
-  _mascotUrl() {
-    const rel = this._MASCOT;
+  _mascotUrl(state) {
+    const map = this._MASCOT_BY_STATE;
+    const rel = (map && map[state]) || this._MASCOT_FALLBACK;
     try {
       if (typeof chrome !== 'undefined' && chrome.runtime &&
           typeof chrome.runtime.getURL === 'function') {
@@ -76,6 +91,10 @@ class ButtonManager {
     this._dragRaf = 0;
     this._busyNoticeAt = 0;         // 「正在提取中」提示的节流时间戳
     this.userMoved = false;         // v2.5.97：用户亲手拖过 → 贴位逻辑（推荐流）不再抢位置
+    this._readingTimer = null;      // v2.9.2：慢提取提示条的延迟定时器
+    this._readingEl = null;         // v2.9.2：提示条节点（不存在时为 null）
+    this._detachButtonTheme = null; // v2.9.3：取消按钮跟随站点明暗
+    this._detachReadingTheme = null; // v2.9.3：取消提示条跟随站点明暗
 
     this.init();
   }
@@ -90,7 +109,8 @@ class ButtonManager {
     this.button = document.createElement('button');
     this.button.className = 'media-extractor-button';
     // v2.8.5：图标换成吉祥物头像，文字从「提取信息」缩成「提取」
-    //   —— 头像本身承载了「这是什么」的识别成本，四个状态各有表情，见 _renderButton
+    //   —— 头像本身承载了「这是什么」的识别成本；v2.9.2 起四个状态各有形态，
+    //      见 _MASCOT_BY_STATE（举纸 / 抱绿勾 / 哭）。
     this._renderButton('normal', this.LABEL_IDLE);
     this.button.title = '扩展正在初始化，稍等一下再点';
     // v2.5.60：创建即置灰，等点击动作接上之后再放开
@@ -98,6 +118,23 @@ class ButtonManager {
     this.button.classList.add('pending');
 
     document.body.appendChild(this.button);
+    // v2.9.3：深色站点上按钮也换暖黑（否则一块白板贴在黑页面上，很扎眼）
+    this._detachButtonTheme = this._syncSiteTheme(this.button);
+  }
+
+  /**
+   * 让元素跟随站点明暗。
+   * 单独抽出来是因为调用点散布在按钮、慢提取提示条两处，
+   * 而 SiteTheme 在单元测试里常常没加载 —— 守卫写一处，别的地方不用重复判空。
+   * @returns {(() => void)|null} 取消跟随；环境不支持时返回 null
+   */
+  _syncSiteTheme(el) {
+    if (!el || typeof SiteTheme === 'undefined' || !SiteTheme.shared) return null;
+    try {
+      return SiteTheme.shared.attach(el);
+    } catch (e) {
+      return null;
+    }
   }
 
   attachEvents() {
@@ -355,7 +392,7 @@ class ButtonManager {
    * 图标用 createElementNS 逐节点构建（不用 innerHTML 拼 SVG），
    * 原因是 web-ext 会对 innerHTML 报 "Unsafe assignment"，保持 lint 基线不上升。
    */
-  setLoading(loading = true) {
+  setLoading(loading = true, options = {}) {
     this.isLoading = !!loading;
     if (!this.button) return;
 
@@ -369,13 +406,82 @@ class ButtonManager {
       // 现在保持可点，重复点击由 click 门禁接住并弹一条「正在提取中」。
       this.button.disabled = !this.isReady;
       this.button.title = '正在提取，稍等一下';
+      // v2.9.2：慢提取时给个陪伴。自动提取不弹 —— 用户没点任何东西，
+      // 页面一打开就冒出个条子，看着像报错。
+      if (options.quiet) this._stopReadingHint();
+      else this._armReadingHint();
     } else {
+      this._stopReadingHint();
       this.setSuccess();
     }
   }
 
+  /* ---------- v2.9.2：慢提取的陪伴提示 ----------
+     提取通常 100~300ms，为它做个遮罩只会闪一下；真的会卡住的是 TMDB 拉完整演职员表、
+     豆瓣影人翻页这类。所以延迟到 700ms 才出现，而且只占右上角一小条 ——
+     不盖页面、不吃点击（pointer-events:none），用户该怎么滚还怎么滚。
+
+     素材用「>_<」的脸，不用抱电脑的全身像：这个尺寸下抱着的电脑只剩一个灰点，
+     表情反而还读得出来 —— 30px 是全身像的辨识下限以下。 */
+  static get READING_WAIT() { return 700; }
+
+  _armReadingHint() {
+    this._stopReadingHint();
+    this._readingTimer = setTimeout(() => {
+      this._readingTimer = null;
+      this._mountReadingHint();
+    }, ButtonManager.READING_WAIT);
+  }
+
+  _stopReadingHint() {
+    if (this._readingTimer) {
+      clearTimeout(this._readingTimer);
+      this._readingTimer = null;
+    }
+    if (this._detachReadingTheme) {
+      this._detachReadingTheme();
+      this._detachReadingTheme = null;
+    }
+    if (this._readingEl && this._readingEl.parentNode) {
+      this._readingEl.parentNode.removeChild(this._readingEl);
+    }
+    this._readingEl = null;
+  }
+
+  _mountReadingHint() {
+    if (this._readingEl || !document.body) return;
+
+    const box = document.createElement('div');
+    box.className = 'clipmate-reading-hint';
+    // role=status + polite：读屏会等当前这句念完再报，不打断
+    box.setAttribute('role', 'status');
+    box.setAttribute('aria-live', 'polite');
+
+    const art = document.createElement('span');
+    art.className = 'clipmate-reading-art';
+    const url = this._mascotUrl('busy');
+    if (url) art.style.backgroundImage = 'url("' + url + '")';
+    art.setAttribute('aria-hidden', 'true');
+
+    const text = document.createElement('span');
+    text.className = 'clipmate-reading-text';
+    text.textContent = '正在读取页面…';
+
+    box.appendChild(art);
+    box.appendChild(text);
+    document.body.appendChild(box);
+    this._detachReadingTheme = this._syncSiteTheme(box);
+    this._readingEl = box;
+
+    // 下一帧再挂 class，否则同一个 tick 里插入 + 加类，transition 不会触发
+    requestAnimationFrame(() => {
+      if (this._readingEl === box) box.classList.add('is-on');
+    });
+  }
+
   setSuccess() {
     this.isLoading = false;
+    this._stopReadingHint();
     if (!this.button) return;
     this.button.classList.remove('loading', 'error');
     this.button.classList.add('success');
@@ -386,6 +492,7 @@ class ButtonManager {
 
   setError() {
     this.isLoading = false;
+    this._stopReadingHint();
     if (!this.button) return;
     this.button.classList.remove('loading', 'success');
     this.button.classList.add('error');
@@ -440,11 +547,11 @@ class ButtonManager {
   }
 
   /**
-   * 重绘按钮内容：吉祥物头像 + 文字 + 状态角标（v2.8.6）
+   * 重绘按钮内容：吉祥物头像 + 文字 + 状态角标
    *
    * 结构固定为 <span.clipmate-mascot-ring><span.clipmate-mascot></span></span>
    * + 文本节点 + [<span.clipmate-badge>符号</span>]，角标只有成功/失败/疑问时才有。
-   * 头像在所有状态下都是同一张图，状态改由角标表达（理由见 _MASCOT 注释）。
+   * 头像按 state 换成对应形态（举纸 / 抱绿勾 / 哭），见 _MASCOT_BY_STATE。
    * 拿不到扩展资源时退回线稿文档图标，绝不让按钮变成空白方块。
    */
   _renderButton(state, label) {
@@ -458,7 +565,7 @@ class ButtonManager {
     face.className = 'clipmate-mascot';
     face.setAttribute('data-state', state);
 
-    const url = this._mascotUrl();
+    const url = this._mascotUrl(state);
     if (url) {
       face.style.backgroundImage = 'url("' + url + '")';
     } else {

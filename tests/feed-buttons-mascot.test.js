@@ -9,8 +9,9 @@
  * 成功/失败时才亮起一块浅绿/浅红底。
  *
  * 这份测试盯死五件事（每条都是「以后有人顺手改回去」会出事故的地方）：
- *   1. 形象只能是 `icons/mascot/mascot.png` 这一张，且必须走 background-image
+ *   1. 形象只能是 `icons/mascot/` 下的矢量形态（v2.9.2 起），且必须走 background-image
  *      —— 用 <img> 会被站点的全局 img 规则（max-width / object-fit / border-radius）改烂；
+ *      28px 只能用「头部特写」，全身像缩到这个尺寸只剩一团白；
  *   2. 扩展内资源必须在 manifest 的 web_accessible_resources 里登记，
  *      否则页面上是一片空白（jsdom 测不出加载，所以这条只能静态断言 + 真机看）；
  *   3. 按钮是 28px 正方形，图按母版比例 480:409 缩放，不许压扁/拉长；
@@ -29,7 +30,8 @@ const FILES = {
   weibo: path.join(CHROME, 'src/content/ui/weibo-feed-buttons.js'),
   x: path.join(CHROME, 'src/content/ui/x-feed-buttons.js')
 };
-const MASCOT = path.join(CHROME, 'icons/mascot/mascot.png');
+const MASCOT_DIR = path.join(CHROME, 'icons/mascot');
+const MASCOT = path.join(MASCOT_DIR, 'face-idle.svg');   // 小按钮用的就是这张
 const MANIFEST = path.join(CHROME, 'manifest.json');
 
 const C = { green: '\x1b[32m', red: '\x1b[31m', cyan: '\x1b[36m', reset: '\x1b[0m' };
@@ -64,11 +66,15 @@ const SRC = {};
 for (const [key, p] of Object.entries(FILES)) SRC[key] = fs.readFileSync(p, 'utf8');
 
 /* ============ 一、形象只有一张，且只能是背景图 ============ */
-section('一、形象来源：只用 mascot.png，且走 background-image');
+section('一、形象来源：icons/mascot/ 下的矢量形态，且走 background-image');
 
 for (const [key, code] of Object.entries(SRC)) {
-  ok('[' + key + '] 引用了 icons/mascot/mascot.png',
-    code.indexOf("icons/mascot/mascot.png") !== -1);
+  ok('[' + key + '] 从 icons/mascot/ 取矢量形态',
+    code.indexOf("'icons/mascot/'") !== -1 && code.indexOf("'.svg'") !== -1);
+  ok('[' + key + '] 待命态是头部特写 face-idle（28px 全身像会糊）',
+    /face-idle/.test(code));
+  ok('[' + key + '] 有结果时换一张脸（face-happy / face-blank）',
+    /face-happy/.test(code) && /face-blank/.test(code));
   // 注意：注释里允许出现「不要用 <img>」这种说明文字，所以只查真正的创建/注入行为
   ok('[' + key + '] 没有创建 <img> 元素（会被站点全局样式改烂）',
     !/createElement\(\s*['"]img['"]\s*\)/.test(code) && !/<img\s+[^>]*src=/i.test(code));
@@ -113,22 +119,21 @@ ok('三站的图片宽度一致（同一套尺寸，不许各写各的）',
   W.instagram === W.weibo && W.weibo === W.x, W);
 ok('三站的图片高度一致', H.instagram === H.weibo && H.weibo === H.x, H);
 
-// 母版真实尺寸 → 断言图不会被拉变形（误差 1% 以内）
+// 素材真实比例 → 断言图不会被拉变形（误差 2% 以内，留一点抗锯齿余量）
 {
-  const buf = fs.readFileSync(MASCOT);
-  const pngW = buf.readUInt32BE(16);
-  const pngH = buf.readUInt32BE(20);
-  ok('母版尺寸读得出来（480×409）', pngW === 480 && pngH === 409, { pngW, pngH });
-  const ratioSrc = pngW / pngH;
+  const txt = fs.readFileSync(MASCOT, 'utf8');
+  const m = txt.match(/viewBox="([-\d.\s]+)"/);
+  const vb = m ? m[1].trim().split(/\s+/).map(Number) : [];
+  ok('face-idle 的 viewBox 读得出来', vb.length === 4 && vb[2] > 0 && vb[3] > 0,
+    m ? m[1] : '无 viewBox');
+  const ratioSrc = vb[2] / vb[3];
   const ratioCss = W.instagram / H.instagram;
-  ok('CSS 里的宽高比 = 母版宽高比（图不被压扁）',
-    Math.abs(ratioCss - ratioSrc) / ratioSrc < 0.01, { ratioCss, ratioSrc });
+  ok('CSS 里的宽高比 = 素材宽高比（图不被压扁）',
+    vb.length === 4 && Math.abs(ratioCss - ratioSrc) / ratioSrc < 0.02, { ratioCss, ratioSrc });
 
-  // 头宽 ≈ 19.5px：母版里头占宽度的 312/480，28px 容器里要放得下 20px 的头
-  const headPx = W.instagram * (312 / 480);
-  ok('换算出来的头约 20px（19~21）', headPx >= 19 && headPx <= 21, headPx);
-  ok('图比按钮宽 2px（左右各裁掉 1px 透明留白，画面无损）',
-    W.instagram === 30, W.instagram);
+  // 31px 装进 28px 按钮：四周各溢 1.5px，边缘不发虚；再大就会溢出画面被邻元素盖住
+  ok('图比按钮大一圈（29~34px，装进 28px）',
+    W.instagram >= 29 && W.instagram <= 34, W.instagram);
 }
 
 /* ============ 三、状态：浅色背光，不是实心色块 ============ */
@@ -167,13 +172,11 @@ section('四、manifest：web_accessible_resources 覆盖素材');
 {
   const mf = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
   const war = mf.web_accessible_resources || [];
-  // 只认能真正覆盖 mascot.png 的两条写法：整个目录通配，或点名这一张。
+  // 只认能真正覆盖 23 个形态的那一条写法：整个目录通配。
   // 写成 icons/mascot/other/* 这种「同前缀但盖不到」的，不算数（变异测试盯着）
   const hit = war.some(function (e) {
     const res = e && e.resources ? e.resources : [];
-    return res.some(function (r) {
-      return r === 'icons/mascot/*' || r === 'icons/mascot/mascot.png';
-    });
+    return res.some(function (r) { return r === 'icons/mascot/*'; });
   });
   ok('web_accessible_resources 登记了 icons/mascot/*', hit, war);
   const coversAll = war.some(function (e) {
@@ -257,10 +260,12 @@ for (const key of Object.keys(SRC)) {
   const css = render(key, { url: URLS[key] });
   ok('[' + key + '] 样式节点真的注入了（有 <style id>）', css.length > 0);
   ok('[' + key + '] 样式里的 background-image 是扩展内地址',
-    css.indexOf('background-image:url("' + FAKE_EXT + '/icons/mascot/mascot.png")') !== -1,
+    css.indexOf('background-image:url("' + FAKE_EXT + '/icons/mascot/face-idle.svg")') !== -1,
     css.slice(0, 240));
-  ok('[' + key + '] 样式里没有 <img> 依赖，也没有 svg 选择器',
-    css.indexOf('svg') === -1);
+  // 素材换成 .svg 之后，样式里本来就带 "svg" 字样（url(".../face-idle.svg")），
+  // 所以不能再粗暴地 indexOf('svg') —— 只查「有没有把 svg 当元素选择器用」。
+  ok('[' + key + '] 样式里没有把 svg 当元素选择器（图标走背景图，不靠内联标签）',
+    !/[\s>]svg[\s{,:]/.test(css), css.slice(0, 240));
 }
 
 for (const key of Object.keys(SRC)) {
@@ -270,21 +275,25 @@ for (const key of Object.keys(SRC)) {
 }
 
 /* ============ 六、素材本身：必须带透明通道 ============ */
-section('六、素材：PNG 必须是 RGBA（带透明通道）');
+section('六、素材：矢量、结构完整、不带烘焙白底');
 
 {
-  const buf = fs.readFileSync(MASCOT);
-  ok('是 PNG（89 50 4E 47）',
-    buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47);
-  // IHDR 色彩类型：紧跟在宽(4)高(4)位深(1)之后，偏移 25
-  ok('色彩类型是 6（RGBA，带 alpha）', buf[25] === 6, buf[25]);
-  ok('体积正常（> 50KB，说明不是空图）', buf.length > 50 * 1024, buf.length);
+  const txt = fs.readFileSync(MASCOT, 'utf8').trim();
+  ok('是 SVG（<svg 开头、</svg> 结尾）',
+    /^<svg[\s>]/.test(txt) && txt.endsWith('</svg>'));
+  ok('体积正常（> 2KB，说明不是空图）', Buffer.byteLength(txt) > 2048, Buffer.byteLength(txt));
+  // 白底一旦烘焙进去，叠在任意站点上都是一块白方块，且没法用 CSS 去掉
+  ok('没有整幅白底矩形（d="M0 0..." + fill 白）',
+    !/d="M\s*0[,.\s]+0[^"]*"[^>]*fill="(#fff|#ffffff|white)"/i.test(txt) &&
+    !/fill="(#fff|#ffffff|white)"[^>]*d="M\s*0[,.\s]+0/i.test(txt));
+  const all = fs.readdirSync(MASCOT_DIR).filter((f) => f.endsWith('.svg'));
+  ok('素材目录里是 23 个形态', all.length === 23, all.length);
 }
 
 /* ============ 汇总 ============ */
 console.log('\n' + '─'.repeat(56));
 if (fail === 0) {
-  console.log(C.green + '全部通过：' + pass + ' 项' + C.reset + ' — 逐帖小按钮 · 头像版（v2.9.0）');
+  console.log(C.green + '全部通过：' + pass + ' 项' + C.reset + ' — 逐帖小按钮 · 头像版（v2.9.2）');
   process.exit(0);
 } else {
   console.log(C.red + '失败 ' + fail + ' 项，通过 ' + pass + ' 项' + C.reset);

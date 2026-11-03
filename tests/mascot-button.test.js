@@ -160,8 +160,8 @@ A.bm._renderButton('normal', A.bm.LABEL_IDLE);
 ok('按钮里有头像容器（v2.8.6 起不再垫白色圆底）', !!A.btn.querySelector('.' + RING));
 ok('头像节点是 span.clipmate-mascot', faceOf(A.btn) && faceOf(A.btn).tagName === 'SPAN');
 eq('初始文字是「提取」', A.btn.textContent.trim(), '提取');
-ok('初始头像指向唯一的 mascot.png',
-  bgOf(faceOf(A.btn)).endsWith('icons/mascot/mascot.png'), bgOf(faceOf(A.btn)));
+ok('待命头像是「举着一张纸」的 hero-doc',
+  bgOf(faceOf(A.btn)).endsWith('icons/mascot/hero-doc.svg'), bgOf(faceOf(A.btn)));
 ok('待命态不挂角标（常态不需要提示）', !A.btn.querySelector('.clipmate-badge'));
 ok('按钮里没有 <img>（站点 img 全局样式碰不到背景图）', A.btn.querySelectorAll('img').length === 0);
 
@@ -169,15 +169,15 @@ ok('按钮里没有 <img>（站点 img 全局样式碰不到背景图）', A.btn
 A.bm.setLoading(true);
 eq('提取中：文字', A.btn.textContent.trim(), '提取中');
 ok('提取中：加上 loading 类', A.btn.classList.contains('loading'));
-ok('提取中：头像不变（晃头靠 CSS 动画）',
-  bgOf(faceOf(A.btn)).endsWith('icons/mascot/mascot.png'), bgOf(faceOf(A.btn)));
+ok('提取中：仍是 hero-doc（晃头靠 CSS 动画，不另换一张）',
+  bgOf(faceOf(A.btn)).endsWith('icons/mascot/hero-doc.svg'), bgOf(faceOf(A.btn)));
 ok('提取中：不挂角标（还在跑，没有结果可报）', !A.btn.querySelector('.clipmate-badge'));
 
 A.bm.setSuccess();
 eq('成功：文字', A.btn.textContent.trim(), '完成');
 ok('成功：加上 success 类', A.btn.classList.contains('success'));
-ok('成功：头像不变（只有一张脸，状态交给角标）',
-  bgOf(faceOf(A.btn)).endsWith('icons/mascot/mascot.png'), bgOf(faceOf(A.btn)));
+ok('成功：头像换成「抱着绿勾」的 hero-done',
+  bgOf(faceOf(A.btn)).endsWith('icons/mascot/hero-done.svg'), bgOf(faceOf(A.btn)));
 ok('成功：结构仍是 1 个头像 + 1 个容器（没有重复挂载）',
   A.btn.querySelectorAll('.' + FACE).length === 1 &&
   A.btn.querySelectorAll('.' + RING).length === 1);
@@ -194,6 +194,8 @@ ok('成功：结构仍是 1 个头像 + 1 个容器（没有重复挂载）',
 A.bm.setError();
 eq('失败：文字', A.btn.textContent.trim(), '重试');
 ok('失败：加上 error 类', A.btn.classList.contains('error'));
+ok('失败：头像换成「哭」的 hero-cry',
+  bgOf(faceOf(A.btn)).endsWith('icons/mascot/hero-cry.svg'), bgOf(faceOf(A.btn)));
 {
   const b = A.btn.querySelector('.clipmate-badge');
   ok('失败：角标换成 error 语义色', !!b && b.getAttribute('data-tone') === 'error',
@@ -216,8 +218,8 @@ ok('失败：加上 error 类', A.btn.classList.contains('error'));
   if (t) t.fn();
   eq('3 秒后文字回到「提取」', A.btn.textContent.trim(), '提取');
   ok('3 秒后角标被摘掉', !A.btn.querySelector('.clipmate-badge'));
-  ok('3 秒后头像不变（本来就同一张）',
-    bgOf(faceOf(A.btn)).endsWith('icons/mascot/mascot.png'), bgOf(faceOf(A.btn)));
+  ok('3 秒后头像回到 hero-doc',
+    bgOf(faceOf(A.btn)).endsWith('icons/mascot/hero-doc.svg'), bgOf(faceOf(A.btn)));
   ok('3 秒后 success 类被摘掉', !A.btn.classList.contains('success'));
   A.win.setTimeout = realSet;
   A.win.clearTimeout = realClear;
@@ -240,57 +242,74 @@ ok('失败：加上 error 类', A.btn.classList.contains('error'));
 {
   const war = MANIFEST_JSON.web_accessible_resources || [];
   const flat = war.reduce((acc, g) => acc.concat(g.resources || []), []);
-  ok('manifest 声明了吉祥物资源（否则页面上是空白圆圈）',
-    flat.some((r) => /icons\/mascot\/\*/.test(r) || /mascot\/.+\.png/.test(r)), JSON.stringify(flat));
+  ok('manifest 声明了吉祥物资源（否则页面上是空白方块）',
+    flat.some((r) => /icons\/mascot\/\*/.test(r)), JSON.stringify(flat));
 
   const dir = path.join(ROOT, 'icons/mascot');
-  // v2.8.6 定稿：只有一张脸。四态 SVG 已归档到 backups（表情等以后再做）。
-  const png = path.join(dir, 'mascot.png');
-  const pngSize = fs.existsSync(png) ? fs.statSync(png).size : 0;
-  ok(`头像资源存在且非空：mascot.png（${(pngSize / 1024).toFixed(1)}KB）`, pngSize > 20000);
-  ok('头像资源是带透明通道的 PNG（原图带白底就会在按钮上留白边）',
-    (() => {
-      try {
-        const buf = fs.readFileSync(png);
-        // PNG：1~3 字节是 "PNG"，第 25 字节是 IHDR 的色彩类型，6 = RGBA
-        return buf.slice(1, 4).toString() === 'PNG' && buf[25] === 6;
-      } catch (e) { return false; }
-    })());
-  ok('头像 PNG 是 8 位 RGBA（否则透明底无从谈起）', (() => {
-    try {
-      const buf = fs.readFileSync(png);
-      const colorType = buf[25];
-      const bitDepth = buf[24];
-      return colorType === 6 && bitDepth === 8;
-    } catch (e) { return false; }
-  })());
-  ok('已抠图：图像左上角是透明的（棋盘格白底没去干净时这里会是不透明）', (() => {
-    try {
-      // 解 PNG 第一行的第一个像素。第一行的左邻与上行都是 0，
-      // 所以无论 scanline 用哪种 filter，还原值都等于原始字节 —— 直接读即可。
-      const buf = fs.readFileSync(png);
-      let off = 8;
-      const idat = [];
-      let w = 0;
-      while (off < buf.length - 8) {
-        const len = buf.readUInt32BE(off);
-        const type = buf.slice(off + 4, off + 8).toString('latin1');
-        const data = buf.slice(off + 8, off + 8 + len);
-        if (type === 'IHDR') w = data.readUInt32BE(0);
-        else if (type === 'IDAT') idat.push(data);
-        else if (type === 'IEND') break;
-        off += 12 + len;
-      }
-      const raw = zlib.inflateSync(Buffer.concat(idat));
-      const alpha = raw[1 + 3];            // 第 0 行、第 0 个像素的 A 通道
-      return w > 0 && alpha < 16;          // < 6% 不透明即视为透明
-    } catch (e) { return false; }
-  })());
-  ok('旧的四态 SVG 已清除（否则打包会带上废弃素材）',
-    ['m-normal.svg', 'm-happy.svg', 'm-sad.svg', 'm-ask.svg']
-      .every((f) => !fs.existsSync(path.join(dir, f))));
+  const svgs = fs.existsSync(dir)
+    ? fs.readdirSync(dir).filter((f) => f.endsWith('.svg')).sort()
+    : [];
+  // v2.9.2：用户给了 23 个形态的矢量合集，全部拆进来
+  ok(`吉祥物素材是 23 个矢量形态（实际 ${svgs.length} 个）`, svgs.length === 23, svgs.join(','));
 
-  // v2.9.0：四个尺寸的应用图标都由 mascot.png 直接合成（旧版是手绘矢量 app-icon.svg）
+  // 每个 SVG 都要结构完整、viewBox 合法 —— 手改素材最容易漏闭合，
+  // 浏览器里表现是整张图不显示，而 jsdom 根本不加载图片，测不出来
+  const bad = [];
+  const vbs = {};
+  svgs.forEach((f) => {
+    const txt = fs.readFileSync(path.join(dir, f), 'utf8').trim();
+    if (!/<svg[\s>]/.test(txt) || !txt.endsWith('</svg>')) { bad.push(f + ':标签不全'); return; }
+    const m = txt.match(/viewBox="([-\d.\s]+)"/);
+    if (!m) { bad.push(f + ':无 viewBox'); return; }
+    const v = m[1].trim().split(/\s+/).map(Number);
+    if (v.length !== 4 || !(v[2] > 0) || !(v[3] > 0)) { bad.push(f + ':viewBox 非法'); return; }
+    vbs[f] = { w: v[2], h: v[3] };
+  });
+  ok('23 个 SVG 结构完整、viewBox 合法', bad.length === 0, bad.join('; '));
+
+  const ratios = Object.keys(vbs).map((f) => vbs[f].w / vbs[f].h);
+  ok(`形态宽高比落在 0.6~1.3（实测 ${ratios.map((r) => r.toFixed(2)).join(' ')}）`,
+    ratios.length === 23 && ratios.every((r) => r > 0.6 && r < 1.3));
+
+  ok('旧的 mascot.png 已清除（全面换成矢量）', !fs.existsSync(path.join(dir, 'mascot.png')));
+
+  /* 最关键的一条：代码里点名的每个形态都必须真的在磁盘上。
+     jsdom 不加载图片，文件名写错测试照过，装进浏览器就是一片空白 ——
+     v2.9.1 之前就吃过「资源没登记 web_accessible」的同类亏。 */
+  const KNOWN = new Set(svgs.map((f) => f.replace(/\.svg$/, '')));
+  const refFiles = [
+    'src/content/ui/button-manager.js',
+    'src/content/ui/floating-window.js',
+    'src/content/ui/x-feed-buttons.js',
+    'src/content/ui/weibo-feed-buttons.js',
+    'src/content/ui/instagram-feed-buttons.js',
+    'src/popup/popup.html',
+    'src/popup/popup.js',
+    'src/options/options.html',
+    'src/options/options.js',
+  ];
+  const missing = [];
+  refFiles.forEach((f) => {
+    const txt = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    // ① 静态引用：icons/mascot/xxx.svg
+    (txt.match(/icons\/mascot\/[a-z-]+\.svg/g) || []).forEach((m) => {
+      const name = m.replace('icons/mascot/', '').replace('.svg', '');
+      if (!KNOWN.has(name)) missing.push(f + ' → ' + m);
+    });
+    // ② 动态拼出来的形态名：单引号里的 face-xxx / hero-xxx
+    (txt.match(/'((?:face|hero)-[a-z]+)'/g) || []).forEach((m) => {
+      const name = m.slice(1, -1);
+      if (!KNOWN.has(name)) missing.push(f + ' → ' + name);
+    });
+  });
+  ok('代码里点名的形态都存在（写错名字＝页面上一片空白）',
+    missing.length === 0, missing.join('; '));
+
+  ok('素材里有四个状态要用的形态',
+    ['hero-doc', 'hero-done', 'hero-cry', 'face-busy'].every((n) => KNOWN.has(n)),
+    ['hero-doc', 'hero-done', 'hero-cry', 'face-busy'].filter((n) => !KNOWN.has(n)).join(','));
+
+  // ---- 应用图标：16/32 头部 + 48/128 全身（用户 2026-11-03 选的「混合」）----
   const ICONS = ['icon16.png', 'icon32.png', 'icon48.png', 'icon128.png'];
   ICONS.forEach((f) => {
     const p = path.join(ROOT, 'icons', f);
@@ -299,7 +318,6 @@ ok('失败：加上 error 类', A.btn.classList.contains('error'));
     ok(`应用图标存在且非空：${f}（${(size / 1024).toFixed(1)}KB）`, exists && size > 600);
   });
 
-  // 逐像素解析：判「图里是这个吉祥物」以及「小尺寸换过裁切」
   const icons = {};
   const broken = [];
   ICONS.forEach((f) => {
@@ -314,16 +332,14 @@ ok('失败：加上 error 类', A.btn.classList.contains('error'));
       const im = icons[f];
       ok(`${f} 的实际像素是 ${n}×${n}`, im.w === n && im.h === n, `${im.w}×${im.h}`);
     });
-    // 圆角：四个角必须是透明的，否则是方块
+
     const cornerTransparent = (im) => {
       const at = (x, y) => im.px[((y * im.w) + x) * 4 + 3];
       return [at(0, 0), at(im.w - 1, 0), at(0, im.h - 1), at(im.w - 1, im.h - 1)]
         .every((a) => a < 40);
     };
-    ok('图标是圆角方底（四角透明）',
-      ICONS.every((f) => cornerTransparent(icons[f])));
+    ok('图标是圆角方底（四角透明）', ICONS.every((f) => cornerTransparent(icons[f])));
 
-    // 计数：母版的描边色 #0C1E32（r<45 g<55 b<80）与机身白
     const count = (im, fn) => {
       let hit = 0, opaque = 0;
       for (let i = 0; i < im.w * im.h; i++) {
@@ -334,35 +350,39 @@ ok('失败：加上 error 类', A.btn.classList.contains('error'));
       }
       return { hit, opaque, ratio: opaque ? hit / opaque : 0 };
     };
-    const navy = (r, g, b) => r < 45 && g < 55 && b < 80;          // 深藏青描边 / 面罩
-    const white = (r, g, b) => r > 225 && g > 235 && b > 235;       // 白机身与纸
+    // 新矢量素材的描边 / 面罩是深蓝（#0028BC / #002374，b 值高）；
+    // 旧手绘素材是藏青 #0C1E32（b 值低）。判据必须换，否则永远红。
+    const ink = (r, g, b) => r < 45 && g < 70 && b > 80;
+    const white = (r, g, b) => r > 225 && g > 235 && b > 235;
 
-    const navy128 = count(icons['icon128.png'], navy);
-    ok(`icon128 里带着母版的深藏青描边（${navy128.hit} 像素）——` +
-       '旧矢量图标的描边是 #0B3C8F（g=60），这条会红',
-      navy128.hit > 800);
+    ok(`icon128 里带着素材的深蓝描边（${count(icons['icon128.png'], ink).hit} 像素）`,
+      count(icons['icon128.png'], ink).hit > 1500);
 
     ICONS.forEach((f) => {
       const w = count(icons[f], white);
-      ok(`${f} 里有白机身（占不透明像素 ${(w.ratio * 100).toFixed(1)}%）`, w.ratio > 0.05);
+      ok(`${f} 里有白机身（占不透明像素 ${(w.ratio * 100).toFixed(1)}%）`, w.ratio > 0.08);
     });
 
-    // 16/32 是「头部方裁」，脸在画面里更大 → 面罩占比明显高于 48/128
-    const small = (count(icons['icon16.png'], navy).ratio + count(icons['icon32.png'], navy).ratio) / 2;
-    const large = (count(icons['icon48.png'], navy).ratio + count(icons['icon128.png'], navy).ratio) / 2;
-    ok(`小尺寸换过头像裁切：16/32 面罩占比 ${(small * 100).toFixed(1)}% > ` +
-       `48/128 的 ${(large * 100).toFixed(1)}%（改成同一张图缩小时这条会红）`,
-      small > large * 1.15);
+    // 16px 是最难过的一关：只要脸还在，深蓝像素就不会归零
+    ok(`icon16 里脸还在（深蓝 ${count(icons['icon16.png'], ink).hit} 像素）`,
+      count(icons['icon16.png'], ink).hit > 10);
   }
 
   // 母版换图后必须重跑脚本，别手改 PNG（脚本在仓库根的 scripts/，不进扩展包）
   const genScript = path.resolve(__dirname, '..', 'scripts', 'make-icons.py');
-  ok('图标生成脚本在（换母版后重跑，而不是手改 PNG）', fs.existsSync(genScript));
+  ok('图标生成脚本在（换素材后重跑，而不是手改 PNG）', fs.existsSync(genScript));
   if (fs.existsSync(genScript)) {
     const code = fs.readFileSync(genScript, 'utf8');
-    ok('脚本里写着 16/32 用头部方裁', /CROP_HEAD\s*=\s*\(\s*19\s*,\s*19\s*,\s*400\s*,\s*400\s*\)/.test(code));
+    ok('脚本从 SVG 素材渲染，不再读 mascot.png',
+      /MASCOT_DIR/.test(code) && !/mascot\.png/.test(code));
+    ok('脚本是混合方案：16/32 头部特写、48/128 全身像',
+      /16:\s*\('face-idle'/.test(code) && /32:\s*\('face-idle'/.test(code) &&
+      /48:\s*\('hero-doc'/.test(code) && /128:\s*\('hero-doc'/.test(code));
     ok('脚本里写着品牌蓝渐变 #3D8BFF → #1668E6',
       /BG_TOP\s*=\s*'#3D8BFF'/.test(code) && /BG_BOTTOM\s*=\s*'#1668E6'/.test(code));
+    ok('脚本换算了 SVG 自带的 6% 内边距（SVG_PAD）', /SVG_PAD\s*=\s*0\.94/.test(code));
+    ok('脚本用无头浏览器渲染（截图必须透明底）',
+      /--default-background-color=00000000/.test(code));
   }
   ok('manifest 的四个尺寸都指向 icons/iconN.png',
     ['16', '32', '48', '128'].every((n) => (MANIFEST_JSON.icons || {})[n] === `icons/icon${n}.png`),
@@ -373,8 +393,9 @@ ok('失败：加上 error 类', A.btn.classList.contains('error'));
  * 三、样式契约
  * ==========================================================*/
 ok('CSS 有头像容器 .clipmate-mascot-ring', /\.clipmate-mascot-ring\s*\{/.test(CSS_CODE));
-ok('CSS 有头像 .clipmate-mascot 且用 background 承载图片',
-  /\.clipmate-mascot\s*\{[\s\S]{0,400}?background-size:\s*contain/.test(CSS_CODE));
+ok('CSS 有头像 .clipmate-mascot 且按高度定尺寸（auto 89%）',
+  /\.clipmate-mascot\s*\{[\s\S]{0,700}?background-size:\s*auto\s+89%/.test(CSS_CODE),
+  '四个形态宽高比不同，按宽度 contain 会让高瘦的那个溢出超标');
 ok('CSS 提取中给了摇头动画 clipmate-nod',
   /\.loading\s+\.clipmate-mascot\s*\{[\s\S]{0,200}?animation:\s*clipmate-nod/.test(CSS_CODE));
 ok('旧的转圈 spinner 已删除（不再有 .loading-spinner 规则）',
@@ -410,7 +431,7 @@ ok('按钮右侧留出角标的位置（padding-right >= 26px）',
     /translateY\(-50%\)/.test(badgeRule), badgeRule);
   ok('角标是 18px 白圆',
     /width:\s*18px/.test(badgeRule) && /height:\s*18px/.test(badgeRule) &&
-    /border-radius:\s*50%/.test(badgeRule) && /background:\s*#ffffff/i.test(badgeRule), badgeRule);
+    /border-radius:\s*50%/.test(badgeRule) && /background:\s*(?:var\(--cm-white,\s*)?#ffffff/i.test(badgeRule), badgeRule);
   ok('角标不吃点击（点角标等于点按钮）',
     /pointer-events:\s*none/.test(badgeRule), badgeRule);
   ok('角标有弹入动画', /animation:\s*clipmate-badge-pop/.test(badgeRule), badgeRule);
@@ -434,11 +455,18 @@ ok('按钮右侧留出角标的位置（padding-right >= 26px）',
   const ringW = Number((ringRule.match(/width:\s*(\d+)px/) || [])[1] || 0);
   ok('能读到头像容器宽度（否则下面的几何断言会假绿）', ringW > 40, 'ringW=' + ringW);
 
-  const buf = fs.readFileSync(path.join(ROOT, 'icons/mascot/mascot.png'));
-  const pw = buf.readUInt32BE(16);
-  const ph = buf.readUInt32BE(20);
-  const drawH = ringW * (ph / pw);            // background-size:contain → 按宽度铺满
-  const overflow = Math.max(0, (drawH - 48) / 2);  // 按钮高 48px，上下平分溢出
+  const ringH = Number((ringRule.match(/height:\s*(\d+)px/) || [])[1] || 0);
+  // 背景尺寸写在 .clipmate-mascot 上，不在 ring 上
+  const faceRule = (CSS_CODE.match(/button\.media-extractor-button\s+\.clipmate-mascot\s*\{[\s\S]*?\}/) || [''])[0];
+  const pctM = faceRule.match(/background-size:\s*auto\s+(\d+)%/);
+  ok('能读到头像的背景高度比例（否则下面的几何断言会假绿）', !!pctM, faceRule.slice(0, 120));
+
+  /* 素材是拆图时按 3% padding 生成的，viewBox 里有 6% 的空气，
+     真正画出来的内容比 background-size 指定的小一圈 —— 必须一起算，
+     否则算出来的溢出量偏大，这条断言就成了「假红」。 */
+  const SVG_PAD = 0.94;
+  const drawnH = ringH * (pctM ? Number(pctM[1]) / 100 : 0) * SVG_PAD;
+  const overflow = Math.max(0, (drawnH - 48) / 2);  // 按钮高 48px，上下平分溢出
 
   ok(`头像向下溢出 ${overflow.toFixed(1)}px 小于浮窗间距 ${gm ? gm[1] : '?'}px`,
     !!gm && overflow < Number(gm[1]), `溢出 ${overflow.toFixed(1)}px`);
@@ -446,7 +474,7 @@ ok('按钮右侧留出角标的位置（padding-right >= 26px）',
 ok('按钮自身 overflow 可见（头像要溢出上下沿）',
   /overflow:\s*visible/.test(btnRule), btnRule);
 ok('主色统一成设计系统蓝 #056bf4',
-  /button\.media-extractor-button\s*\{[\s\S]{0,400}?background:\s*#056bf4/.test(CSS_CODE));
+  /button\.media-extractor-button\s*\{[\s\S]{0,400}?background:\s*(?:var\(--cm-(?:blue|btn),\s*)?#056bf4/i.test(CSS_CODE));
 
 /* ============================================================
  * 四、浮窗按钮顺序（静态契约，锚在非编辑分支的 push 块上）

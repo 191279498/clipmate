@@ -12,6 +12,8 @@
   <div class="popup-container">
 
     <header class="pop-head">
+      <!-- v2.9.2：左边站一只吉祥物的头，让弹窗第一眼有「是谁在说话」的落点 -->
+      <img class="pop-face" src="../../icons/mascot/face-idle.svg" alt="" draggable="false">
       <div class="pop-id">
         <span class="pop-name" id="siteName">本站设置</span>
         <span class="pop-host" id="siteHost"></span>
@@ -32,8 +34,9 @@
     <div class="pop-note" id="siteNote" hidden></div>
 
     <!-- v2.9.1：这个页面没有可提取的东西时，不再只留一句灰字 —— 变成「吉祥物 + 一句话 + 出口」 -->
+    <!-- v2.9.2：图按场景换 —— 浏览器内部页一脸懵（face-blank），没收录的站探头看（hero-peek） -->
     <div class="pop-empty" id="popEmpty" hidden>
-      <img class="pop-empty-art" id="popEmptyArt" src="../../icons/mascot/mascot.png" alt="采媒灵吉祥物" draggable="false">
+      <img class="pop-empty-art" id="popEmptyArt" src="../../icons/mascot/hero-peek.svg" alt="" draggable="false">
       <p class="pop-empty-title" id="popEmptyTitle">这个页面还没有可提取的内容</p>
       <p class="pop-empty-desc" id="popEmptyDesc">打开条目详情页，采媒灵会自动认出它属于哪一类。</p>
       <button type="button" class="pop-empty-link" id="openSites">查看支持的站点</button>
