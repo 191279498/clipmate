@@ -570,6 +570,13 @@ class MediaExtractor {
           this.buttonManager.setVisible(eff.showButton !== false);
         }
 
+        // v2.9.4：浮窗自动收起开关。v2.9.6 起按**站点**生效：
+        // 社交站默认开、其余站默认关，站点级可覆盖 —— 一律走 eff（resolve 已经算好），
+        // 不再直接读 config.settings.autoDismiss（那个只剩「老配置全关」的迁移用途）。
+        if (typeof ClipMateBrowseDismiss !== 'undefined' && ClipMateBrowseDismiss.setEnabled) {
+          ClipMateBrowseDismiss.setEnabled(eff.autoDismiss !== false);
+        }
+
         // v2.8.2：简介长度上限（社交 / 影人 / 其他）。
         // 挂在原型上而不是实例上 —— 提取器是由 ExtractorFactory 按站点造出来的，
         // 每个站一个实例，逐实例去设会漏；而 processCommonFields 是共享 mixin，

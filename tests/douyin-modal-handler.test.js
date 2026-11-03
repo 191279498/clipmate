@@ -231,12 +231,16 @@ async function testCloseModal(mediaConfigs) {
 /* ============================ 四、切下一条 ============================ */
 
 async function testSwitchNext(mediaConfigs) {
-  section('四、弹窗里切下一条 → 按钮不动 + 浮窗就地刷新');
+  section('四、弹窗里切下一条 → 按钮不动 + 浮窗就地刷新（自动收起关掉时的行为）');
 
   const fx = fixtureById('douyin-modal-search-video-7672265848853220618');
   const { page, inst, w, d } = await open(fx, { mediaConfigs });
   const OLD = '7672265848853220618';
   const NEW = '7000000000000000001';
+
+  // v2.9.6：本节钉的是「就地刷新」这条老路。开关开着时换条会关窗（见四 B），
+  // 这里先把自动收起关掉，行为才与 v2.9.5 之前完全一致。
+  if (w.ClipMateBrowseDismiss) w.ClipMateBrowseDismiss.setEnabled(false);
 
   await inst.handleExtract();
   eq('[切条·前置] 浮窗已打开', inst.modalManager.isOpen, true);
@@ -277,6 +281,44 @@ async function testSwitchNext(mediaConfigs) {
   inst._onDouyinModalState({ id: NEW, opened: true });
   await sleep(300);
   eq('同一条再通知一次 → 不重复刷新', calls.length, 1);
+
+  w.close();
+}
+
+/* ============================ 四 B、自动收起开着 = 关窗 ============================ */
+
+async function testSwitchNextDismiss(mediaConfigs) {
+  section('四 B、自动收起开着 → 弹窗里切下一条 = 关窗（不就地刷新）');
+
+  const fx = fixtureById('douyin-modal-search-video-7672265848853220618');
+  const { page, inst, w, d } = await open(fx, { mediaConfigs });
+  const OLD = '7672265848853220618';
+  const NEW = '7000000000000000001';
+
+  // v2.9.6：社交站默认开。显式 setEnabled(true)，不依赖模块初始值。
+  if (w.ClipMateBrowseDismiss) w.ClipMateBrowseDismiss.setEnabled(true);
+  truthy('[关窗·前置] shouldCloseOnSwitch=true',
+    w.ClipMateBrowseDismiss && w.ClipMateBrowseDismiss.shouldCloseOnSwitch() === true);
+
+  await inst.handleExtract();
+  eq('[关窗·前置] 浮窗已打开', inst.modalManager.isOpen, true);
+
+  const refreshCalls = [];
+  const origUpdate = inst.modalManager.updateInPlace.bind(inst.modalManager);
+  inst.modalManager.updateInPlace = async (data) => { refreshCalls.push(data); return origUpdate(data); };
+
+  // 模拟真实切条：URL 换 ID + 本条节点换 ID/昵称/文案
+  w.history.replaceState({}, '', 'https://www.douyin.com/search/x?modal_id=' + NEW);
+  const info = d.querySelector(`[data-e2e="video-info"][data-e2e-aweme-id="${OLD}"]`);
+  truthy('[关窗·前置] 找到本条信息节点', !!info);
+  info.setAttribute('data-e2e-aweme-id', NEW);
+  d.body.appendChild(d.createElement('span'));
+  await sleep(1300);
+
+  eq('浮窗已关闭', inst.modalManager.isOpen, false);
+  eq('没有发生就地刷新（updateInPlace 一次都没跑）', refreshCalls.length, 0);
+  eq('按钮还在，仍然只有 1 个', d.querySelectorAll('.media-extractor-button').length, 1);
+  eq('当前作品 ID 跟着换成新的', inst._douyinModalId, NEW);
 
   w.close();
 }
@@ -610,6 +652,7 @@ async function testTabSwitch(mediaConfigs) {
   await testExtractOpensPanel(mediaConfigs);
   await testCloseModal(mediaConfigs);
   await testSwitchNext(mediaConfigs);
+  await testSwitchNextDismiss(mediaConfigs);
   await testPrefOff(mediaConfigs);
   await testBreaker(mediaConfigs);
   await testOtherSitesUnaffected(mediaConfigs);

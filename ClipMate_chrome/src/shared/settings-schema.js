@@ -14,7 +14,8 @@
 //   1. 只在 ITEMS 里加一条，不要在页面里手写控件；
 //   2. `path` 是这个值在 config 里的位置，嵌套就写数组（如 ['settings','enableCache']）；
 //   3. 只有**真的生效**的项才允许写进来 —— 放了开关却没人读，等于骗用户；
-//   4. siteOverridable: true 的项才会出现在站点卡片里（站点覆盖目前只支持 5 项）。
+//   4. siteOverridable: true 的项才会出现在站点卡片里（站点覆盖目前只支持 6 项）；
+//      siteOnly: true 表示「只在站点卡片里出现，通用页不显示」（v2.9.6 的自动收起就是）。
 (function (global) {
   'use strict';
 
@@ -177,6 +178,22 @@
         { value: 'light', label: '浅色' },
         { value: 'dark', label: '深色' }
       ]
+    },
+    // v2.9.4：浮窗自动收起。v2.9.6 起改为**站点级**设置：
+    //   默认值按站点类型实时算（社交站开、其余站关，见 site-config.autoDismissDefault），
+    //   所以通用页不再显示这一项 —— 一个「全局开关」会让人以为它对所有站都生效，
+    //   实际却打不过社交站的类型默认值。
+    // 老配置 settings.autoDismiss === false 仍会被 resolve() 当作「全都别自动收」迁移。
+    {
+      key: 'autoDismiss',
+      group: 'ui',
+      label: '换作品时收起浮窗',
+      hint: '往下翻或切下一条时自动收起浮窗（只收浮窗，按钮留着）。社交站默认开，其余站默认关',
+      type: 'switch',
+      path: ['settings', 'autoDismiss'],
+      default: false,
+      siteOverridable: true,
+      siteOnly: true
     },
     {
       key: 'enableCache',

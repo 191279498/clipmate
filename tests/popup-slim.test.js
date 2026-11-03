@@ -166,8 +166,8 @@ async function main() {
   ok('不再用 openOptionsPage（拿不到当前域名）', JS_SRC.indexOf('runtime.openOptionsPage') === -1);
   ok('popup.html 不再有主题单选组', HTML_RAW.indexOf('name="theme"') === -1);
 
-  // 四项设置 + 两个子项一个都不能少（砍了就会和设置页漂移）
-  ['siteAutoExtract', 'siteAutoExtractDelay', 'siteAutoCopy', 'siteAutoCopyFormat', 'siteShowButton']
+  // 五项设置 + 两个子项一个都不能少（砍了就会和设置页漂移；v2.9.6 加收起浮窗）
+  ['siteAutoExtract', 'siteAutoExtractDelay', 'siteAutoCopy', 'siteAutoCopyFormat', 'siteShowButton', 'siteAutoDismiss']
     .forEach((id) => ok('保留 #' + id, HTML_RAW.indexOf('id="' + id + '"') !== -1));
 
   eq('openOptions 只有一处', (HTML_RAW.match(/id="openOptions"/g) || []).length, 1);
@@ -196,7 +196,8 @@ async function main() {
   eq('站点名识别为抖音', doc.getElementById('siteName').textContent, '抖音');
   eq('域名显示', doc.getElementById('siteHost').textContent, 'www.douyin.com');
   eq('版本号显示', doc.getElementById('popVersion').textContent, 'v2.8.5');
-  eq('五个控件都在', doc.querySelectorAll('#siteRows input, #siteRows select').length, 5);
+  // v2.9.6：新增「换作品时收起浮窗」开关，4 个 checkbox + 1 滑块 + 1 下拉 = 6 个控件
+  eq('六个控件都在', doc.querySelectorAll('#siteRows input, #siteRows select').length, 6);
   eq('底部默认不说话（既没改过、也不继承别的规则）',
     doc.getElementById('footState').hidden, true);
 
@@ -227,9 +228,9 @@ async function main() {
 
   const ov = state.config.siteOverrides['www.douyin.com'];
   ok('第一次改动直接写出本站规则', !!ov);
-  eq('快照含其余四项、不含格式键（格式继续跟着变）',
+  eq('快照含其余五项、不含格式键（格式继续跟着变）',
     Object.keys(ov || {}).sort(),
-    ['autoCopy', 'autoExtract', 'autoExtractDelay', 'showButton']);
+    ['autoCopy', 'autoDismiss', 'autoExtract', 'autoExtractDelay', 'showButton']);
   eq('改的那一项落了盘', ov && ov.showButton, false);
   eq('底部出现「本站已单独设置」',
     doc.getElementById('footState').hidden, false);
@@ -249,8 +250,8 @@ async function main() {
   await tick(60);
   ok('选回 markdown（等于继承值）→ 不写这条键，继续跟着全局变',
     !Object.prototype.hasOwnProperty.call(state.config.siteOverrides['www.douyin.com'], 'autoCopyFormat'));
-  eq('其余四项仍在', Object.keys(state.config.siteOverrides['www.douyin.com']).sort(),
-    ['autoCopy', 'autoExtract', 'autoExtractDelay', 'showButton']);
+  eq('其余五项仍在', Object.keys(state.config.siteOverrides['www.douyin.com']).sort(),
+    ['autoCopy', 'autoDismiss', 'autoExtract', 'autoExtractDelay', 'showButton']);
 
   // 恢复默认：删掉本站规则，底部重新闭嘴
   doc.getElementById('restoreGlobal').click();

@@ -157,6 +157,56 @@
     return fallback;
   }
 
+  /**
+   * 在一个容器里找「当前这一条」的作品 ID（v2.9.5）
+   *
+   * 抖音 2026 年 10 月下旬起，弹层切条改成**复用节点、只改 class**（不再重建 DOM）：
+   * 容器里 `video-info[data-e2e-aweme-id]` 是**后填**的，切条瞬间读到的仍是上一条；
+   * class 里的 `video_<id>` 先更新。所以「只认 info」的判定会出现
+   * 「切了十条，签名一个字没变」——上层据此认为没换作品，浮窗永远刷成第一条。
+   *
+   * 多个候选都像「当前」时返回空串（**不猜**），让调用方退回用 info 的 ID。
+   */
+  function idFromFeedInScope(doc, scope) {
+    if (!scope) return '';
+    var cand = [];
+    var own = idFromClass(scope);
+    if (own) cand.push({ id: own, el: scope });
+    var feeds = safeQueryAll(scope, SEL.feed);
+    for (var i = 0; i < feeds.length; i++) {
+      var id = idFromClass(feeds[i]);
+      if (id && id !== own) cand.push({ id: id, el: feeds[i] });
+    }
+    if (!cand.length) return '';
+    if (cand.length === 1) return cand[0].id;
+    // 多个候选：只信「唯一一个有版面」的那条（jsdom / 未布局时全无版面 → 不猜）
+    var withGeo = [];
+    for (var k = 0; k < cand.length; k++) {
+      if (hasGeometry(cand[k].el)) withGeo.push(cand[k].id);
+    }
+    return withGeo.length === 1 ? withGeo[0] : '';
+  }
+
+  /**
+   * 「正在播的那一条」的作品 ID（v2.9.5）
+   *
+   * 优先级：容器内有且仅有一个 `feed-active-video` → 用它的 class ID；
+   * 否则退回「唯一候选」判定。
+   *
+   * 为什么不直接用「容器内所有 feed 的 ID 集合」：抖音弹层会预加载相邻条，
+   * 集合会因预加载而变化，那会让浮窗被无意义地反复重提取。
+   * `feed-active-video` 只在**真正切条**时换手，是最干净的信号。
+   */
+  function activeIdInScope(doc, scope) {
+    if (!scope) return '';
+    var acts = safeQueryAll(scope, SEL.active);
+    if (acts.length === 1) {
+      var id = idFromClass(acts[0]);
+      if (id) return id;
+    }
+    return idFromFeedInScope(doc, scope);
+  }
+
   function scopeByInfoId(doc, id) {
     if (!id) return null;
     var infos = safeQueryAll(doc, SEL.info);
@@ -356,6 +406,14 @@
     var id = urlId || infoId;
     if (!id) return null;
 
+    // v2.9.5：地址栏的 modal_id 被抖音抹掉之后，唯一还能说明「这一条是谁」的是
+    // 容器节点 class 里的 `video_<id>`。它比 info 的 data-e2e-aweme-id 更新得早，
+    // 所以两者不一致时**以 class 为准**（info 还是上一条的残留）。
+    if (!urlId) {
+      var feedId = activeIdInScope(d, scope);
+      if (feedId) id = feedId;
+    }
+
     return { id: id, scope: scope, info: info, mode: 'modal' };
   }
 
@@ -448,7 +506,11 @@
         var scope = scopeByClassId(d, urlId) || safeQuery(d, SEL.container);
         var info = scope ? safeQuery(scope, SEL.info) : null;
         var infoId = info ? String(info.getAttribute('data-e2e-aweme-id') || '') : '';
-        return 'modal|' + urlId + '|' + infoId;
+        // v2.9.5：切条若只改 class（抖音 2026-10 下旬起），infoId 会滞后一整条 ——
+        // 签名必须把这层「class 里的 ID」也算进去，否则切了十条签名也不变，
+        // 上层就不会重新提取，浮窗停在第一条。
+        var feedId = activeIdInScope(d, scope);
+        return 'modal|' + urlId + '|' + (feedId || infoId);
       }
       // ② 沉浸流页：认不出只是「等一下」，不是「没了」
       if (isImmersivePage()) {
@@ -505,7 +567,17 @@
     var observer = null;
     if (typeof global.MutationObserver === 'function') {
       observer = new global.MutationObserver(schedule);
-      observer.observe(d.body, { childList: true, subtree: true });
+      // v2.9.5：必须同时盯属性 —— 抖音弹层切条是**复用同一个节点、只改 class**
+      // （`video_<旧ID>` → `video_<新ID>`），DOM 子节点一个没增删，
+      // 只开 childList 的话回调一次都收不到 → 上层以为「没换作品」→ 永远只提第一条。
+      // （快手 2026-10-27 踩过同一个坑，那边也是只挪 class。）
+      // attributeFilter 限定这三个，避免播放进度/样式抖动把 schedule 刷爆。
+      observer.observe(d.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'data-e2e', 'data-e2e-aweme-id']
+      });
     }
 
     var origPush = global.history && global.history.pushState;

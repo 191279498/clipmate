@@ -224,7 +224,9 @@ class SettingsPage {
     host.textContent = '';
 
     SCHEMA.GROUPS.forEach((group) => {
-      var items = SCHEMA.ITEMS.filter((it) => it.group === group.id);
+      // v2.9.6：siteOnly 的项只在站点卡片里出现（自动收起的默认值按站点类型算，
+      // 摆在通用页会变成一个「看着像全局、实际打不过类型默认」的开关）
+      var items = SCHEMA.ITEMS.filter((it) => it.group === group.id && !it.siteOnly);
       if (!items.length) return;
 
       var wrap = el('div', 'group');
@@ -627,7 +629,10 @@ class SettingsPage {
       autoExtract: eff.autoExtract,
       autoExtractDelay: eff.autoExtractDelay,
       autoCopy: eff.autoCopy,
-      showButton: eff.showButton
+      showButton: eff.showButton,
+      // v2.9.6：必须一起快照 —— 否则用户设过「收起浮窗」再改自动提取，
+      // 新快照里没有这个键，本站就掉回类型默认值了（社交站会悄悄又变回开）
+      autoDismiss: eff.autoDismiss
     };
 
     // 复制格式：本站原本没设过就继续保持「跟随通用」，不要顺手把它固定下来
@@ -727,6 +732,35 @@ class SettingsPage {
       return;
     }
 
+    // v2.9.6：批量开关「收起浮窗」。社交站本来就默认开，这里主要是给
+    // 「全部关掉」「把非社交站也全开」这种一次性调整用的。
+    var dismissWhich = (which === 'dismiss-on' || which === 'dismiss-off');
+    if (dismissWhich) {
+      var dismissOn = which === 'dismiss-on';
+      if (!confirm((dismissOn ? '所有站：换作品时都收起浮窗' : '所有站：都不自动收起浮窗')
+        + '？\n\n会给 23 个站各写一条单独设置，覆盖它们原来的开关。')) return;
+
+      SITES.CATALOG.forEach((site) => {
+        var effD = SITES.resolve(this.config, site.domain);
+        var snapD = {
+          autoExtract: effD.autoExtract,
+          autoExtractDelay: effD.autoExtractDelay,
+          autoCopy: effD.autoCopy,
+          showButton: effD.showButton,
+          autoDismiss: dismissOn
+        };
+        var prevD = ov[site.domain];
+        if (prevD && typeof prevD === 'object' &&
+            Object.prototype.hasOwnProperty.call(prevD, 'autoCopyFormat')) {
+          snapD.autoCopyFormat = prevD.autoCopyFormat;
+        }
+        ov[site.domain] = snapD;
+      });
+
+      await this.save({ siteOverrides: ov }, dismissOn ? '所有站：换作品时收起浮窗' : '所有站：不自动收起浮窗');
+      return;
+    }
+
     var target = which === 'button-on';
     if (!confirm((target ? '所有站都显示提取按钮' : '所有站都隐藏提取按钮') + '？\n\n会给 23 个站各写一条单独设置，覆盖它们原来的按钮开关。')) return;
 
@@ -736,7 +770,8 @@ class SettingsPage {
         autoExtract: eff.autoExtract,
         autoExtractDelay: eff.autoExtractDelay,
         autoCopy: eff.autoCopy,
-        showButton: target
+        showButton: target,
+        autoDismiss: eff.autoDismiss
       };
       var prevOv = ov[site.domain];
       if (prevOv && typeof prevOv === 'object' &&

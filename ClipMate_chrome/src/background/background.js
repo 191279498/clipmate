@@ -76,6 +76,9 @@ class BackgroundService {
           fieldMappings: {}, // v2.8.2：字段改名（浮窗里存的那份，以前这里写的是没人读的 customMappings）
           settings: {
             enableCache: true,
+            // v2.9.6：浮窗自动收起。默认值按站点类型实时算（社交开/其余关，见 site-config.js），
+            // 这个键不再写默认值含义；只有老配置里显式 false 会被当作「全部关闭」迁移。
+            autoDismiss: true,
             // v2.8.2：简介长度上限（社交 / 影人 / 其他），值与搬进设置页之前完全一致
             descLimits: { social: 50000, person: 5000, other: 500 }
           }
@@ -413,6 +416,9 @@ class BackgroundService {
         fieldMappings: {}, // v2.8.2：字段改名
         settings: {
           enableCache: true,
+          // v2.9.6：浮窗自动收起。默认值按站点类型实时算（社交开/其余关，见 site-config.js），
+          // 这个键不再写默认值含义；只有老配置里显式 false 会被当作「全部关闭」迁移。
+          autoDismiss: true,
           // v2.8.2：简介长度上限（社交 / 影人 / 其他）
           descLimits: { social: 50000, person: 5000, other: 500 }
         }

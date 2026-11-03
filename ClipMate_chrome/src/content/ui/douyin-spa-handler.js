@@ -218,8 +218,17 @@
           // 跨页切标签：按用户拍板直接关掉浮窗（按钮留在新页继续可用）
           this._closeDouyinPanelOnly();
         } else if (switched) {
-          // 同一页里换了一条（弹窗里切条 / 沉浸流按 ↓）：就地刷新
-          this._refreshDouyinPanel();
+          // v2.9.6：同一页里换了一条（弹窗里切条 / 沉浸流按 ↓）。
+          // 用户开着「换作品时收起浮窗」→ 关窗，**不再就地刷新** —— 沉浸流是整屏播放，
+          // 浮窗就地刷新等于一直糊在画面正中挡着下一条（真机实测还会盖住右侧箭头和头像）。
+          // 关掉这一项的老用户（含 type=其他站）仍是原来的就地刷新，行为一个字都不变。
+          if (typeof ClipMateBrowseDismiss !== 'undefined' &&
+              typeof ClipMateBrowseDismiss.shouldCloseOnSwitch === 'function' &&
+              ClipMateBrowseDismiss.shouldCloseOnSwitch()) {
+            this._closeDouyinPanelOnly('换了下一条，浮窗已关闭（按钮保留）');
+          } else {
+            this._refreshDouyinPanel();
+          }
         }
       } else if (this.autoExtract) {
         // 与 Instagram 一致：自动开面板受 autoExtract 控制
@@ -252,11 +261,11 @@
      * 但按钮必须留在新页继续可用（这是 v2.5.81 的主修目标）。
      * 直接调现有 close()，不另写强制关 —— 避免留下半关状态。
      */
-    _closeDouyinPanelOnly() {
+    _closeDouyinPanelOnly(logMsg) {
       try {
         if (this.modalManager && this.modalManager.isOpen) {
           this.modalManager.close();
-          this._douyinLog('info', '切到另一个标签页，浮窗已关闭（按钮保留）');
+          this._douyinLog('info', logMsg || '切到另一个标签页，浮窗已关闭（按钮保留）');
         }
       } catch (e) {
         this._douyinLog('warn', '关闭浮窗失败：' + (e && e.message));
@@ -511,10 +520,14 @@
      */
     async _refreshDouyinPanel() {
       if (!this.modalManager || !this.modalManager.isOpen) return;
+      var targetId = String(this._douyinModalId || '');
       for (var attempt = 0; attempt < 4; attempt++) {
         try {
           var data = await this.extractFromCurrentPage();
-          if (this._isDouyinDataValid(data)) {
+          // v2.9.5：光判「字段非空」不够 —— 切条瞬间 DOM 还是上一条，取回来的数据
+          // 完全合法，于是第一次尝试就 updateInPlace(上一条) 并 return，
+          // 用户看到的就是「浮窗永远停在第一条」。必须按作品 ID 对账。
+          if (this._isDouyinDataValid(data) && this._douyinDataMatchesTarget(data, targetId)) {
             await this.modalManager.updateInPlace(data);
             this._douyinLog('info', '浮窗已就地刷新成新的一条');
             return;
@@ -524,6 +537,20 @@
         }
         if (attempt < 3) await new Promise(function (r) { setTimeout(r, 400); });
       }
+    },
+
+    /**
+     * 这份数据是不是「当前这一条」的？
+     *
+     * 判据用数据里的 URL（`/video/<id>` 或 `/note/<id>`）与上层记着的作品 ID 比对。
+     * targetId 为空时一律放行 —— 认不出目标就不该拦，宁可沿用旧行为。
+     */
+    _douyinDataMatchesTarget(data, targetId) {
+      if (!targetId) return true;
+      var url = String((data && data.URL) || '');
+      var m = /\/(?:video|note|slides)\/(\d{6,25})/.exec(url);
+      if (!m) return true;   // URL 形态不认识 → 不拦（避免把正常数据挡掉）
+      return m[1] === targetId;
     },
 
     /** 弹窗态「这份数据算不算取到了」：URL 有值且三要素至少一项非空 */

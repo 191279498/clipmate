@@ -169,7 +169,15 @@
     // 面板已开 → 就地刷新（与全局 autoExtract 无关，实现“点一次后自动跟随切换”）
     // 仅“自动开新面板”受全局 autoExtract 控制
     if (this.modalManager && this.modalManager.isOpen) {
-      this._refreshOpenPanel();
+      // v2.9.6：开着「换作品时收起浮窗」→ 关窗（用户滑到下一条时不该被上一条的结果挡着）。
+      // watcher 已按 shortcode 去重，这里不会被同一条帖子重复触发。
+      if (typeof ClipMateBrowseDismiss !== 'undefined' &&
+          typeof ClipMateBrowseDismiss.shouldCloseOnSwitch === 'function' &&
+          ClipMateBrowseDismiss.shouldCloseOnSwitch()) {
+        this._closeIgPanelOnly('换了下一条，浮窗已关闭（按钮保留）');
+      } else {
+        this._refreshOpenPanel();
+      }
     } else if (this.autoExtract) {
       this.handleExtract();
     }

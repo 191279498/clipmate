@@ -17,8 +17,8 @@ var WBR = (typeof browser !== "undefined" && browser && browser.runtime) ? brows
 // 合法性校验统一走 ClipMateSites.normalizeCopyFormat()，这里只负责显示。
 var COPY_FORMAT_LABELS = { notion: 'Notion', markdown: 'Markdown', plaintext: '纯文本' };
 
-// 本站规则里允许出现的五个键（判断「改过几项」用）
-var SITE_KEYS = ['autoExtract', 'autoExtractDelay', 'autoCopy', 'autoCopyFormat', 'showButton'];
+// 本站规则里允许出现的六个键（判断「改过几项」用）
+var SITE_KEYS = ['autoExtract', 'autoExtractDelay', 'autoCopy', 'autoCopyFormat', 'showButton', 'autoDismiss'];
 
 class PopupManager {
   constructor() {
@@ -194,6 +194,7 @@ class PopupManager {
     safeSetChecked('siteAutoExtract', eff.autoExtract);
     safeSetChecked('siteAutoCopy', eff.autoCopy);
     safeSetChecked('siteShowButton', eff.showButton);
+    safeSetChecked('siteAutoDismiss', eff.autoDismiss);
     safeSetValue('siteAutoExtractDelay', eff.autoExtractDelay);
     safeSetText('siteDelayValue', eff.autoExtractDelay);
 
@@ -259,7 +260,9 @@ class PopupManager {
       autoExtract: eff.autoExtract,
       autoExtractDelay: eff.autoExtractDelay,
       autoCopy: eff.autoCopy,
-      showButton: eff.showButton
+      showButton: eff.showButton,
+      // v2.9.6：一起快照，否则「先设了收起浮窗、再改自动提取」会把本站的设置弄丢
+      autoDismiss: eff.autoDismiss
     };
 
     // 格式键特殊：本站原本没这条 → 不写，继续保持「跟全局一起变」
@@ -340,6 +343,7 @@ class PopupManager {
     bindSwitch('siteAutoExtract', 'autoExtract');
     bindSwitch('siteAutoCopy', 'autoCopy');
     bindSwitch('siteShowButton', 'showButton');
+    bindSwitch('siteAutoDismiss', 'autoDismiss');
 
     // 延迟滑块：拖动时只更新数字，松手才落盘
     const delay = document.getElementById('siteAutoExtractDelay');

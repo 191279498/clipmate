@@ -231,7 +231,22 @@
 
       var switched = !!(prevId && id && prevId !== id && this._ksActivated);
       if (this.modalManager && this.modalManager.isOpen) {
-        if (switched) this._refreshKuaishouPanel();
+        if (switched) {
+          // v2.9.6：开着「换作品时收起浮窗」→ 关窗，不再就地刷新（推荐页是整屏播放，
+          // 刷新等于一直挡着下一屏）。关掉这一项仍是原来的就地刷新，行为不变。
+          if (typeof ClipMateBrowseDismiss !== 'undefined' &&
+              typeof ClipMateBrowseDismiss.shouldCloseOnSwitch === 'function' &&
+              ClipMateBrowseDismiss.shouldCloseOnSwitch()) {
+            try {
+              this.modalManager.close();
+              this._ksLog('info', '换了下一条，浮窗已关闭（按钮保留）');
+            } catch (e) {
+              this._ksLog('warn', '关闭浮窗失败：' + (e && e.message));
+            }
+          } else {
+            this._refreshKuaishouPanel();
+          }
+        }
       } else if (this.autoExtract) {
         Promise.resolve(this.handleExtract()).catch(function (e) {
           this._ksLog && this._ksLog('warn', '自动提取失败：' + (e && e.message));

@@ -68,9 +68,11 @@ const flags = require(path.join(ROOT, 'shared', 'feature-flags.js'));
 
 console.log('\n【一】设置项定义 settings-schema');
 
-eq('共 10 个设置项', schema.ITEMS.length, 10);
-eq('站点可单独设的 5 项', schema.siteItems().map((i) => i.key),
-  ['autoExtract', 'autoExtractDelay', 'autoCopy', 'autoCopyFormat', 'showButton']);
+eq('共 11 个设置项', schema.ITEMS.length, 11);
+eq('站点可单独设的 6 项', schema.siteItems().map((i) => i.key),
+  ['autoExtract', 'autoExtractDelay', 'autoCopy', 'autoCopyFormat', 'showButton', 'autoDismiss']);
+ok('autoDismiss 是 siteOnly（只在站点卡片，通用页不显示）',
+  schema.byKey('autoDismiss').siteOnly === true);
 ok('enableCache 不允许站点覆盖', schema.byKey('enableCache').siteOverridable === false);
 
 // 正文：脏值 / 缺字段都回退默认
@@ -263,6 +265,7 @@ async function main() {
   console.log('\n【三】设置页渲染');
 
   ok('页面实例已创建', !!page);
+  // v2.9.6：autoDismiss 转为站点级（siteOnly），通用页少一行
   eq('通用页渲染 10 项', doc.querySelectorAll('#generalGroups .row').length, 10);
   eq('站点页渲染 23 个站', doc.querySelectorAll('.site').length, 23);
   eq('关于页站点数', doc.getElementById('aboutSiteCount').textContent, '23 个');
@@ -276,7 +279,7 @@ async function main() {
   eq('抖音卡里 2 个专属开关', douyin.querySelectorAll('.feature-block .sw').length, 2);
   eq('快手卡里 3 个专属开关', kuaishou.querySelectorAll('.feature-block .sw').length, 3);
   eq('TikTok 没有专属开关块', tiktok.querySelectorAll('.feature-block').length, 0);
-  eq('抖音卡里 5 个通用设置项', douyin.querySelectorAll('.site-body .row').length, 2 + 5);
+  eq('抖音卡里 6 个通用设置项', douyin.querySelectorAll('.site-body .row').length, 2 + 6);
 
   // ============ 四、写盘形状 ============
 
@@ -313,8 +316,8 @@ async function main() {
   await tick(30);
   const last3 = sent[sent.length - 1];
   const ov = last3.config.siteOverrides['movie.douban.com'];
-  eq('站点快照带上其余四项', ov,
-    { autoExtract: true, autoExtractDelay: 3, autoCopy: false, showButton: false });
+  eq('站点快照带上其余五项', ov,
+    { autoExtract: true, autoExtractDelay: 3, autoCopy: false, showButton: false, autoDismiss: false });
   ok('站点覆盖里没有多余的 autoCopyFormat 键',
     !Object.prototype.hasOwnProperty.call(ov, 'autoCopyFormat'));
   ok('站点行变成「已自定义」', !!doc.querySelector('.site[data-domain="movie.douban.com"].is-own'));

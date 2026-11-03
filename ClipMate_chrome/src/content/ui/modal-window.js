@@ -70,6 +70,11 @@
 
       // 设置状态
       this.isOpen = true;
+      // v2.9.4：挂上「滚动 / 换作品就收起」的监听。放在 isOpen=true 之后 ——
+      // 监听器的豁免判断要读 host.isOpen；放在前面会被当成「没开着」。
+      if (typeof ClipMateBrowseDismiss !== 'undefined' && ClipMateBrowseDismiss.arm) {
+        ClipMateBrowseDismiss.arm(this);
+      }
       // v2.5.45：接线 ESC 关闭 + 编辑模式表头双击改名。
       // （attachEvents 原先全项目 0 调用，是纯死代码；ESC 和改名的监听都埋在里面）
       this.attachEvents();
@@ -97,6 +102,12 @@
     this.isClosing = true;
     const startTime = performance.now();
     ClipMateLog.debug('===== 开始关闭悬浮窗 =====');
+
+    // v2.9.4：先摘掉自动收起监听（关窗路径有好几条：ESC / 按钮 / 自动收起 / 站点换条），
+    // 统一在 here 收口，避免漏摘导致「窗关了监听还在跑」。
+    if (typeof ClipMateBrowseDismiss !== 'undefined' && ClipMateBrowseDismiss.disarm) {
+      ClipMateBrowseDismiss.disarm();
+    }
 
     try {
       // 移除ESC键事件监听

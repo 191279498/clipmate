@@ -123,6 +123,22 @@
     return (AUTO_COPY_FORMATS.indexOf(s) !== -1) ? s : AUTO_COPY_FORMAT_DEFAULT;
   }
 
+  /**
+   * 浮窗自动收起的默认值（v2.9.6）。
+   *
+   * 用户 2026-11-03 拍板：**社交站默认开**（看完一条要看下一条，浮窗杵在正中挡画面），
+   * **其余站默认关**（详情页看完就走了，用不上自动收）。
+   *
+   * 为什么按类型实时算、不写进配置文件：
+   *   写进去就要给 23 个站各落一条，用户没碰过的站也会被"固定"下来；
+   *   将来站点分类调整（比如某个站从「其他」挪进「社交」），写死的值跟不上。
+   *   算出来的只用于「没设过」的站 —— 用户在 popup / 设置页碰过的站，走 siteOverrides。
+   */
+  function autoDismissDefault(hostname) {
+    var site = findSite(hostname);
+    return !!(site && site.group === '社交');
+  }
+
   /** 全局默认值（config 里缺字段时的兜底，必须和 background 的 defaultConfig 保持一致） */
   function globalDefaults(config) {
     var c = config || {};
@@ -132,7 +148,9 @@
       autoCopy: !!c.autoCopy,
       // v2.5.66：自动复制用哪种格式。缺字段 / 脏值都回退 markdown（用户 2026-10-25 裁决）
       autoCopyFormat: normalizeCopyFormat(c.autoCopyFormat),
-      showButton: c.showButton !== false
+      showButton: c.showButton !== false,
+      // v2.9.6：这里给的是「非社交站」的保守值；真正按站点类型算在 resolve() 里
+      autoDismiss: false
     };
   }
 
@@ -164,11 +182,19 @@
 
   /**
    * 算出当前页真正生效的四个开关。
-   * @returns {{autoExtract:boolean, autoExtractDelay:number, autoCopy:boolean, showButton:boolean, rule:string|null}}
+   * @returns {{autoExtract:boolean, autoExtractDelay:number, autoCopy:boolean, showButton:boolean, autoDismiss:boolean, rule:string|null}}
    */
   function resolve(config, hostname) {
     var eff = globalDefaults(config);
     eff.rule = null;
+
+    // v2.9.6：浮窗自动收起 —— 默认值按站点类型算（社交开、其余关），全程不落盘。
+    eff.autoDismiss = autoDismissDefault(hostname);
+    // 老配置迁移：v2.9.4 那版只有一个全局开关，用户明确关过（false）就是「全都别自动收」。
+    // 明确打开过（true）不携带信息（那本来就是当时的默认），交给上面的类型判断。
+    if (config && config.settings && config.settings.autoDismiss === false) {
+      eff.autoDismiss = false;
+    }
 
     var rule = matchRule(config, hostname);
 
@@ -206,6 +232,10 @@
     if (Object.prototype.hasOwnProperty.call(o, 'showButton')) {
       eff.showButton = !!o.showButton;
     }
+    // v2.9.6：站点级自动收起。本站设过就完全以它为准（包括设成 false 压掉社交站的默认开）
+    if (Object.prototype.hasOwnProperty.call(o, 'autoDismiss')) {
+      eff.autoDismiss = !!o.autoDismiss;
+    }
     eff.rule = rule;
     return eff;
   }
@@ -219,6 +249,8 @@
     globalDefaults: globalDefaults,
     matchRule: matchRule,
     resolve: resolve,
+    // v2.9.6：浮窗自动收起的默认值（社交开 / 其余关）
+    autoDismissDefault: autoDismissDefault,
     // v2.5.66：自动复制格式
     AUTO_COPY_FORMATS: AUTO_COPY_FORMATS,
     AUTO_COPY_FORMAT_DEFAULT: AUTO_COPY_FORMAT_DEFAULT,
