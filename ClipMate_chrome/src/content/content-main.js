@@ -368,7 +368,12 @@ class MediaExtractor {
       });
       
       this.modalManager = new ModalManager();
-      
+
+      // v2.9.7：浮窗与按钮联动 —— 把按钮的拖动事件接给浮窗管理器
+      if (this.buttonManager && typeof this.modalManager.attachButton === 'function') {
+        this.modalManager.attachButton(this.buttonManager);
+      }
+
       // 初始化书名处理器
       this.titleProcessor = new TitleProcessor();
       
@@ -575,6 +580,16 @@ class MediaExtractor {
         // 不再直接读 config.settings.autoDismiss（那个只剩「老配置全关」的迁移用途）。
         if (typeof ClipMateBrowseDismiss !== 'undefined' && ClipMateBrowseDismiss.setEnabled) {
           ClipMateBrowseDismiss.setEnabled(eff.autoDismiss !== false);
+        }
+
+        // v2.9.7：浮窗尺寸约束（全局项，不走站点覆盖，直接读 config.settings）。
+        // 宽度 = 每次弹出浮窗的固定宽度；maxHeight = 高度自适应的上限。
+        // 读不到 / 脏值回落默认（与 background defaultConfig、settings-schema 一致）。
+        if (this.modalManager && typeof this.modalManager.setUiConstraints === 'function') {
+          this.modalManager.setUiConstraints({
+            width: numOr(config.settings && config.settings.floatingWindowWidth, 320),
+            maxHeight: numOr(config.settings && config.settings.floatingWindowMaxHeight, 800)
+          });
         }
 
         // v2.8.2：简介长度上限（社交 / 影人 / 其他）。

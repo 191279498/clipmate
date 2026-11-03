@@ -420,6 +420,23 @@ ok('按钮左侧不留内边距（头像自己占住左端，不再留蓝边）'
 ok('按钮右侧留出角标的位置（padding-right >= 26px）',
   (() => { const m = btnRule.match(/padding:\s*0\s+(\d+)px/); return !!m && Number(m[1]) >= 26; })(), btnRule);
 
+/* --- v2.9.7 按钮盒子尺寸防站点 .loading 类名撞车 ---
+ * 豆瓣有一套自家 .loading 规则（margin:5px 10px 0 0 + width + min-width:0），
+ * 提取中按钮挂上 loading 类就被压成 34px 宽、下坠 5px —— v2.9.7 浮窗按按钮
+ * rect 锚定开窗位置，于是每次都弹到错误位置（真机实测）。按钮基础规则必须
+ * 锁 margin/width/min-width/max-width，加固副本必须带 !important。 */
+{
+  const hardened = (CSS_CODE.match(/\/\* 2\) 右上角「提取信息」按钮 \*\/\s*\n\.media-extractor-button\s*\{[\s\S]*?\n\}/) || [''])[0];
+  ok('按钮加固副本锁死盒子尺寸（margin 0 / width auto / min-width 0 / max-width none，全 !important）',
+    /margin:\s*0\s!important/.test(hardened) && /width:\s*auto\s!important/.test(hardened) &&
+    /min-width:\s*0\s!important/.test(hardened) && /max-width:\s*none\s!important/.test(hardened),
+    hardened.slice(-300));
+  ok('按钮基础规则也带普通级 margin/width 锁（规范默认值，防裸类规则干扰）',
+    /margin:\s*0;/.test(btnRule) && /width:\s*auto;/.test(btnRule) &&
+    /min-width:\s*0;/.test(btnRule) && /max-width:\s*none;/.test(btnRule),
+    btnRule.slice(-260));
+}
+
 /* --- v2.8.6 状态角标（不换表情，用角标反馈结果）--- */
 {
   const badgeRule = (CSS_CODE.match(/\.clipmate-badge\s*\{[\s\S]*?\}/) || [''])[0];

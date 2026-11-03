@@ -68,7 +68,7 @@ const flags = require(path.join(ROOT, 'shared', 'feature-flags.js'));
 
 console.log('\n【一】设置项定义 settings-schema');
 
-eq('共 11 个设置项', schema.ITEMS.length, 11);
+eq('共 13 个设置项', schema.ITEMS.length, 13);
 eq('站点可单独设的 6 项', schema.siteItems().map((i) => i.key),
   ['autoExtract', 'autoExtractDelay', 'autoCopy', 'autoCopyFormat', 'showButton', 'autoDismiss']);
 ok('autoDismiss 是 siteOnly（只在站点卡片，通用页不显示）',
@@ -266,7 +266,7 @@ async function main() {
 
   ok('页面实例已创建', !!page);
   // v2.9.6：autoDismiss 转为站点级（siteOnly），通用页少一行
-  eq('通用页渲染 10 项', doc.querySelectorAll('#generalGroups .row').length, 10);
+  eq('通用页渲染 12 项', doc.querySelectorAll('#generalGroups .row').length, 12);
   eq('站点页渲染 23 个站', doc.querySelectorAll('.site').length, 23);
   eq('关于页站点数', doc.getElementById('aboutSiteCount').textContent, '23 个');
   eq('版本号显示', doc.getElementById('brandVersion').textContent, 'v2.8.5');
@@ -509,7 +509,7 @@ async function main() {
   const numOf = (k) => doc.querySelector('#generalGroups .row[data-key="' + k + '"] .num');
 
   eq('通用页分 5 组', doc.querySelectorAll('#generalGroups .group').length, 5);
-  eq('简介长度渲染出 3 个数字输入', doc.querySelectorAll('#generalGroups .num').length, 3);
+  eq('数字输入共 5 个（简介 3 + 浮窗宽高 2，v2.9.7）', doc.querySelectorAll('#generalGroups .num').length, 5);
   ok('社交简介输入框存在', !!numOf('descSocial'));
   eq('社交简介初值 50000', numOf('descSocial') && numOf('descSocial').value, '50000');
   eq('影人简介初值 5000', numOf('descPerson').value, '5000');

@@ -488,6 +488,15 @@ button.media-extractor-button {
   box-sizing: border-box;
   height: 48px;
   white-space: nowrap;
+  /* v2.9.7：锁死盒子尺寸三件套（普通级，规范化默认值）。
+     .loading/.pending/.success/.error 都是全网高频类名，豆瓣就有一套自家 .loading
+     规则（margin:5px 10px 0 0 + width + min-width:0），提取中会把按钮压成 34px 宽、
+     下坠 5px —— 浮窗按按钮 rect 锚定，跟着弹到错误位置。这里先写普通级，!important
+     版本在下方「跨站点样式统一」一节。JS 从不写按钮的 width/margin，加固安全。 */
+  margin: 0;
+  width: auto;
+  min-width: 0;
+  max-width: none;
 }
 
 /* 悬浮感只改颜色和阴影，不动几何 —— 按钮绝不能在指针下面挪位置 */
@@ -782,6 +791,8 @@ button.media-extractor-button .clipmate-badge[data-tone='ask']::after { content:
  *
  * 铁律：绝不加固 display / 宽高 / 位置 / overflow / 背景色（会变色的那几个），
  * 这些属性由 JS 用 element.style 动态改写，加了 !important 会把交互压死。
+ *   （例外，v2.9.7：按钮的 width/margin/min-width 可以钉 —— JS 从不改写它们，
+ *   而站点的 .loading 等同名类规则会把按钮盒子改塌，见按钮一节内的注释。）
  * ========================================================================== */
 
 /* 1) 浮窗宿主：钉死字体排版，页面无法再改 */
@@ -838,6 +849,15 @@ button.media-extractor-button .clipmate-badge[data-tone='ask']::after { content:
   white-space: nowrap !important;
   align-items: center !important;
   justify-content: center !important;
+  /* v2.9.7：盒子尺寸防撞车（!important 版）。
+     豆瓣自家 .loading 规则（用户级读不到但生效）会给我们的提取中按钮塞
+     margin:5px 10px 0 0、width、min-width:0，按钮塌成 34px —— 浮窗锚定按钮
+     rect 就弹偏。这四个属性 JS 从不改写（JS 只写 inset/transform/display），
+     加固不影响交互。width 用 auto：fixed 定位下 = 按内容收缩，与旧表现一致。 */
+  margin: 0 !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
 }
 
 /* 3) 提示卡片见本文件上方「页面层提示卡片」一节，那里已自带 !important，不必重复 */

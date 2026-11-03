@@ -181,6 +181,10 @@ class ButtonManager {
 
     this._basePos.left = Number(this.button.offsetLeft) || 0;
     this._basePos.top = Number(this.button.offsetTop) || 0;
+    // v2.9.7 真机修复：拖拽期间 basePos 会被联动钳制（applyExternalPosition）改写，
+    // 指针目标必须从「按下瞬间冻结的起点」算，否则已吸收过的位移每帧复利叠加，
+    // 实测位移会被放大好几倍、一路顶死在屏幕边上。收尾时清掉。
+    this._dragOrigin = { left: this._basePos.left, top: this._basePos.top };
     this.dragOffset.x = e.clientX - this._basePos.left;
     this.dragOffset.y = e.clientY - this._basePos.top;
 
@@ -229,8 +233,10 @@ class ButtonManager {
     };
     const maxX = Math.max(0, m.vw - m.w);
     const maxY = Math.max(0, m.vh - m.h);
-    const newX = Math.max(0, Math.min(this._basePos.left + dx, maxX));
-    const newY = Math.max(0, Math.min(this._basePos.top + dy, maxY));
+    // 目标一律从冻结起点算（_dragOrigin），basePos 中途被联动改写也不影响指针语义
+    const o = this._dragOrigin || this._basePos;
+    const newX = Math.max(0, Math.min(o.left + dx, maxX));
+    const newY = Math.max(0, Math.min(o.top + dy, maxY));
 
     // 只记目标值，写入交给 rAF 合帧：一帧最多写一次，不再「每个 mousemove 都重排一次」
     this._pendingPos = { left: newX, top: newY };
@@ -250,6 +256,9 @@ class ButtonManager {
       const dx = pos.left - this._basePos.left;
       const dy = pos.top - this._basePos.top;
       this.button.style.transform = 'translate3d(' + dx + 'px,' + dy + 'px,0)';
+      // v2.9.7：浮窗联动 —— 拖按钮时把「本次拖动的绝对目标位置」报给监听者
+      //（modal-window），浮窗跟着走同样的距离。
+      if (typeof this.onDragMove === 'function') this.onDragMove(pos.left, pos.top);
     });
   }
 
@@ -304,6 +313,7 @@ class ButtonManager {
     }
 
     this._pendingPos = null;
+    this._dragOrigin = null;
     this._dragMetrics = null;
     this.isDragging = false;
   }
@@ -348,6 +358,35 @@ class ButtonManager {
     try {
       if (typeof this.onPositionSaved === 'function') this.onPositionSaved(pos);
     } catch (e) { /* 回调异常不许影响保存位置 */ }
+  }
+
+  /**
+   * v2.9.7：浮窗联动 —— 拖浮窗（或窗口被推回视口）时由 modal-window 调这里，
+   * 把按钮搬到绝对位置。与用户手拖等效：更新 basePos、停自动贴位，但不落盘
+   * （拖动过程中每帧都写 localStorage 太浪费），落盘走 commitExternalPosition。
+   */
+  applyExternalPosition(left, top) {
+    if (!this.button) return;
+    const l = Math.round(left);
+    const t = Math.round(top);
+    this.button.style.transform = '';
+    this.button.style.left = l + 'px';
+    this.button.style.top = t + 'px';
+    this.button.style.right = 'auto';
+    this.button.style.bottom = 'auto';
+    this._basePos = { left: l, top: t };
+    this._pendingPos = { left: l, top: t };
+    this.userMoved = true;
+  }
+
+  /** v2.9.7：联动拖动收尾，把按钮最终位置记下来（一次，不逐帧） */
+  commitExternalPosition(left, top) {
+    if (!this.button) return;
+    const l = Math.round(left);
+    const t = Math.round(top);
+    this._basePos = { left: l, top: t };
+    this.userMoved = true;
+    this.savePosition({ left: l, top: t });
   }
 
   loadSavedPosition() {

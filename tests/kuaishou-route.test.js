@@ -124,7 +124,7 @@ function section1() {
   section('一、静态契约：文件装上了、顺序对、版本号跟上');
 
   const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
-  eq('版本号是 2.9.6', manifest.version, '2.9.6');
+  eq('版本号是 2.9.8', manifest.version, '2.9.8');
 
   const js = manifest.content_scripts[0].js;
   const iRoute = js.indexOf('src/content/ui/kuaishou-route-watcher.js');

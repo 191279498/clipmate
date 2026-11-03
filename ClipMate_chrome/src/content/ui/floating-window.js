@@ -21,6 +21,11 @@ class MediaFloatingWindow {
     this.onClose = options.onClose || null;
     this.onResize = options.onResize || null;
     this.onMove = options.onMove || null;
+    // v2.9.7：拖动结束（标题栏 / 胶囊）回调 —— 浮窗与按钮联动后，按钮的位置
+    // 是拖动过程中一路搬过去的，落盘（记住位置）等拖完一次性做，别每帧写存储。
+    this.onDragEnd = options.onDragEnd || null;
+    // v2.9.7：高度自适应的上限（px）。0 = 未设置（autoFitHeight 用传入值兜底）。
+    this._heightCap = 0;
     
     // 状态
     this.isShown = false;
@@ -364,11 +369,15 @@ class MediaFloatingWindow {
    * 处理鼠标释放事件
    */
   handleMouseUp = () => {
+    const wasDragging = this.isDragging;
     this.isDragging = false;
     this.isResizing = false;
-    
+
     document.removeEventListener('mousemove', this.handleMouseMove);
     document.removeEventListener('mouseup', this.handleMouseUp);
+
+    // v2.9.7：拖完一次性通知（按钮位置落盘在这里做）
+    if (wasDragging && typeof this.onDragEnd === 'function') this.onDragEnd();
   }
 
   /** 拖动胶囊（v2.5.47 / B3）：只改位置，尺寸不变 */
@@ -386,12 +395,21 @@ class MediaFloatingWindow {
     this.x = Math.max(0, Math.min(this._capsuleOriginX + dx, window.innerWidth - w));
     this.y = Math.max(0, Math.min(this._capsuleOriginY + dy, window.innerHeight - h));
     this.updatePosition();
+
+    // v2.9.7：胶囊也是浮窗的一部分，拖它按钮要跟着走
+    if (typeof this.onMove === 'function') {
+      this.onMove({ x: this.x, y: this.y });
+    }
   }
 
   handleCapsuleUp = () => {
+    const wasMoved = this._capsuleMoved;
     this._capsuleDragging = false;
     document.removeEventListener('mousemove', this.handleCapsuleMove);
     document.removeEventListener('mouseup', this.handleCapsuleUp);
+
+    // v2.9.7：真拖过才通知收尾（点一下不算拖动，不该触发落盘）
+    if (wasMoved && typeof this.onDragEnd === 'function') this.onDragEnd();
   }
 
   /**
@@ -591,6 +609,31 @@ class MediaFloatingWindow {
   updateSize() {
     this.windowElement.style.width = `${this.width}px`;
     this.windowElement.style.height = `${this.height}px`;
+  }
+
+  /**
+   * v2.9.7：高度贴合内容。
+   * 量内容区的真实高度（+标题栏），夹在 [minHeight, cap] 里；量不出来（jsdom /
+   * 刚插入还没布局）保持现状不动。cap 缺省用 this._heightCap，再兜底 800。
+   */
+  autoFitHeight(capOverride) {
+    if (this.isMinimized || this.isCollapsed || this.isMaximized) return;
+    const content = this.contentElement;
+    if (!content) return;
+
+    let needed = 0;
+    try {
+      const inner = content.firstElementChild || content;
+      needed = Math.ceil((inner && inner.scrollHeight) || content.scrollHeight || 0);
+    } catch (e) { needed = 0; }
+    if (!needed) return; // 量不到就不猜，维持当前高度
+
+    let headerH = 0;
+    try { headerH = this.headerElement ? this.headerElement.offsetHeight : 0; } catch (e) { headerH = 0; }
+
+    const cap = Math.max(240, Math.min(capOverride || this._heightCap || 800, (typeof window !== 'undefined' ? window.innerHeight - 16 : 800)));
+    this.height = Math.max(this.minHeight, Math.min(needed + headerH + 12, cap));
+    this.updateSize();
   }
   
   /**
@@ -842,7 +885,10 @@ class MediaFloatingWindow {
     
     // 更新折叠状态
     this.isCollapsed = !this.isCollapsed;
-    
+
+    // v2.9.7：展开后高度重新贴合内容（折叠前的高度可能是旧数据留下的）
+    if (!this.isCollapsed) this.autoFitHeight();
+
     // 调用调整大小回调（如果存在）
     if (this.onResize) {
       this.onResize({ width: this.width, height: this.height });

@@ -396,6 +396,11 @@
     if (typeof this._syncCapsuleCount === 'function') {
       this._syncCapsuleCount();
     }
+
+    // v2.9.7：内容变了高度重新贴合（上限由设置页的「浮窗最大高度」控制）
+    if (typeof this._autoFitHeight === 'function') {
+      this._autoFitHeight();
+    }
     },
 
     toggleDisplayMode() {

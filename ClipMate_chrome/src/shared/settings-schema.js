@@ -195,6 +195,32 @@
       siteOverridable: true,
       siteOnly: true
     },
+    // v2.9.7：浮窗尺寸。全局项（popup 不显示）——宽度 = 每次弹出时的固定宽度；
+    // 高度跟内容自适应，这里只管上限（超出部分在表格里滚动）。
+    {
+      key: 'floatingWindowWidth',
+      group: 'ui',
+      label: '浮窗宽度',
+      hint: '每次弹出浮窗时的固定宽度（320–1200 像素），右下角手柄拖宽只对当次生效',
+      type: 'number',
+      path: ['settings', 'floatingWindowWidth'],
+      default: 320,
+      min: 320,
+      max: 1200,
+      unit: 'px'
+    },
+    {
+      key: 'floatingWindowMaxHeight',
+      group: 'ui',
+      label: '浮窗最大高度',
+      hint: '内容再多浮窗也不会高过这个数（300–2000 像素），且不超过屏幕',
+      type: 'number',
+      path: ['settings', 'floatingWindowMaxHeight'],
+      default: 800,
+      min: 300,
+      max: 2000,
+      unit: 'px'
+    },
     {
       key: 'enableCache',
       group: 'perf',

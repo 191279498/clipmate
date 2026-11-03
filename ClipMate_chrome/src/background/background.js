@@ -79,6 +79,9 @@ class BackgroundService {
             // v2.9.6：浮窗自动收起。默认值按站点类型实时算（社交开/其余关，见 site-config.js），
             // 这个键不再写默认值含义；只有老配置里显式 false 会被当作「全部关闭」迁移。
             autoDismiss: true,
+            // v2.9.7：浮窗尺寸（全局项，设置页可改；这里是默认值）
+            floatingWindowWidth: 320,
+            floatingWindowMaxHeight: 800,
             // v2.8.2：简介长度上限（社交 / 影人 / 其他），值与搬进设置页之前完全一致
             descLimits: { social: 50000, person: 5000, other: 500 }
           }
@@ -419,6 +422,9 @@ class BackgroundService {
           // v2.9.6：浮窗自动收起。默认值按站点类型实时算（社交开/其余关，见 site-config.js），
           // 这个键不再写默认值含义；只有老配置里显式 false 会被当作「全部关闭」迁移。
           autoDismiss: true,
+          // v2.9.7：浮窗尺寸（全局项，设置页可改；这里是默认值）
+          floatingWindowWidth: 320,
+          floatingWindowMaxHeight: 800,
           // v2.8.2：简介长度上限（社交 / 影人 / 其他）
           descLimits: { social: 50000, person: 5000, other: 500 }
         }
