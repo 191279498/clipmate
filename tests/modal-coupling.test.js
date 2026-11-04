@@ -505,5 +505,84 @@ console.log('J. v2.9.9 高度自适应真机回归');
 }
 
 /* ============================================================ */
+console.log('K. v2.10.1 逐帖小按钮锚点（真机验收抓到的「浮窗永远弹右上角」）');
+
+{
+  // K1：设了锚点就必须按它定位 —— 右缘对齐、下沿 +12
+  const t = setup();
+  // jsdom 默认视口 768 高，会把 y 收紧到 innerHeight-120；真机是窗口高度。
+  // 撑到 1200 让断言量的是「锚点公式」本身，而不是边界收拢。
+  Object.defineProperty(t.win, 'innerHeight', { configurable: true, value: 1200 });
+  const small = t.win.document.createElement('div');
+  small.className = 'clipmate-weibo-feed-btn';
+  small.getBoundingClientRect = () => ({ left: 816, top: 686, width: 28, height: 28, right: 844, bottom: 714 });
+  t.win.document.body.appendChild(small);
+
+  t.mm.setAnchorElement(small);
+  eq('_anchorRect 选中显式锚点', t.mm._anchorRect() && t.mm._anchorRect().left, 816);
+
+  const pos = t.mm._computeFloatingPosition(320, 800);
+  eq('x = 按钮右缘 844 - 宽 320', pos.x, 524);
+  eq('y = 按钮下沿 714 + 12（与大按钮同一规则）', pos.y, 714 + 12);
+
+  // K2：锚点清空后回落到大按钮，不残留上一颗
+  t.mm.setAnchorElement(null);
+  const origQs = t.win.document.querySelector.bind(t.win.document);
+  t.win.document.querySelector = (sel) =>
+    (sel === '.media-extractor-button') ? t.btn : origQs(sel);
+  t.btn.getBoundingClientRect = () => ({ right: 420, bottom: 100, width: 120, height: 44 });
+  const pos2 = t.mm._computeFloatingPosition(320, 500);
+  eq('清空锚点 → 回落大按钮', pos2.x, 420 - 320);
+}
+
+{
+  // K3：用户关窗 → 锚点必须清（否则下次开窗贴到一颗已经滚走的按钮上）
+  const t = setup();
+  // close() 里会调 ClipMateLog（真机由 content-main 提供），测试里补个空壳
+  t.win.ClipMateLog = { debug() {}, error() {}, warn() {}, info() {} };
+  const el = t.win.document.createElement('div');
+  t.win.document.body.appendChild(el);
+  t.mm.setAnchorElement(el);
+  t.mm.close();
+  eq('关窗后锚点清空', t.mm._anchorEl, null);
+}
+
+{
+  // K4：开窗流程内部那次 close 不许吃掉锚点（v2.10.1 的真 bug）
+  // createFloatingWindow 第一步就 close()，锚点在它之前刚由 handleExtract 设好。
+  const iKeep = MODAL_SRC.indexOf('const anchorKeep = this._anchorEl;');
+  const iClose = MODAL_SRC.indexOf('this.close();', iKeep);
+  const iRestore = MODAL_SRC.indexOf('this._anchorEl = anchorKeep;', iClose);
+  ok('开窗前先存下锚点', iKeep > -1);
+  ok('close() 紧随其后', iClose > iKeep && iClose > -1);
+  ok('close() 之后把锚点补回来', iRestore > iClose);
+
+  // 顺序必须严格「存 → close → 补」，中间不许插别的东西
+  const between = MODAL_SRC.slice(iKeep, iRestore);
+  eq('存的这一段里只有一次 close', (between.match(/this\.close\(\)/g) || []).length, 1);
+  ok('补锚点写在 close 之后（不是之前）', iRestore > iClose);
+}
+
+{
+  // K5：close() 里清锚点的语句只此一处（防止有人删掉语义或另起一处乱清）
+  const closeBody = MODAL_SRC.slice(
+    MODAL_SRC.indexOf('close() {'),
+    MODAL_SRC.indexOf('setAnchorElement(el)')
+  );
+  eq('close() 里有清锚点', (closeBody.match(/this\._anchorEl = null;/g) || []).length, 1);
+  eq('全文件只有这一处写 null（其余都是读取/赋值元素）',
+    (MODAL_SRC.match(/this\._anchorEl = null;/g) || []).length, 1);
+}
+
+{
+  // K6：两种键名都要收（逐帖按钮传 anchor，spa-handler 传 anchorEl）
+  const feeds = ['weibo', 'x', 'instagram'].map((n) =>
+    fs.readFileSync(path.join(UI, n + '-feed-buttons.js'), 'utf8'));
+  eq('微博/X/IG 三站都把自己的按钮当锚点传出去',
+    feeds.filter((s) => /anchor: btn/.test(s)).length, 3);
+  ok('主流程两种键名都收', /opts\.anchorEl \|\| opts\.anchor\)/.test(MAIN_SRC));
+}
+
+/* ============================================================ */
 console.log(`\nmodal-coupling：${pass} 通过 / ${fails.length} 失败`);
 if (fails.length) process.exit(1);

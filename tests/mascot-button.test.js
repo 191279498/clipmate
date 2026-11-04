@@ -250,7 +250,8 @@ ok('失败：头像换成「哭」的 hero-cry',
     ? fs.readdirSync(dir).filter((f) => f.endsWith('.svg')).sort()
     : [];
   // v2.9.2：用户给了 23 个形态的矢量合集，全部拆进来
-  ok(`吉祥物素材是 23 个矢量形态（实际 ${svgs.length} 个）`, svgs.length === 23, svgs.join(','));
+  // v2.10.0：再加 1 个「整理档案」（用户 2026-11-04 提供）→ 24 个
+  ok(`吉祥物素材是 24 个矢量形态（实际 ${svgs.length} 个）`, svgs.length === 24, svgs.join(','));
 
   // 每个 SVG 都要结构完整、viewBox 合法 —— 手改素材最容易漏闭合，
   // 浏览器里表现是整张图不显示，而 jsdom 根本不加载图片，测不出来
@@ -265,11 +266,11 @@ ok('失败：头像换成「哭」的 hero-cry',
     if (v.length !== 4 || !(v[2] > 0) || !(v[3] > 0)) { bad.push(f + ':viewBox 非法'); return; }
     vbs[f] = { w: v[2], h: v[3] };
   });
-  ok('23 个 SVG 结构完整、viewBox 合法', bad.length === 0, bad.join('; '));
+  ok('24 个 SVG 结构完整、viewBox 合法', bad.length === 0, bad.join('; '));
 
   const ratios = Object.keys(vbs).map((f) => vbs[f].w / vbs[f].h);
   ok(`形态宽高比落在 0.6~1.3（实测 ${ratios.map((r) => r.toFixed(2)).join(' ')}）`,
-    ratios.length === 23 && ratios.every((r) => r > 0.6 && r < 1.3));
+    ratios.length === 24 && ratios.every((r) => r > 0.6 && r < 1.3));
 
   ok('旧的 mascot.png 已清除（全面换成矢量）', !fs.existsSync(path.join(dir, 'mascot.png')));
 
@@ -467,7 +468,7 @@ ok('按钮右侧留出角标的位置（padding-right >= 26px）',
   const WIN_JS = path.join(ROOT, 'src/content/ui/modal-window.js');
   const winSrc = fs.readFileSync(WIN_JS, 'utf8');
   const gm = winSrc.match(/const\s+BTN_GAP\s*=\s*(\d+)/);
-  ok('浮窗有独立的「贴按钮间距」常量 BTN_GAP', !!gm && /y\s*=\s*r\.bottom\s*\+\s*BTN_GAP/.test(winSrc));
+  ok('浮窗有独立的「贴按钮间距」常量 BTN_GAP', !!gm && /y\s*=\s*(?:r|anchor)\.bottom\s*\+\s*BTN_GAP/.test(winSrc));
 
   const ringW = Number((ringRule.match(/width:\s*(\d+)px/) || [])[1] || 0);
   ok('能读到头像容器宽度（否则下面的几何断言会假绿）', ringW > 40, 'ringW=' + ringW);

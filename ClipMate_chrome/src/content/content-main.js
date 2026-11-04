@@ -283,6 +283,14 @@ class MediaExtractor {
         }
       }
 
+      // v2.10.0：按页面形态决定大按钮显隐 + 档案皮肤，并把地址监听挂上。
+      // 放在 IG 入口显隐之后：IG 那套是它自己的机制（弹层跟随），这里对 IG 不做任何事
+      // （page-shape 的规则表里没有 instagram），两边不会互相覆盖。
+      // 放在自动提取之前：按钮的最终形态（藏在哪、什么皮肤）要在任何提取动作之前就位，
+      // 否则自动提取那一瞬间浮窗锚的还是旧状态。
+      this._applyPageShape();
+      this._startPageShapeWatcher();
+
       // v2.5.45：按配置延迟自动提取一次（全站点可用，只跑一次，不监听 DOM）
       this._scheduleAutoExtract();
 
@@ -571,9 +579,11 @@ class MediaExtractor {
         if (cacheOn !== this.cacheEnabled) this.setCacheEnabled(cacheOn);
 
         // 按钮显隐：默认显示（沿用原行为），只有明确设为 false 才隐藏
-        if (this.buttonManager && typeof this.buttonManager.setVisible === 'function') {
-          this.buttonManager.setVisible(eff.showButton !== false);
-        }
+        // v2.10.0：这里只**记下**配置意愿，真正的显隐交给 _applyPageShape 决定 ——
+        // 页面形态（信息流页要藏）与用户设置（showButton 关掉）必须一起算，
+        // 否则两边各写一次，后跑的那一个会把另一个覆盖掉。
+        this._showButtonByConfig = eff.showButton !== false;
+        this._applyPageShape();
 
         // v2.9.4：浮窗自动收起开关。v2.9.6 起按**站点**生效：
         // 社交站默认开、其余站默认关，站点级可覆盖 —— 一律走 eff（resolve 已经算好），
@@ -605,6 +615,113 @@ class MediaExtractor {
 
       }
     } catch (e) { ClipMateLog.debug('[ClipMate] 已忽略异常:', e && e.message); }
+  }
+
+  /* ================= v2.10.0：页面形态（大按钮该不该出现） ================= */
+
+  /**
+   * 按「页面形态」决定大提取按钮的显隐与皮肤。
+   *
+   * 四种形态（判定表在 `utils/page-shape.js`，用户 2026-11-04 拍板只做三站）：
+   *   person  —— 作者主页 / 影人页：显示，换「档案皮肤」（深蓝底 + 金黄边 + 整理档案 + 新图标）
+   *   detail  —— 单条内容详情页：显示，普通皮肤
+   *   feed    —— 首页 / 热门 / 搜索等信息流：藏起来。**只是隐藏，不销毁** ——
+   *              销毁了按钮位置就丢了，用户退回详情页还得重新摆一次
+   *   unknown —— 没配规则的站点（抖音/快手/B站/YouTube/小红书…）：照旧显示，什么都不变
+   *
+   * 幂等，可以随时重复调用（init、地址变化、存储变化都会走到这里）。
+   * @returns {'person'|'detail'|'feed'|'unknown'}
+   */
+  _applyPageShape() {
+    const bm = this.buttonManager;
+    if (!bm || !bm.button) return 'unknown';
+
+    let shape = 'unknown';
+    try {
+      if (typeof PageShape !== 'undefined' && PageShape && typeof PageShape.shapeOf === 'function') {
+        shape = PageShape.shapeOf({
+          hostname: location.hostname,
+          pathname: location.pathname,
+          mediaType: this.detectMediaType()
+        });
+      }
+    } catch (e) { shape = 'unknown'; }
+
+    this._pageShape = shape;
+
+    // 皮肤：只有档案页换；离开档案页必须能褪回普通蓝，
+    // 否则用户从作者主页点进一条博文后，会看到一个「整理档案」按钮去提单条内容。
+    try {
+      if (typeof bm.setSkin === 'function') bm.setSkin(shape === 'person' ? 'arch' : 'default');
+    } catch (e) { /* 换肤失败不影响提取 */ }
+
+    // 显隐，三种情况分开处理 —— 这里最容易踩「谁也不管/谁都管」的坑：
+    //   · 用户自己在设置里关了按钮 → 任何站都藏（用户设置最高）
+    //   · 信息流页（feed）→ 藏
+    //   · 详情页 / 档案页 → 显示
+    //   · unknown（没配规则的站）→ **一个字节都不碰**。
+    //     这些站的显隐另有主人：IG 有 `_syncInstagramEntryVisibility`（列表页藏、
+    //     弹层开时显示），抖音 / 快手有弹层接管。这里要是顺手 setVisible(true)，
+    //     就把它们刚藏好的按钮又翻出来了 —— 实测会让 IG 列表页重新冒出大按钮。
+    try {
+      if (this._showButtonByConfig === false) {
+        bm.setVisible(false);
+      } else if (shape === 'feed') {
+        bm.setVisible(false);
+      } else if (shape !== 'unknown') {
+        bm.setVisible(true);
+      }
+    } catch (e) { /* 显隐失败不影响提取 */ }
+
+    return shape;
+  }
+
+  /**
+   * 盯地址变化（只在本次纳入的几站启用，其他站点一个定时器都不多）。
+   *
+   * 为什么必须盯：微博 / X / IG 点开一条内容都是**站内跳转、不刷新文档**，
+   * 而 init() 只在文档加载时跑一次。不盯的话，从首页点进详情页后按钮永远不出现，
+   * 反过来从详情页退回首页按钮也不会撤。
+   *
+   * 三重保险（任一失效还有下一个兜着）：
+   *   ① 包一层 history.pushState / replaceState —— 站内跳转走它
+   *   ② popstate —— 浏览器前进 / 后退
+   *   ③ 250ms 轮询最后 URL —— 个别站点自己改写 history，包装会被绕过
+   */
+  _startPageShapeWatcher() {
+    if (this._pageShapeWatcher) return;
+    if (typeof PageShape === 'undefined' || !PageShape || typeof PageShape.watches !== 'function') return;
+    if (!PageShape.watches(location.hostname)) return;
+
+    const onUrlChange = () => {
+      try {
+        if (location.href === this._lastShapeHref) return;
+        this._lastShapeHref = location.href;
+        this._applyPageShape();
+      } catch (e) { /* 地址读不到就算了，下一拍再来 */ }
+    };
+    this._lastShapeHref = location.href;
+
+    try {
+      const wrap = (name) => {
+        const orig = history[name];
+        if (typeof orig !== 'function' || orig.__cmShapeWrapped) return;
+        const wrapped = function () {
+          const ret = orig.apply(this, arguments);
+          try { onUrlChange(); } catch (e) { /* 忽略 */ }
+          return ret;
+        };
+        wrapped.__cmShapeWrapped = true;
+        history[name] = wrapped;
+      };
+      wrap('pushState');
+      wrap('replaceState');
+    } catch (e) { /* 包装失败靠下面两路兜底 */ }
+
+    try { window.addEventListener('popstate', onUrlChange); } catch (e) { /* 忽略 */ }
+
+    const timer = setInterval(onUrlChange, 250);
+    this._pageShapeWatcher = { timer: timer, onUrlChange: onUrlChange };
   }
 
   /** v2.8.0：某个站点专属功能是否开着（读不到就当开着，绝不因配置缺失砍掉功能） */
@@ -736,6 +853,20 @@ class MediaExtractor {
   async handleExtract(opts = {}) {
     const startTime = performance.now();
     ClipMateLog.debug('===== 开始提取数据 =====');
+
+    // v2.10.0：逐帖小按钮点了哪一颗 → 浮窗就贴哪一颗下方。
+    // 信息流页（微博首页 / 热门 / 搜索、X 首页）按新规则不出大按钮，
+    // 浮窗没有大按钮可贴；不告诉它「用户点的是这一条」，窗就会弹到屏幕右上角，
+    // 离刚点的内容很远。只在显式传了锚点时才设，详情页走原有逻辑（贴大按钮）。
+    // 两种键名都收：逐帖按钮那层传的是 `anchor`，各站 spa-handler 传的是 `anchorEl`。
+    // （v2.10.0 真机验收发现只认后者时锚点永远为空 —— 浮窗退回右上角，白做一版）
+    const anchorElForWindow = (opts && (opts.anchorEl || opts.anchor)) || null;
+    if (anchorElForWindow && this.modalManager &&
+        typeof this.modalManager.setAnchorElement === 'function') {
+      try {
+        this.modalManager.setAnchorElement(anchorElForWindow);
+      } catch (e) { /* 锚不上就退回默认位置，不影响提取 */ }
+    }
 
     // v2.5.99：每次提取前重算缓存键。
     // 原来只在 init 里算一次，之后再不更新。页面内跳转（SPA 从一个作品切到另一个、

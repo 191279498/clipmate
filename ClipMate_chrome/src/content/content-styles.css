@@ -36,6 +36,16 @@
   --cm-btn: #056BF4;
   --cm-btn-hover: #0458CC;
   --cm-btn-ink: #FFFFFF;
+  /* v2.10.0：作者档案皮肤（用户 2026-11-04 选 B 方案）。
+     浅色站点 = 深海军蓝底 + 金黄边 —— 与普通按钮的中蓝底在色相和明度上
+     同时拉开，扫一眼就知道「这一页提的不是某条内容，是整份档案」。
+     金黄取自吉祥物图里的星星/文件夹（#FECE3E），不是随便挑的色。
+     ⚠️ 与 --cm-btn 同一纪律：深色下按钮底绝不翻浅蓝，只换成暖黑面。 */
+  --cm-arch-btn: #001FB5;
+  --cm-arch-btn-hover: #02187F;
+  --cm-arch-ink: #FFFFFF;
+  --cm-arch-edge: #FECE3E;
+  --cm-arch-shadow: rgba(0, 31, 181, 0.42);
   --cm-line: #E1DCD1;
   --cm-line-mid: #D9D3C5;
   --cm-line-soft: #D5CFC1;
@@ -88,6 +98,13 @@
   --cm-btn: #222120;
   --cm-btn-hover: #2B2926;
   --cm-btn-ink: #8FB6FF;
+  /* v2.10.0：档案皮肤（深色站点）—— 面与普通按钮一致（暖黑），
+     靠金黄边 + 换图标 + 换文案区分，不再叠第二种亮色。 */
+  --cm-arch-btn: #222120;
+  --cm-arch-btn-hover: #2B2926;
+  --cm-arch-ink: #8FB6FF;
+  --cm-arch-edge: #FECE3E;
+  --cm-arch-shadow: rgba(0, 0, 0, 0.5);
   --cm-line: #33302A;
   --cm-line-mid: #3F3B33;
   --cm-line-soft: #423D34;
@@ -546,6 +563,31 @@ button.media-extractor-button {
   background: var(--cm-btn-hover, #0a4fcb);
   border-color: var(--cm-blue-deep, #0a4fcb);
   opacity: 0.9;
+}
+
+/* ---------- v2.10.0 作者档案皮肤 ----------
+   触发方式：JS 给按钮加 .clipmate-arch（只在作者主页 / 影人页这类「提整份档案」的页面）。
+   为什么选择器**故意不写 button 前缀**：
+     带 button 会变成 (0,2,1)，比下面 .success / .error 的 (0,2,0) 更高，
+     于是「提取成功变绿」会被皮肤压住，用户看不到成功反馈。
+     不写前缀是 (0,2,0)，与状态规则同级、写在它们之前（本文件 560 多行 vs 730 多行），
+     让置灰 / 成功 / 失败后写覆盖 —— 那三种是「这一次成没成」的反馈，优先级必须更高。
+   深色站点不给第二套亮色：--cm-arch-btn 在 .clipmate-dark 里就是暖黑，
+   只换金黄边 + 图标 + 文案，一块深海军蓝贴在黑页面上反而更刺眼。 */
+.media-extractor-button.clipmate-arch {
+  background: var(--cm-arch-btn, #001FB5);
+  border-color: var(--cm-arch-edge, #FECE3E);
+  color: var(--cm-arch-ink, #FFFFFF);
+  box-shadow: 0 4px 12px var(--cm-arch-shadow, rgba(0, 31, 181, 0.42));
+}
+.media-extractor-button.clipmate-arch:hover {
+  background: var(--cm-arch-btn-hover, #02187F);
+  border-color: var(--cm-arch-edge, #FECE3E);
+}
+/* 提取中也保持档案底色（否则一点就闪回普通蓝，像换了个按钮） */
+.media-extractor-button.clipmate-arch.loading {
+  background: var(--cm-arch-btn-hover, #02187F);
+  border-color: var(--cm-arch-edge, #FECE3E);
 }
 
 /* ---------- 吉祥物头像（透明底 · 撑满按钮左端）----------

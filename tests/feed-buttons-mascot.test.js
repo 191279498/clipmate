@@ -287,7 +287,8 @@ section('六、素材：矢量、结构完整、不带烘焙白底');
     !/d="M\s*0[,.\s]+0[^"]*"[^>]*fill="(#fff|#ffffff|white)"/i.test(txt) &&
     !/fill="(#fff|#ffffff|white)"[^>]*d="M\s*0[,.\s]+0/i.test(txt));
   const all = fs.readdirSync(MASCOT_DIR).filter((f) => f.endsWith('.svg'));
-  ok('素材目录里是 23 个形态', all.length === 23, all.length);
+  // v2.10.0：23 + 「整理档案」= 24（档案皮肤那张也在同一目录）
+  ok('素材目录里是 24 个形态', all.length === 24, all.length);
 }
 
 /* ============ 汇总 ============ */

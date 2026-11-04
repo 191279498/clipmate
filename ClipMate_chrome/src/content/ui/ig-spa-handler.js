@@ -66,7 +66,11 @@
     this.activeContext = article;
     this.activeShortcode = code;
     try {
-      return await this.handleExtract({ feedPost: true });
+      return await this.handleExtract({
+        feedPost: true,
+        // v2.10.0：浮窗贴在用户点的那颗小按钮下方（IG 首页按 v2.7.4 起就不出大按钮）
+        anchorEl: (target && target.anchor) || null
+      });
     } catch (e) {
       safeLog('[MediaExtractor] 首页逐帖提取失败: ' + (e && e.message));
       return false;

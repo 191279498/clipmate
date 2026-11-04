@@ -69,7 +69,10 @@
         // 人物档案提取器，它不认识 `feedPost`，点博文按钮只会弹出 6 列空表。
         return await this.handleExtract({
           feedPost: { container: container, post: post },
-          forceMediaType: 'social'
+          forceMediaType: 'social',
+          // v2.10.0：把「用户点的那颗小按钮」交给浮窗当锚点 ——
+          // 信息流页不再有大按钮，浮窗要贴在这一条的小按钮下方才有意义
+          anchorEl: (target && target.anchor) || null
         });
       } catch (e) {
         safeLog('[MediaExtractor] 微博逐帖提取失败: ' + (e && e.message));

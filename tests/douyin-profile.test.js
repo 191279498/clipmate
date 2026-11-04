@@ -150,7 +150,16 @@ const SEC = 'MS4wLjABAAAATeeWHaXZ7dWwyDuDEOZAXpKT2EWH2pdixzq9cU3cBkZstCaNaPwYy72
   section('5. 注册与接线');
 
   const MANIFEST = JSON.parse(fs.readFileSync(P('manifest.json'), 'utf8'));
-  truthy('版本号已升到 2.7.11 或更高', /^2\.(7\.(1[1-9]|[2-9]\d)|[89]\.\d+)$/.test(MANIFEST.version), MANIFEST.version);
+  // 版本比较必须按数字段比，不能靠正则白名单 —— 2.10.1 会被 `2\.(7\.x|[89]\.x)` 判死
+  const verAtLeast = (v, min) => {
+    const a = String(v).split('.').map(Number);
+    const b = String(min).split('.').map(Number);
+    for (let i = 0; i < Math.max(a.length, b.length); i++) {
+      if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0);
+    }
+    return true;
+  };
+  truthy('版本号已升到 2.7.11 或更高', verAtLeast(MANIFEST.version, '2.7.11'), MANIFEST.version);
   const js = MANIFEST.content_scripts[0].js;
   const idx = (n) => js.findIndex((x) => x.indexOf(n) > -1);
   truthy('manifest 加载了 country-extract', idx('country-extract') > -1);

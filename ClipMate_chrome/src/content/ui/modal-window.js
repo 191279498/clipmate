@@ -103,6 +103,10 @@
     const startTime = performance.now();
     ClipMateLog.debug('===== 开始关闭悬浮窗 =====');
 
+    // v2.10.0：锚点跟着窗一起清 —— 下次开窗要么用大按钮、要么用新的小按钮，
+    // 绝不沿用上一次那颗（列表页滚动后它可能已经不在 DOM 里了）。
+    this._anchorEl = null;
+
     // v2.9.4：先摘掉自动收起监听（关窗路径有好几条：ESC / 按钮 / 自动收起 / 站点换条），
     // 统一在 here 收口，避免漏摘导致「窗关了监听还在跑」。
     if (typeof ClipMateBrowseDismiss !== 'undefined' && ClipMateBrowseDismiss.disarm) {
@@ -160,9 +164,46 @@
     },
 
     /**
+     * v2.10.0：显式锚点 —— 用户刚点的那颗「逐帖小按钮」。
+     *
+     * 为什么需要它：信息流页（微博首页 / 热门 / 搜索、X 首页、IG 首页）按新规则
+     * **不再出大按钮**（每条内容有自己的小按钮，大按钮在那里只会碍事）。
+     * 大按钮没了，浮窗就没有可贴的东西，只能退到屏幕右上角 —— 离刚点的那条
+     * 内容八丈远，用户得回头找窗。贴在小按钮下方才是「我点的就是这个」。
+     *
+     * 只存元素、不存坐标：小按钮随滚动不断重建，存下来的坐标一秒钟就过期。
+     */
+    setAnchorElement(el) {
+      this._anchorEl = el || null;
+    },
+
+    /**
+     * 取当前该贴的矩形：显式锚点优先，其次大提取按钮，都没有返回 null。
+     * `isConnected` 必判：SPA 换条时旧卡片会被整体回收，留着它的 rect
+     * 会把窗贴到屏幕边缘的空白处（微博/X 都是虚拟列表，回收很激进）。
+     */
+    _anchorRect() {
+      const pick = (el) => {
+        try {
+          if (!el || !el.isConnected) return null;
+          if (el.nodeType !== 1) return null;
+          if (getComputedStyle(el).display === 'none') return null;
+          const r = el.getBoundingClientRect();
+          if (!r || r.width <= 0 || r.height <= 0) return null;
+          return r;
+        } catch (e) { return null; }
+      };
+      const byClick = pick(this._anchorEl);
+      if (byClick) return byClick;
+      let btn = null;
+      try { btn = document.querySelector('.media-extractor-button'); } catch (e) { btn = null; }
+      return pick(btn);
+    },
+
+    /**
      * 计算浮窗位置（v2.5.45）
-     * 直接定位到我们自己的提取按钮下方：右边缘对齐、顶部留 8px；
-     * 按钮被隐藏或不存在时退到右上角；最后统一做四边边界收拢。
+     * 直接定位到锚点下方：右边缘对齐、顶部留 12px；
+     * 锚点被隐藏或不存在时退到右上角；最后统一做四边边界收拢。
      */
     _computeFloatingPosition(width, height) {
       const gap = 8;
@@ -172,16 +213,11 @@
       let x = Math.max(gap, window.innerWidth - width - 20);
       let y = 72; // 按钮默认 top:20 + 高约 44 + 间距
 
-      try {
-        const btn = document.querySelector('.media-extractor-button');
-        if (btn && getComputedStyle(btn).display !== 'none') {
-          const r = btn.getBoundingClientRect();
-          if (r.width > 0 && r.height > 0) {
-            x = r.right - width;   // 右边缘对齐按钮右边缘
-            y = r.bottom + BTN_GAP;    // 贴在按钮正下方（让开溢出的头像）
-          }
-        }
-      } catch (e) { /* 拿不到按钮就用兜底位置 */ }
+      const anchor = this._anchorRect();
+      if (anchor) {
+        x = anchor.right - width;   // 右边缘对齐锚点右边缘
+        y = anchor.bottom + BTN_GAP;    // 贴在锚点正下方（让开溢出的头像）
+      }
 
       // 边界收拢：左右各留 gap；顶部保证至少 120px 可见，不会整个跑到屏幕外
       x = Math.max(gap, Math.min(x, window.innerWidth - width - gap));
@@ -526,7 +562,13 @@
       }
 
       // 先关闭现有的悬浮窗（如果存在）
+      // v2.10.0 修复（真机验收抓到的）：close() 会把 _anchorEl 清空 —— 本意是「下次开窗
+      // 别沿用上一颗已经滚走的按钮」，但这一次 close 是**开窗流程内部**的一步，
+      // 直接清掉会让下面 _computeFloatingPosition 拿不到用户刚点的那颗小按钮，
+      // 浮窗于是退回右上角（信息流页又没有大按钮可贴）。这里先存后补。
+      const anchorKeep = this._anchorEl;
       this.close();
+      this._anchorEl = anchorKeep;
 
       // 创建悬浮窗
 

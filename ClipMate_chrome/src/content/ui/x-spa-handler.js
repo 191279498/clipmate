@@ -69,7 +69,9 @@
         // 它不认识 `feedPost`，点推文按钮只会弹出 6 列空表。
         return await this.handleExtract({
           feedPost: { container: container, post: post },
-          forceMediaType: 'social'
+          forceMediaType: 'social',
+          // v2.10.0：浮窗贴在用户点的那颗小按钮下方（信息流页没有大按钮可贴）
+          anchorEl: (target && target.anchor) || null
         });
       } catch (e) {
         safeLog('[MediaExtractor] X 逐帖提取失败: ' + (e && e.message));

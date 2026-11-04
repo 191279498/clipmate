@@ -464,7 +464,7 @@
       btn.setAttribute('data-state', 'busy');
 
       Promise.resolve()
-        .then(function () { return self.onExtract({ container: container, post: post }); })
+        .then(function () { return self.onExtract({ container: container, post: post, anchor: btn }); })
         .then(function (ok) {
           self._flash(btn, ok ? 'ok' : 'fail');
         })

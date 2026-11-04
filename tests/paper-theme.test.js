@@ -226,8 +226,8 @@ ok('popup.html 有 #popEmpty 容器', /id="popEmpty"/.test(POPUP_HTML));
 ok('空状态里有吉祥物 image（v2.9.2 起是矢量形态）',
   /class="pop-empty-art"[^>]*src="\.\.\/\.\.\/icons\/mascot\/[a-z-]+\.svg"/.test(POPUP_HTML),
   (POPUP_HTML.match(/pop-empty-art[^>]*/) || [''])[0]);
-ok('吉祥物素材是 23 个矢量形态（旧 mascot.png 已退役）',
-  fs.readdirSync(path.join(CHROME, 'icons/mascot')).filter((f) => f.endsWith('.svg')).length === 23);
+ok('吉祥物素材是 24 个矢量形态（旧 mascot.png 已退役；v2.10.0 加了整理档案那张）',
+  fs.readdirSync(path.join(CHROME, 'icons/mascot')).filter((f) => f.endsWith('.svg')).length === 24);
 ok('空状态标题用设计稿文案',
   /id="popEmptyTitle"[^>]*>这个页面还没有可提取的内容</.test(POPUP_HTML));
 ok('空状态有「查看支持的站点」出口', /id="openSites"[^>]*>查看支持的站点</.test(POPUP_HTML));
@@ -346,7 +346,7 @@ ok('设置页没有旧冷灰底 #f6f7f8 残留', !/f6f7f8/i.test(OPT_CSS));
 section('六、版本号');
 
 const MANIFEST = JSON.parse(read(F.manifest));
-eq('manifest 版本是 2.9.9', MANIFEST.version, '2.9.9');
+eq('manifest 版本是 2.10.1', MANIFEST.version, '2.10.1');
 
 /* ============================================================
    汇总

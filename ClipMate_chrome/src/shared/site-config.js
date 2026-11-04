@@ -45,7 +45,11 @@
     { name: '抖音', domain: 'www.douyin.com', domains: ['v.douyin.com'], group: '社交' },
     { name: '快手', domain: 'www.kuaishou.com', group: '社交' },
     { name: '小红书', domain: 'www.xiaohongshu.com', group: '社交' },
-    { name: '微博', domain: 'weibo.com', domains: ['www.weibo.com', 'm.weibo.cn'], group: '社交' },
+    // v2.10.0：补上搜索页 s.weibo.com。findSite 是**精确匹配**，
+    // 只登记 www.weibo.com / m.weibo.cn 时，搜索页查不到「自己是微博」，
+    // 于是被当成陌生站 → 浮窗自动收起按「非社交站」判成关（用户 2026-11-04 报：
+    // 搜索页滚动不关窗、首页关）。补上后与首页完全一致。
+    { name: '微博', domain: 'weibo.com', domains: ['www.weibo.com', 'm.weibo.cn', 's.weibo.com'], group: '社交' },
     { name: 'X', domain: 'x.com', domains: ['www.x.com'], group: '社交' },
     { name: 'Instagram', domain: 'www.instagram.com', group: '社交' },
     { name: 'YouTube', domain: 'www.youtube.com', domains: ['youtube.com'], group: '社交' },

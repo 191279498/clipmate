@@ -730,8 +730,17 @@ const FEED_HTML = '<!DOCTYPE html><html><head><title>Instagram</title></head><bo
     ok('manifest 注册了 instagram-feed-buttons.js', iBtn > -1);
     ok('注册顺序：在 ig-spa-handler.js 之前', iBtn > -1 && iHandler > -1 && iBtn < iHandler);
     ok('注册顺序：在 content-main.js 之前（初始化时要用到）', iBtn > -1 && iMain > -1 && iBtn < iMain);
-    ok('版本号已更新到 2.7.36 及以上（当前 2.8.x）',
-      /^2\.(7\.(3[6-9]|[4-9]\d)|[89]\.\d+)$/.test(String(manifest.version || '')), manifest.version);
+    // 版本比较按数字段比 —— 正则白名单会把 2.10.x 判死（`2\.(7\.x|[89]\.x)` 不认两位次版本）
+    const verAtLeast = (v, min) => {
+      const a = String(v).split('.').map(Number);
+      const b = String(min).split('.').map(Number);
+      for (let i = 0; i < Math.max(a.length, b.length); i++) {
+        if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0);
+      }
+      return true;
+    };
+    ok('版本号已更新到 2.7.36 及以上',
+      verAtLeast(manifest.version, '2.7.36'), manifest.version);
 
     const main = fs.readFileSync(P.main, 'utf8');
     ok('[接线] content-main 的 IG 分支调用了 _initInstagramFeedButtons',

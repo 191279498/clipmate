@@ -506,7 +506,7 @@
       this._setState(btn, 'is-busy');
 
       Promise.resolve()
-        .then(function () { return self.onExtract({ article: article, shortcode: code }); })
+        .then(function () { return self.onExtract({ article: article, shortcode: code, anchor: btn }); })
         .then(function (ok) {
           self._setState(btn, ok ? 'is-ok' : 'is-err');
           setTimeout(function () { self._setState(btn, null); }, 1800);

@@ -5,6 +5,11 @@ class ButtonManager {
   get LABEL_BUSY() { return '提取中'; }
   get LABEL_OK() { return '完成'; }
   get LABEL_BAD() { return '重试'; }
+  /**
+   * v2.10.0：作者档案页上的待命文案。
+   * 为什么四种文案挤在一个 getter 区里：这里是唯一的文案表，改字不用翻全文。
+   */
+  get LABEL_ARCH() { return '整理档案'; }
 
   /**
    * 吉祥物形象 —— v2.9.2 起每态一张全身像（矢量 SVG）。
@@ -43,6 +48,22 @@ class ButtonManager {
   }
 
   /**
+   * v2.10.0：作者档案页专用常态图标 —— 「正在整理档案的吉祥物」
+   * （用户 2026-11-04 提供，抱着一盒文件夹 + 手拿清单，配色是深蓝描边 + 天蓝）。
+   *
+   * 只有**常态**换它。提取中 / 成功 / 失败仍是原来那一套：
+   * 那三态是「这一次成没成」的瞬时反馈，与「这一页提的是什么」无关，
+   * 换掉反而会让用户以为换了个功能。
+   *
+   * 素材处理（不是原样直接放进来）：原图是 1024×1024 带纯白底矩形、
+   * 四周各留 78px 空白。① 白底必须删 —— 深色站点上会贴出一块白方块；
+   * ② 留白必须裁 —— 小尺寸下角色会缩成一小坨。裁完 874×860，宽高比 1.016。
+   */
+  get _MASCOT_ARCH() {
+    return 'icons/mascot/hero-archive.svg';
+  }
+
+  /**
    * 哪些状态下挂角标（v2.8.6）。
    * normal 不挂 —— 待命是常态，常态不需要提示。
    * 符号（✓ / ! / ?）写在 CSS 里，用 ::after 生成而不是塞文本节点：
@@ -55,8 +76,14 @@ class ButtonManager {
 
   /** 取扩展内资源的绝对地址；没有扩展运行时（单测 / 资源缺失）返回空串走线稿降级 */
   _mascotUrl(state) {
-    const map = this._MASCOT_BY_STATE;
-    const rel = (map && map[state]) || this._MASCOT_FALLBACK;
+    // v2.10.0：档案皮肤下常态换图；其余态（提取中/成功/失败）与普通皮肤一致
+    let rel;
+    if (this._skin === 'arch' && (!state || state === 'normal')) {
+      rel = this._MASCOT_ARCH;
+    } else {
+      const map = this._MASCOT_BY_STATE;
+      rel = (map && map[state]) || this._MASCOT_FALLBACK;
+    }
     try {
       if (typeof chrome !== 'undefined' && chrome.runtime &&
           typeof chrome.runtime.getURL === 'function') {
@@ -66,11 +93,49 @@ class ButtonManager {
     return '';
   }
 
+  /**
+   * v2.10.0：换皮肤。
+   *
+   *   'default' —— 普通提取按钮（蓝底 + 举纸的吉祥物 + 「提取」）
+   *   'arch'    —— 作者档案按钮（深海军蓝底 + 金黄边 + 整理档案的吉祥物 + 「整理档案」）
+   *
+   * 为什么单开一套皮肤而不是改配色：用户要的是「一眼看出这不是同一个动作」，
+   * 图标 + 底色 + 文案三处同时变，扫一眼就不会混。
+   *
+   * 三条边界：
+   *   ① 只改外观，不碰位置/尺寸/显隐/拖拽状态 —— 换肤不该让按钮跳一下；
+   *   ② 四态里只换常态图标，其余保持（见 _MASCOT_ARCH 的注释）；
+   *   ③ 幂等：同一个皮肤重复调用直接返回，不会反复重排 DOM。
+   */
+  setSkin(skin) {
+    const next = skin === 'arch' ? 'arch' : 'default';
+    if (this._skin === next) return;
+    this._skin = next;
+    if (!this.button) return;
+    try {
+      this.button.classList.toggle('clipmate-arch', next === 'arch');
+      const face = this.button.querySelector('.clipmate-mascot');
+      if (face) {
+        const st = face.getAttribute('data-state') || 'normal';
+        const url = this._mascotUrl(st);
+        if (url) face.style.backgroundImage = 'url("' + url + '")';
+      }
+      // 待命文案跟着换；「提取中」「完成」「重试」这些瞬态文案一律不动
+      const last = this.button.lastChild;
+      if (last && last.nodeType === 3) {
+        if (last.textContent === this.LABEL_IDLE) last.textContent = this.LABEL_ARCH;
+        else if (last.textContent === this.LABEL_ARCH) last.textContent = this.LABEL_IDLE;
+      }
+    } catch (e) { /* 换肤失败不影响提取本身 */ }
+  }
+
   constructor() {
     this.button = null;
     this.isLoading = false;
     this.isDragging = false;
     this.dragOffset = { x: 0, y: 0 };
+    // v2.10.0：皮肤。'default' 普通提取 / 'arch' 作者档案（换图标+配色+文案）
+    this._skin = 'default';
     // v2.5.60：按钮在构造函数里就插进页面，而 onClick 要等 initFieldMapper() 才接上，
     // 中间隔着 await（等 ModalManager 加载），实测有 1.2~1.4 秒「按钮在、点了没反应」。
     // isReady 就是这段窗口期的开关：没就绪就置灰 + disabled，让按钮别装作能用。
