@@ -72,6 +72,28 @@ MUTATIONS = [
         "&& fieldName === 'URL' && displayValue) {\n        return this._buildMergedLinkCell(displayValue);",
         "&& fieldName === 'URL' && false) {\n        return this._buildMergedLinkCell(displayValue);",
     ),
+    # v2.11.3：骨架键回归（真机事故 —— 三键从骨架消失 → 「补齐网址」按钮不出现）
+    (
+        'M8',
+        '骨架不再补三键（补链按钮判据失效，v2.11.2 真机事故重演）',
+        MT,
+        "const skeletonOnly = SKELETON_ONLY_KEYS[mediaType];",
+        "const skeletonOnly = null;",
+    ),
+    (
+        'M9',
+        '骨架补的三键值是 undefined 而不是空字符串（结构对、值不定）',
+        MT,
+        "      if (!(key in merged)) merged[key] = '';",
+        "      if (!(key in merged)) merged[key] = undefined;",
+    ),
+    (
+        'M10',
+        '把三键塞回展示清单（页面上又多出三行空列）',
+        MT,
+        "'豆瓣链接', 'URL', '导演', '编剧', '主演',",
+        "'豆瓣链接', 'URL', 'IMDB', '导演', '编剧', '主演',",
+    ),
 ]
 
 

@@ -111,6 +111,22 @@ const PERSON_FIELD_LISTS = {
   ]
 };
 
+// ============================================================
+// 只进骨架、不进展示清单的字段（v2.11.3）
+// ------------------------------------------------------------
+// v2.11.2 把 IMDB / TMDB / Bangumi 三列从影视清单里撤掉了（并进 URL 一格展示），
+// 但**骨架里必须继续留着这三个空键**：
+//   · 浮窗「补齐网址」按钮的显示判据是 `'TMDB' in this.data || 'Bangumi' in this.data`；
+//   · 跨站补链按这几个键判空、写入，缺键虽不崩，但与缓存里的老记录结构不一致。
+// 真机实测（v2.11.2，豆瓣电影页）：三键从骨架消失 → 按钮直接不出现 → 补全功能静默失效。
+// 所以展示清单（22 列）与骨架（25 键）在这里**有意分离**，改任何一边都要两边对一遍。
+// ============================================================
+const SKELETON_ONLY_KEYS = {
+  [MEDIA_TYPES.MEDIA]: ['IMDB', 'TMDB', 'Bangumi'],
+  [MEDIA_TYPES.MOVIE]: ['IMDB', 'TMDB', 'Bangumi'],
+  [MEDIA_TYPES.TV]: ['IMDB', 'TMDB', 'Bangumi']
+};
+
 /**
  * 由字段清单生成模板对象：键序与清单完全一致，值统一为空字符串。
  * @param {Array<string>} fieldList 字段清单
@@ -250,7 +266,18 @@ function getFullFieldTemplate(mediaType, personKind) {
   }
   
   // 合并所有模板
-  return Object.assign({}, ...templates);
+  const merged = Object.assign({}, ...templates);
+
+  // 补上「只进骨架、不进展示清单」的键：影视类的 IMDB / TMDB / Bangumi。
+  // 它们不出现在 getDisplayOrder() 里，但 data 里必须有 —— 补链与按钮判据都靠它。
+  const skeletonOnly = SKELETON_ONLY_KEYS[mediaType];
+  if (Array.isArray(skeletonOnly)) {
+    skeletonOnly.forEach((key) => {
+      if (!(key in merged)) merged[key] = '';
+    });
+  }
+
+  return merged;
 }
 
 // 根据媒体类型获取对应的字段模板（保持向后兼容）
@@ -316,6 +343,7 @@ if (typeof module !== 'undefined' && module.exports) {
     PERSON_CELEBRITY_FIELDS,
     PERSON_ACCOUNT_FIELDS,
     MEDIA_FIELD_LISTS,
+    SKELETON_ONLY_KEYS,
     PERSON_KINDS,
     PERSON_FIELD_LISTS,
     buildFieldTemplate,
@@ -348,6 +376,7 @@ if (typeof window !== 'undefined') {
     PERSON_CELEBRITY_FIELDS,
     PERSON_ACCOUNT_FIELDS,
     MEDIA_FIELD_LISTS,
+    SKELETON_ONLY_KEYS,
     PERSON_KINDS,
     PERSON_FIELD_LISTS,
     buildFieldTemplate,

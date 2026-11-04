@@ -99,9 +99,10 @@ function makeCtx(mixin, mediaType, data, fieldOrder) {
     MEDIA.indexOf('IMDB') === -1 && MEDIA.indexOf('TMDB') === -1 && MEDIA.indexOf('Bangumi') === -1,
     MEDIA.join(','));
   eq('首项「名字」、末项「结束时间」', [MEDIA[0], MEDIA[MEDIA.length - 1]], ['名字', '结束时间']);
-  eq('tv / movie 模板都跟随同一份清单（22 键）',
+  // v2.11.3：展示清单 22 列，但骨架必须留着三键 —— 详见下一节。
+  eq('tv / movie 骨架 = 22 展示列 + 3 个隐藏键（共 25 键）',
     [Object.keys(MT.getFullFieldTemplate('tv')).length, Object.keys(MT.getFullFieldTemplate('movie')).length],
-    [22, 22]);
+    [25, 25]);
   eq('getDisplayOrder("tv") 也含 URL 不含三键',
     (() => {
       const order = MT.getDisplayOrder('tv');
@@ -113,6 +114,52 @@ function makeCtx(mixin, mediaType, data, fieldOrder) {
     MT.MEDIA_FIELD_LISTS.game.length,
     MT.MEDIA_FIELD_LISTS.social.length
   ], [17, 17, 7]);
+
+  /* ==================== 1.5 骨架与展示清单分离（v2.11.3） ==================== */
+  section('1.5 骨架键 / 展示列 分离（v2.11.3 真机事故回归）');
+
+  // 事故：v2.11.2 把三列从字段清单删掉后，field-mapper 的骨架也不再预置三个空键，
+  // 而「补齐网址」按钮的显示判据是 `'TMDB' in this.data || 'Bangumi' in this.data`
+  // → 豆瓣电影页按钮直接消失，补全功能静默失效（真机实测，单测没抓住）。
+  {
+    const THREE = ['IMDB', 'TMDB', 'Bangumi'];
+    ['media', 'movie', 'tv'].forEach((type) => {
+      const tpl = MT.getFullFieldTemplate(type);
+      truthy(`骨架(${type}) 保留 IMDB / TMDB / Bangumi 三个键`,
+        THREE.every((k) => k in tpl), Object.keys(tpl).join(','));
+      truthy(`骨架(${type}) 三键的值是空字符串（不是缺省 undefined）`,
+        THREE.every((k) => tpl[k] === ''), THREE.map((k) => `${k}=${JSON.stringify(tpl[k])}`).join(','));
+    });
+
+    ['movie', 'tv'].forEach((type) => {
+      const order = MT.getDisplayOrder(type);
+      truthy(`展示顺序(${type}) 仍然不含这三个键（它们只是骨架）`,
+        THREE.every((k) => order.indexOf(k) === -1), order.join(','));
+      eq(`展示顺序(${type}) 仍是 22 列`, order.length, 22);
+    });
+
+    // 判据本身：浮窗按钮按 data 里有没有 TMDB/Bangumi 判断「这是不是影视页」，
+    // 这条断言把「谁在用这三个键」钉住，免得以后又被人当成多余的键删掉。
+    const managerSrc = src(path.join(ROOT, 'src/content/ui/modal-manager.js'));
+    truthy('「补齐网址」按钮仍靠 TMDB / Bangumi 键判断影视页（删键会让它消失）',
+      /isMediaPage\s*=\s*!!\([\s\S]{0,120}'TMDB'\s+in\s+this\.data[\s\S]{0,60}'Bangumi'\s+in\s+this\.data/.test(managerSrc),
+      '未在 modal-manager.js 中找到 isMediaPage 判据');
+
+    // 端到端：拿一份真实影视存档，走 field-mapper 的骨架预置，再喂给 _prepareData 的等价流程，
+    // 确认「三键进了 data、没进展示列」—— 这才是用户看到的最终形态。
+    const { mixin } = makeDataMixin('movie.douban.com');
+    const tpl = MT.getFullFieldTemplate('movie');
+    const ctx = makeCtx(mixin, 'movie',
+      Object.assign({}, tpl, { '名字': '肖申克的救赎', 'IMDB': 'https://www.imdb.com/title/tt0111161/' }),
+      Object.keys(tpl));
+    ctx._mergeLinksIntoUrl();
+    truthy('骨架带三键时，三键仍留在 data 里（补链能继续写）',
+      THREE.every((k) => k in ctx.data), Object.keys(ctx.data).join(','));
+    truthy('骨架带三键时，三键不会变成三行空列',
+      THREE.every((k) => ctx.fieldOrder.indexOf(k) === -1), ctx.fieldOrder.join(','));
+    eq('骨架带三键时，URL 里只有 IMDB 一段（空值不出空壳段）',
+      ctx.data['URL'], 'IMDB：https://www.imdb.com/title/tt0111161/');
+  }
 
   /* ==================== 2. 合并逻辑 ==================== */
   section('2. 合并逻辑（modal-data-processor._mergeLinksIntoUrl）');
