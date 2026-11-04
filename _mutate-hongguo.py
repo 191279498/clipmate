@@ -43,6 +43,12 @@ MUTATIONS = [
         "if (n >= 10000) return `${Math.round(n / 1000) / 10}万`;",
         "if (n >= 10000) return `${Math.floor(n / 10000)}万`;",
     ),
+    (
+        'M5',
+        '国家不写死（v2.11.1 新增，红果数据层没有地区字段 → 这一格会空）',
+        "fields['国家'] = '中国';",
+        "fields['国家'] = '';",
+    ),
 ]
 
 
@@ -108,7 +114,7 @@ def main():
     if survived:
         print('\n有 %d 处变异没被抓住：%s' % (len(survived), ', '.join(survived)))
         return 1
-    print('\n4/4 全部变红，断言有效。')
+    print('\n%d/%d 全部变红，断言有效。' % (len(MUTATIONS), len(MUTATIONS)))
     return 0
 
 

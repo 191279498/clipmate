@@ -317,6 +317,10 @@ class HongguoMovieExtractor extends BaseExtractor {
       fields['名字'] = this.cleanText(series.series_name || '');
       // 红果全站都是剧集，不做「按集数猜电影/剧集」那套
       fields['影视类型'] = '剧集';
+      // v2.11.1：红果是字节的国内短剧平台，全站只收国内出品，数据层没有国家/地区字段
+      // （14 个字段里没有任何地区信息，页面也不显示），故固定「中国」——与 17K 同做法。
+      // 不写的话这一格会一直空着，而它是影视字段表第 3 位，空格很扎眼。
+      fields['国家'] = '中国';
       fields['上映日期'] = this._formatDate(series.first_visible_time);
       fields['集数'] = series.episode_cnt ? String(series.episode_cnt) : '';
       fields['主演'] = this._joinCelebrities();

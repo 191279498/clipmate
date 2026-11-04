@@ -106,6 +106,8 @@ const NORANK = { file: 'hongguo-7700477891418524696.html', id: '7700477891418524
     eq('名字', d['名字'], '十八岁太奶奶驾到，重整家族荣耀第五部');
     eq('title（基类字段也要对）', d.title, '十八岁太奶奶驾到，重整家族荣耀第五部');
     eq('影视类型', d['影视类型'], '剧集');
+    // v2.11.1：国家固定「中国」（红果全站国内短剧，数据层无地区字段）
+    eq('国家', d['国家'], '中国');
     eq('上映日期', d['上映日期'], '2026/10/31');
     eq('集数', d['集数'], '102');
     eq('网络评分', d['网络评分'], '9.5');
@@ -133,6 +135,7 @@ const NORANK = { file: 'hongguo-7700477891418524696.html', id: '7700477891418524
 
     eq('名字', d['名字'], '聚宝仙盆之杂灵根才是真BOSS第十五季');
     eq('影视类型', d['影视类型'], '剧集');
+    eq('国家（漫剧同样是中国）', d['国家'], '中国');
     eq('上映日期', d['上映日期'], '2026/10/31');
     eq('集数', d['集数'], '300');
     eq('网络评分', d['网络评分'], '9');
@@ -152,6 +155,7 @@ const NORANK = { file: 'hongguo-7700477891418524696.html', id: '7700477891418524
 
     eq('名字', d['名字'], '持械入宋：第一季');
     eq('影视类型', d['影视类型'], '剧集');
+    eq('国家（AI剧同样是中国）', d['国家'], '中国');
     eq('上映日期', d['上映日期'], '2026/08/21');
     eq('集数', d['集数'], '100');
     eq('网络评分', d['网络评分'], '8.7');
@@ -170,6 +174,8 @@ const NORANK = { file: 'hongguo-7700477891418524696.html', id: '7700477891418524
     const d = await ext.extractAllFields();
 
     eq('名字', d['名字'], '公路求生榜一说他要走到公路尽头第二季');
+    // 判不出子分类是「子分类留空」，不是「国家留空」——两件事别混
+    eq('国家（判不出子分类也不影响国家）', d['国家'], '中国');
     eq('集数', d['集数'], '172');
     eq('上映日期', d['上映日期'], '2026/10/26');
     ok('主演（无演员表 → 空）', !d['主演'], d['主演']);
@@ -265,7 +271,7 @@ const NORANK = { file: 'hongguo-7700477891418524696.html', id: '7700477891418524
     const hostPerms = manifest.host_permissions || [];
     const jsList = main.js || [];
 
-    eq('manifest 版本是 2.11.0', manifest.version, '2.11.0');
+    eq('manifest 版本是 2.11.1', manifest.version, '2.11.1');
     for (const domain of ['https://hongguoduanju.com/*', 'https://www.hongguoduanju.com/*', 'https://www.novelquickapp.com/*']) {
       ok(`host_permissions 含 ${domain}`, hostPerms.indexOf(domain) >= 0);
     }
