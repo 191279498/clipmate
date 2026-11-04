@@ -116,7 +116,8 @@ eq('三层补丁：只换目标，两层兄弟键全带上', deepPatch,
 
 console.log('\n【二】站点专属开关 feature-flags');
 
-eq('注册 8 个功能', flags.FEATURES.length, 8);
+// v2.11.4：新增 doubanListButtons（豆瓣收藏列表逐条按钮）→ 8 变 9
+eq('注册 9 个功能', flags.FEATURES.length, 9);
 eq('旧键 5 个', flags.legacyKeys().sort(), [
   'douyinImmersiveEnabled', 'douyinModalEnabled',
   'kuaishouImmersiveEnabled', 'kuaishouNoAutoplayEnabled', 'kuaishouPopupEnabled'
@@ -140,10 +141,12 @@ eq('抖音挂 2 条', flags.forDomain('www.douyin.com').map((f) => f.key), ['dou
 eq('快手挂 3 条', flags.forDomain('www.kuaishou.com').map((f) => f.key),
   ['kuaishouImmersive', 'kuaishouPopup', 'kuaishouNoAutoplay']);
 eq('X 挂 1 条', flags.forDomain('x.com').map((f) => f.key), ['xFeedButtons']);
+// v2.11.4：豆瓣收藏列表逐条按钮
+eq('豆瓣电影挂 1 条', flags.forDomain('movie.douban.com').map((f) => f.key), ['doubanListButtons']);
 eq('TikTok 没有专属开关', flags.forDomain('www.tiktok.com').length, 0);
-eq('无旧键的三个新功能不写旧键',
+eq('无旧键的四个新功能不写旧键',
   flags.FEATURES.filter((f) => !f.legacyKey).map((f) => f.key),
-  ['xFeedButtons', 'weiboFeedButtons', 'igFeedButtons']);
+  ['xFeedButtons', 'weiboFeedButtons', 'igFeedButtons', 'doubanListButtons']);
 
 // ============ 二、把真设置页放进 jsdom ============
 

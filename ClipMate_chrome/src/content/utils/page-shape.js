@@ -76,6 +76,25 @@
   /** 整页都是内容流、永远没有「单条详情」形态的站点 → 永远藏 */
   var ALWAYS_FEED_HOSTS = ['s.weibo.com'];
 
+  /**
+   * 「这片路径只可能是列表」白名单（v2.11.4）。
+   *
+   * 与 RULES 的语义**正好相反**，所以必须单独一张表：
+   *   RULES      —— 配了规则，没命中就**算信息流**。适用于整站几乎都是内容流的站（微博 / X）。
+   *   LIST_PAGES —— 只认这几条路径，没命中就**保持原样（unknown，不藏）**。
+   *                 适用于「列表只是站内一小块」的站（豆瓣），
+   *                 否则 /review/ /celebrity/ /trailer/ 这些页面会被误判成信息流、大按钮直接消失。
+   *
+   * 命中即 `feed`：藏大按钮（改挂逐条小按钮）、并且按 feed 开「滚动自动关浮窗」。
+   */
+  var LIST_PAGES = {
+    // 豆瓣收藏三态（v2.11.4）：想看 / 在看 / 看过。
+    // 网格与列表两种视图是同一地址（只差 ?mode=），pathname 完全一致，一条规则覆盖。
+    'movie.douban.com': [
+      /^\/people\/[^/]+\/(wish|do|collect)\/?$/i
+    ]
+  };
+
   /** 需要盯着地址变化的站点（站内跳转不刷新文档，不盯就会「进了详情页还没按钮」） */
   var WATCHED_HOSTS = ['weibo.com', 'm.weibo.cn', 'x.com', 's.weibo.com'];
 
@@ -102,6 +121,9 @@
 
     // ② 整页内容流
     if (ALWAYS_FEED_HOSTS.indexOf(host) !== -1) return 'feed';
+
+    // ②.5 只认白名单的列表页（豆瓣收藏三态）—— 没命中继续往下走，绝不改名
+    if (matchAny(LIST_PAGES[host], path)) return 'feed';
 
     // ③ 没配规则的站点：不知道，保持原样
     var rules = RULES[host];
@@ -130,6 +152,7 @@
     shouldHideMainButton: shouldHideMainButton,
     watches: watches,
     RULES: RULES,
+    LIST_PAGES: LIST_PAGES,
     ALWAYS_FEED_HOSTS: ALWAYS_FEED_HOSTS
   };
 

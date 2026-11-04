@@ -346,7 +346,7 @@ ok('设置页没有旧冷灰底 #f6f7f8 残留', !/f6f7f8/i.test(OPT_CSS));
 section('六、版本号');
 
 const MANIFEST = JSON.parse(read(F.manifest));
-eq('manifest 版本是 2.11.3', MANIFEST.version, '2.11.3');
+eq('manifest 版本是 2.11.4', MANIFEST.version, '2.11.4');
 
 /* ============================================================
    汇总

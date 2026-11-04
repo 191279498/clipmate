@@ -158,7 +158,10 @@
       autoCopyFormat: normalizeCopyFormat(c.autoCopyFormat),
       showButton: c.showButton !== false,
       // v2.9.6：这里给的是「非社交站」的保守值；真正按站点类型算在 resolve() 里
-      autoDismiss: false
+      autoDismiss: false,
+      // v2.11.4：这个值是不是「用户自己设过」的。没设过时，feed 形态（豆瓣收藏列表页）
+      // 会自行开启自动收起 —— 用户显式关掉的站绝不覆盖。
+      autoDismissExplicit: false
     };
   }
 
@@ -202,6 +205,7 @@
     // 明确打开过（true）不携带信息（那本来就是当时的默认），交给上面的类型判断。
     if (config && config.settings && config.settings.autoDismiss === false) {
       eff.autoDismiss = false;
+      eff.autoDismissExplicit = true;
     }
 
     var rule = matchRule(config, hostname);
@@ -243,6 +247,7 @@
     // v2.9.6：站点级自动收起。本站设过就完全以它为准（包括设成 false 压掉社交站的默认开）
     if (Object.prototype.hasOwnProperty.call(o, 'autoDismiss')) {
       eff.autoDismiss = !!o.autoDismiss;
+      eff.autoDismissExplicit = true;
     }
     eff.rule = rule;
     return eff;

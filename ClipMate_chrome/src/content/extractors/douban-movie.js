@@ -3,8 +3,26 @@ class DoubanMovieExtractor extends BaseExtractor {
   constructor() {
     super();
     this.siteName = 'douban_movie';
-    
+
+    // v2.11.4：提取源。默认就是当前页面 —— 行为与改造前一致。
+    // 豆瓣收藏列表页的小按钮会调 setSource(解析后的文档, 详情页地址)，
+    // 让这一整套选择器去读「另一个页面的 HTML」，不再维护第二份。
+    this.doc = document;
+    this.pageUrl = window.location.href;
+
     // 人员字段配置 - 已完全移除所有人员相关配置
+  }
+
+  /**
+   * v2.11.4：切换提取源。
+   * @param {Document|null} doc 目标文档（DOMParser 解析出来的也算）；传 null 恢复当前页
+   * @param {string} [url] 该文档的真实地址（用于 /tv/ 判定与「豆瓣链接」字段）
+   * @returns {this}
+   */
+  setSource(doc, url) {
+    this.doc = doc || document;
+    this.pageUrl = url || window.location.href;
+    return this;
   }
 
   // 提取评分
@@ -21,12 +39,12 @@ class DoubanMovieExtractor extends BaseExtractor {
 
     // 1) 官方微数据：<strong class="ll rating_num" property="v:average">9.7</strong>
     let rating =
-      pick(document.querySelector('#interest_sectl [property="v:average"]')) ||
-      pick(document.querySelector('[property="v:average"]'));
+      pick(this.doc.querySelector('#interest_sectl [property="v:average"]')) ||
+      pick(this.doc.querySelector('[property="v:average"]'));
     if (rating) return rating;
 
     // 2) 兜底：评分区里标注为「豆瓣评分」的那一格
-    const wraps = document.querySelectorAll('#interest_sectl .rating_wrap');
+    const wraps = this.doc.querySelectorAll('#interest_sectl .rating_wrap');
     for (const wrap of wraps) {
       const label = wrap.querySelector('.rating_logo');
       if (label && /豆瓣评分/.test(label.textContent || '')) {
@@ -36,7 +54,7 @@ class DoubanMovieExtractor extends BaseExtractor {
     }
 
     // 3) 再兜底：评分区里只有一个评分时取它（防止豆瓣改掉微数据标签）
-    const nums = document.querySelectorAll('#interest_sectl strong.rating_num');
+    const nums = this.doc.querySelectorAll('#interest_sectl strong.rating_num');
     if (nums.length === 1) {
       rating = pick(nums[0]);
       if (rating) return rating;
@@ -49,7 +67,7 @@ class DoubanMovieExtractor extends BaseExtractor {
   // 提取JSON-LD结构化数据
   extractJsonLdData() {
     try {
-      const scriptTags = document.querySelectorAll('script[type="application/ld+json"]');
+      const scriptTags = this.doc.querySelectorAll('script[type="application/ld+json"]');
       for (const script of scriptTags) {
         try {
           const data = JSON.parse(script.textContent);
@@ -119,7 +137,7 @@ class DoubanMovieExtractor extends BaseExtractor {
     try {
       
       // 方法1: 直接从#info元素中提取文本匹配
-      const infoElement = document.querySelector('#info');
+      const infoElement = this.doc.querySelector('#info');
       if (infoElement) {
         const infoText = infoElement.textContent;
         
@@ -148,7 +166,7 @@ class DoubanMovieExtractor extends BaseExtractor {
       
       // 方法2: 查找页面中的IMDb链接元素
       try {
-        const imdbLinks = Array.from(document.querySelectorAll('a[href*="imdb.com/title/"]'));
+        const imdbLinks = Array.from(this.doc.querySelectorAll('a[href*="imdb.com/title/"]'));
         
         for (const link of imdbLinks) {
           const href = link.getAttribute('href');
@@ -184,12 +202,12 @@ class DoubanMovieExtractor extends BaseExtractor {
   // 判断是否为电视剧
   isTvSeries() {
     // 通过URL判断
-    if (window.location.href.includes('/tv/')) {
+    if (this.pageUrl.includes('/tv/')) {
       return true;
     }
     
     // 通过页面特征判断
-    const infoElement = document.querySelector('#info');
+    const infoElement = this.doc.querySelector('#info');
     if (infoElement) {
       const infoText = infoElement.textContent;
       // 检查是否包含集数信息（提高识别率）
@@ -197,14 +215,14 @@ class DoubanMovieExtractor extends BaseExtractor {
         return true;
       }
       // 检查类型是否包含电视剧相关词汇
-      const typeElements = document.querySelectorAll('[property="v:genre"]');
+      const typeElements = this.doc.querySelectorAll('[property="v:genre"]');
       const genres = Array.from(typeElements).map(el => el.textContent.toLowerCase());
       if (genres.some(genre => genre.includes('电视剧') || genre.includes('剧集') || genre.includes('动画剧'))) {
         return true;
       }
       // 从标题判断（包含"季"或"季数"）
-      const titleElement = document.querySelector('h1 span[property="v:itemreviewed"]') || 
-                          document.querySelector('h1 span');
+      const titleElement = this.doc.querySelector('h1 span[property="v:itemreviewed"]') || 
+                          this.doc.querySelector('h1 span');
       if (titleElement) {
         const titleText = titleElement.textContent.toLowerCase();
         if (titleText.includes('season') || titleText.includes('季')) {
@@ -224,7 +242,7 @@ class DoubanMovieExtractor extends BaseExtractor {
     
     try {
       // 主提取策略：从页面中查找并解析JSON-LD脚本
-      const scriptTags = document.querySelectorAll('script[type="application/ld+json"]');
+      const scriptTags = this.doc.querySelectorAll('script[type="application/ld+json"]');
       
       for (const script of scriptTags) {
         try {
@@ -301,7 +319,7 @@ class DoubanMovieExtractor extends BaseExtractor {
         
         try {
           // 方法1：从编剧标签结构中提取（根据示例页面结构）
-          const plElements = document.querySelectorAll('.pl');
+          const plElements = this.doc.querySelectorAll('.pl');
           const writerLabels = Array.from(plElements).filter(el => 
             el.textContent.includes('编剧') || el.textContent.includes('编剧:')
           );
@@ -344,13 +362,13 @@ class DoubanMovieExtractor extends BaseExtractor {
           
           // 方法2：如果方法1失败，尝试更通用的选择器
           if (writers.length === 0) {
-            const infoElement = document.querySelector('#info');
+            const infoElement = this.doc.querySelector('#info');
             if (infoElement) {
               // 查找包含编剧的行
               const writerRows = infoElement.innerHTML.match(/<span[^>]*class=["']?pl["']?[^>]*>编剧[：:]?<\/span>[\s\S]*?<br\/>/i);
               if (writerRows && writerRows[0]) {
                 // 从匹配的行中提取a标签文本
-                const tempDiv = document.createElement('div');
+                const tempDiv = this.doc.createElement('div');
                 tempDiv.innerHTML = writerRows[0];
                 const aTags = tempDiv.querySelectorAll('a');
                 aTags.forEach(tag => {
@@ -366,7 +384,7 @@ class DoubanMovieExtractor extends BaseExtractor {
           // 方法3：如果前两种方法都失败，尝试从页面中查找编剧相关链接
           if (writers.length === 0) {
             // 查找所有包含编剧文本的链接
-            const allLinks = document.querySelectorAll('a[href*="subject_search"]');
+            const allLinks = this.doc.querySelectorAll('a[href*="subject_search"]');
             allLinks.forEach(link => {
               const parentSpan = link.closest('span');
               if (parentSpan && parentSpan.textContent.includes('编剧')) {
@@ -401,7 +419,7 @@ class DoubanMovieExtractor extends BaseExtractor {
     
     try {
       // 主提取策略：从页面中查找并解析JSON-LD脚本
-      const scriptTags = document.querySelectorAll('script[type="application/ld+json"]');
+      const scriptTags = this.doc.querySelectorAll('script[type="application/ld+json"]');
       
       for (const script of scriptTags) {
         try {
@@ -478,7 +496,7 @@ class DoubanMovieExtractor extends BaseExtractor {
         
         try {
           // 方法1：从rel="v:directedBy"属性的a标签中提取
-          const directedByLinks = document.querySelectorAll('a[rel="v:directedBy"]');
+          const directedByLinks = this.doc.querySelectorAll('a[rel="v:directedBy"]');
           if (directedByLinks.length > 0) {
             directedByLinks.forEach(link => {
               const name = link.textContent.trim();
@@ -495,7 +513,7 @@ class DoubanMovieExtractor extends BaseExtractor {
             // 被外层 catch 吞掉 → 方法2 和方法3 从来都没执行过。
             // 改为遍历 .pl，用文本匹配找「导演」这个标签。
             let directorLabel = null;
-            document.querySelectorAll('#info .pl').forEach(function (pl) {
+            this.doc.querySelectorAll('#info .pl').forEach(function (pl) {
               if (directorLabel) return;
               const labelText = (pl.textContent || '').trim().replace(/[：:]+$/, '');
               if (labelText === '导演') directorLabel = pl;
@@ -517,13 +535,13 @@ class DoubanMovieExtractor extends BaseExtractor {
           
           // 方法3：如果前两种方法都失败，尝试更通用的选择器
           if (directors.length === 0) {
-            const infoElement = document.querySelector('#info');
+            const infoElement = this.doc.querySelector('#info');
             if (infoElement) {
               // 查找包含导演的行
               const directorRows = infoElement.innerHTML.match(/<span[^>]*class=["']?pl["']?[^>]*>导演[：:]?<\/span>[\s\S]*?<br\/>/i);
               if (directorRows && directorRows[0]) {
                 // 从匹配的行中提取a标签文本
-                const tempDiv = document.createElement('div');
+                const tempDiv = this.doc.createElement('div');
                 tempDiv.innerHTML = directorRows[0];
                 const aTags = tempDiv.querySelectorAll('a');
                 aTags.forEach(tag => {
@@ -611,12 +629,14 @@ class DoubanMovieExtractor extends BaseExtractor {
       // 在豆瓣影视页面中，由于已有"豆瓣链接"字段，不再设置URL字段
       // fields['URL'] = window.location.href;
       // 设置豆瓣链接字段，去除查询参数
-      const baseUrl = window.location.href.split('?')[0];
+      const baseUrl = this.pageUrl.split('?')[0];
       fields['豆瓣链接'] = baseUrl;
       
       fields['其他信息'] = this.extractOtherInfo();
       fields['我的进度'] = this.extractMyProgress();
-      BaseExtractor.assignProgressTimeFields(fields);
+      // v2.11.4：把提取源传进去 —— 收藏列表页换源时读的是详情页那份文档，
+      // 不传就只能读到列表页（那里没有 #interest_sect_level，进度时间会整段丢）
+      BaseExtractor.assignProgressTimeFields(fields, { root: this.doc });
       
       return fields;
     } catch (error) {
@@ -632,7 +652,7 @@ class DoubanMovieExtractor extends BaseExtractor {
    */
   extractMyProgress() {
     try {
-      const container = document.querySelector('#interest_sect_level');
+      const container = this.doc.querySelector('#interest_sect_level');
       if (!container) return '';
       const text = container.textContent;
       if (text.includes('想看') || text.includes('想读')) return '想看';
@@ -655,7 +675,7 @@ class DoubanMovieExtractor extends BaseExtractor {
    */
   extractTags() {
     try {
-      const infoElement = document.querySelector('#info');
+      const infoElement = this.doc.querySelector('#info');
       if (!infoElement) return '';
 
       let names = [];
@@ -721,7 +741,7 @@ class DoubanMovieExtractor extends BaseExtractor {
   extractOtherInfo() {
     try {
       
-      const infoElement = document.querySelector('#info');
+      const infoElement = this.doc.querySelector('#info');
       if (!infoElement) {
         ClipMateLog.debug('[DoubanMovieExtractor] 未找到#info元素，无法提取其他信息');
         return '';
@@ -804,7 +824,7 @@ class DoubanMovieExtractor extends BaseExtractor {
   // 提取制片国家/地区信息
   extractCountry() {
     try {
-      const infoElement = document.querySelector('#info');
+      const infoElement = this.doc.querySelector('#info');
       if (!infoElement) {
         ClipMateLog.debug('[DoubanMovieExtractor] 未找到#info元素，无法提取国家信息');
         return '';
@@ -891,7 +911,7 @@ class DoubanMovieExtractor extends BaseExtractor {
    * @returns {string} 该行纯文本（含标签本身），没找到返回 ''
    */
   _getInfoLineText(labelPattern) {
-    const infoElement = document.querySelector('#info');
+    const infoElement = this.doc.querySelector('#info');
     if (!infoElement) return '';
     const lines = (infoElement.innerHTML || '').split(/<br\s*\/?>/i);
     for (let i = 0; i < lines.length; i++) {
@@ -917,7 +937,7 @@ class DoubanMovieExtractor extends BaseExtractor {
     const allDates = [];
     
     // 1. 从DOM元素中提取所有可能的日期元素
-    const dateElements = document.querySelectorAll('[property="v:initialReleaseDate"], .year, #info span[property="v:initialReleaseDate"]');
+    const dateElements = this.doc.querySelectorAll('[property="v:initialReleaseDate"], .year, #info span[property="v:initialReleaseDate"]');
     if (dateElements.length > 0) {
       dateElements.forEach(element => {
         const dateText = element.textContent.trim();
@@ -928,7 +948,7 @@ class DoubanMovieExtractor extends BaseExtractor {
     }
     
     // 2. 从info文本中提取日期
-    const infoElement = document.querySelector('#info');
+    const infoElement = this.doc.querySelector('#info');
     if (infoElement) {
       const infoText = infoElement.textContent;
 
@@ -1052,7 +1072,7 @@ class DoubanMovieExtractor extends BaseExtractor {
 
   extractEpisodes() {
     // 主要针对电视剧
-    const infoElement = document.querySelector('#info');
+    const infoElement = this.doc.querySelector('#info');
     if (infoElement) {
       const infoText = infoElement.textContent;
       
@@ -1083,7 +1103,7 @@ class DoubanMovieExtractor extends BaseExtractor {
     
     // 从#mainpic img的alt属性提取原作名
     try {
-      const mainPicImg = document.querySelector('#mainpic img');
+      const mainPicImg = this.doc.querySelector('#mainpic img');
       if (mainPicImg && mainPicImg.alt) {
         const originalTitle = mainPicImg.alt.trim();
         if (isValidOriginalTitle(originalTitle)) {
@@ -1101,7 +1121,7 @@ class DoubanMovieExtractor extends BaseExtractor {
   extractAliases() {
     
     // 查找包含别名信息的元素
-    const plElements = document.querySelectorAll('#info span.pl, #info .pl');
+    const plElements = this.doc.querySelectorAll('#info span.pl, #info .pl');
     let aliases = '';
     
     
@@ -1160,7 +1180,7 @@ class DoubanMovieExtractor extends BaseExtractor {
     
     try {
       // 主提取策略：从页面中查找并解析JSON-LD脚本
-      const scriptTags = document.querySelectorAll('script[type="application/ld+json"]');
+      const scriptTags = this.doc.querySelectorAll('script[type="application/ld+json"]');
       
       for (const script of scriptTags) {
         try {
@@ -1278,7 +1298,7 @@ class DoubanMovieExtractor extends BaseExtractor {
         
         try {
           // 从页面HTML中提取主演信息，查找带有rel="v:starring"属性的a标签
-          const actorLinks = document.querySelectorAll('a[rel="v:starring"]');
+          const actorLinks = this.doc.querySelectorAll('a[rel="v:starring"]');
           
           if (actorLinks && actorLinks.length > 0) {
             
@@ -1323,7 +1343,7 @@ class DoubanMovieExtractor extends BaseExtractor {
       ];
       
       for (const selector of introSelectors) {
-        const element = document.querySelector(selector);
+        const element = this.doc.querySelector(selector);
         if (element) {
           const text = element.textContent.trim();
           // 只返回有意义的简介内容，避免提取默认描述

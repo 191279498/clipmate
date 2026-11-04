@@ -53,6 +53,7 @@
   'use strict';
 
   var GLIDE_MS = 350;          // 开窗后的宽限期
+  var GLIDE_MS_FEED = 1000;    // feed 形态（豆瓣收藏列表页）用的宽限期，见 setFeedGlide
   var SCROLL_THRESHOLD = 200;  // 累计位移阈值（px）
   var POLL_MS = 250;           // 地址轮询间隔，与各站换条判定一致
 
@@ -96,6 +97,7 @@
   var BrowseDismiss = {
     _host: null,        // ModalManager 实例
     _enabled: true,     // 本站生效值（社交站开、其余站关；由 content-main 设置）
+    _glideMs: GLIDE_MS, // 开窗宽限期（feed 形态放宽到 1 秒，见 setGlide）
     _armed: false,
     _armedAt: 0,
     _pathCheck: true,   // 本次 arm 是否负责地址信号
@@ -125,6 +127,28 @@
     },
 
     isEnabled: function () { return this._enabled; },
+
+    /**
+     * v2.11.4：设置开窗宽限期。
+     *
+     * 为什么 feed 形态要放宽到 1 秒：豆瓣收藏列表页的浮窗是**点小按钮抓完详情页才弹**的，
+     * 抓一次约 1 秒。用户点完往往顺手往下滑，浮窗弹出来时页面的惯性滚动还没停，
+     * 350ms 的宽限期会被后续几个 scroll 事件直接凑满 200px → 浮窗一闪就没，
+     * 用户看到的是「点了没反应」。放宽到 1 秒刚好盖住抓取 + 惯性。
+     *
+     * 只放宽**时间**，阈值仍是 200px —— 与微博首页完全一致。
+     */
+    setGlide: function (ms) {
+      var v = parseInt(ms, 10);
+      this._glideMs = (isFinite(v) && v >= 0) ? v : GLIDE_MS;
+      return this._glideMs;
+    },
+
+    /** 当前宽限期（测试 / 调试用） */
+    glideMs: function () { return this._glideMs; },
+
+    /** feed 形态的宽限期常量，供 content-main 引用，避免两边写死不同的数 */
+    GLIDE_MS_FEED: GLIDE_MS_FEED,
 
     /**
      * 换作品时该不该关窗（各站 handler 用）。
@@ -284,7 +308,7 @@
      */
     _handleSignal: function (evt) {
       if (!this._armed || !this._enabled) return;
-      if (Date.now() - this._armedAt < GLIDE_MS) return;
+      if (Date.now() - this._armedAt < this._glideMs) return;
       if (this._host && this._host.isEditMode) return;
       if (!evt || evt.opened === false) return;
 
@@ -387,7 +411,7 @@
 
     _handleScroll: function (e) {
       if (!this._armed || !this._enabled) return;
-      if (Date.now() - this._armedAt < GLIDE_MS) return;
+      if (Date.now() - this._armedAt < this._glideMs) return;
       // 编辑模式豁免：实时读，中途进编辑立刻生效
       if (this._host && this._host.isEditMode) return;
       // ① 浮窗自己的滚动不算
@@ -412,7 +436,7 @@
     _checkPath: function () {
       if (!this._armed || !this._enabled) return;
       if (!this._pathCheck) return; // 站点自己管地址信号，本模块不插手
-      if (Date.now() - this._armedAt < GLIDE_MS) return;
+      if (Date.now() - this._armedAt < this._glideMs) return;
       // 编辑模式豁免 —— 与滚动判定保持一致，否则「编辑时滚不动但一点下一条就没了」
       if (this._host && this._host.isEditMode) return;
 

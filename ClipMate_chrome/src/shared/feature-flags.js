@@ -100,6 +100,15 @@
       legacyKey: null,
       defaultEnabled: true,
       appliesTo: 'buttons'
+    },
+    {
+      key: 'doubanListButtons',
+      sites: ['movie.douban.com'],
+      label: '收藏列表逐条按钮',
+      hint: '「想看 / 在看 / 看过」列表页每条挂一颗小按钮，点一下直接出浮窗；关掉后只能点进详情页再提取',
+      legacyKey: null,
+      defaultEnabled: true,
+      appliesTo: 'buttons'
     }
   ];
 

@@ -71,7 +71,7 @@ class BaseExtractor {
       // 基础信息
       fields.title = this.extractTitle();
       // 🔧 修复：设置url字段为当前页面URL，确保基础字段完整性
-      fields.url = window.location.href;
+      fields.url = this.pageUrl || window.location.href;
       fields.rating = this.extractRating();
       fields.description = this.extractDescription();
       
@@ -92,6 +92,25 @@ class BaseExtractor {
   }
 
   // 提取标题
+  /**
+   * 读 DOM 的根（v2.11.4）。
+   *
+   * 默认就是当前页 document —— **20 多个站点的行为一个字都不变**：它们都没有 `this.doc`
+   * 这个属性，`this.doc || document` 恒等于 document，与改造前逐字节等价。
+   *
+   * 唯一会变的是豆瓣影视：收藏列表页把条目详情页抓回来、用 DOMParser 解析成另一份文档，
+   * 由 `DoubanMovieExtractor.setSource()` 把 `this.doc` 指过去，整套选择器原样复用。
+   *
+   * 为什么不在豆瓣子类里 override 每个方法：豆瓣用了基类的 extractText / extractAttribute /
+   * extractDescription 等一堆 helper，逐个 override 会漏；改这一处，所有 helper 自动跟随。
+   *
+   * 注意 `waitForElement` 里那三处 document **故意不改**：它等的是「当前页面上某个元素出现」，
+   * 换源跟它没关系。
+   */
+  _root() {
+    return this.doc || document;
+  }
+
   extractTitle() {
     const selectors = [
       'h1',
@@ -101,7 +120,7 @@ class BaseExtractor {
     ];
     
     for (const selector of selectors) {
-      const element = document.querySelector(selector);
+      const element = this._root().querySelector(selector);
       if (element) {
         const text = element.textContent || element.getAttribute('content') || '';
         if (text.trim()) {
@@ -110,7 +129,7 @@ class BaseExtractor {
       }
     }
     
-    return document.title;
+    return this._root().title;
   }
 
   // 提取评分
@@ -124,7 +143,7 @@ class BaseExtractor {
     ];
     
     for (const selector of selectors) {
-      const elements = document.querySelectorAll(selector);
+      const elements = this._root().querySelectorAll(selector);
       for (const element of elements) {
         const text = element.textContent || element.getAttribute('content') || '';
         const rating = this.parseRating(text);
@@ -166,7 +185,7 @@ class BaseExtractor {
     ];
     
     for (const selector of selectors) {
-      const element = document.querySelector(selector);
+      const element = this._root().querySelector(selector);
       if (element) {
         const text = element.textContent || element.getAttribute('content') || '';
         if (text.trim() && text.length > 10) {
@@ -234,7 +253,7 @@ class BaseExtractor {
 
   // 提取文本内容
   extractText(selector, clean = true) {
-    const element = document.querySelector(selector);
+    const element = this._root().querySelector(selector);
     if (!element) return '';
     
     const text = element.textContent || element.innerText || '';
@@ -243,7 +262,7 @@ class BaseExtractor {
 
   // 提取属性值
   extractAttribute(selector, attribute) {
-    const element = document.querySelector(selector);
+    const element = this._root().querySelector(selector);
     if (!element) return '';
     
     return element.getAttribute(attribute) || '';
@@ -282,7 +301,7 @@ class BaseExtractor {
   async extractCountries() {
     try {
       // 从标签区域提取国家信息
-      const tagSection = document.querySelector('.subject_tag_section');
+      const tagSection = this._root().querySelector('.subject_tag_section');
       if (tagSection) {
         // 定义常见国家名称列表，包含更多可能的国家名称
         const countryKeywords = [
@@ -402,14 +421,18 @@ class BaseExtractor {
    * @param {Object} [options] - 可选配置
    * @param {Object} [options.progressMap] - 进度值→时间字段名映射，默认为书影用
    * @param {string} [options.containerSelector] - 日期容器 CSS 选择器，默认为 '#interest_sect_level'
+   * @param {Document} [options.root] - 从哪份文档读（v2.11.4）。
+   *        不传就读当前页 —— 书 / 游戏两个调用方没传，行为与以前完全一致。
+   *        豆瓣影视收藏列表页换源时传 `this.doc`（是**静态方法**，拿不到实例的 _root()）。
    */
   static assignProgressTimeFields(fields, options = {}) {
     const {
       progressMap = { '想看': '标记时间', '在看': '开始时间', '看过': '结束时间' },
-      containerSelector = '#interest_sect_level'
+      containerSelector = '#interest_sect_level',
+      root = null
     } = options;
 
-    const container = document.querySelector(containerSelector);
+    const container = (root || document).querySelector(containerSelector);
     if (!container) return;
 
     let rawDate = '';

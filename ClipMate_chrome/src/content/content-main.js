@@ -181,6 +181,28 @@ class MediaExtractor {
         } catch (e) {
           // 清理失败不许影响初始化流程
         }
+
+        // v2.11.4：豆瓣收藏三态（想看 / 在看 / 看过）。
+        //
+        // 它同样没有「这一页的媒体类型」—— 那是一整页条目，不是单条内容，
+        // 所以会走到这里、大按钮刚被上面摘掉。要做的只是把逐条小按钮挂上。
+        //
+        // 三件事的顺序不能换：
+        //   ① 先算页面形态（feed）→ 这一步顺带决定「滚动自动关浮窗」
+        //   ② 应用自动收起（本分支走不到 refreshConfig，得单独调一次）
+        //   ③ 挂按钮
+        // 挂完照样 return：这一页的全局按钮就是不该存在，交给小按钮。
+        if (/^movie\.douban\.com$/i.test(location.hostname) &&
+            this._featureOn('doubanListButtons') &&
+            typeof this._initDoubanListButtons === 'function') {
+          try {
+            this._applyPageShape();
+            this._applyAutoDismiss(null);
+            this._initDoubanListButtons();
+          } catch (e) {
+            ClipMateLog.debug('[豆瓣] 列表逐条按钮挂载失败（不影响其他功能）: ' + (e && e.message));
+          }
+        }
         return;
       }
 
@@ -588,9 +610,8 @@ class MediaExtractor {
         // v2.9.4：浮窗自动收起开关。v2.9.6 起按**站点**生效：
         // 社交站默认开、其余站默认关，站点级可覆盖 —— 一律走 eff（resolve 已经算好），
         // 不再直接读 config.settings.autoDismiss（那个只剩「老配置全关」的迁移用途）。
-        if (typeof ClipMateBrowseDismiss !== 'undefined' && ClipMateBrowseDismiss.setEnabled) {
-          ClipMateBrowseDismiss.setEnabled(eff.autoDismiss !== false);
-        }
+        // v2.11.4：判定抽到 `_applyAutoDismiss`，豆瓣收藏列表页走不到这里也能复用同一份。
+        this._applyAutoDismiss(eff);
 
         // v2.9.7：浮窗尺寸约束（全局项，不走站点覆盖，直接读 config.settings）。
         // 宽度 = 每次弹出浮窗的固定宽度；maxHeight = 高度自适应的上限。
@@ -634,7 +655,6 @@ class MediaExtractor {
    */
   _applyPageShape() {
     const bm = this.buttonManager;
-    if (!bm || !bm.button) return 'unknown';
 
     let shape = 'unknown';
     try {
@@ -647,7 +667,13 @@ class MediaExtractor {
       }
     } catch (e) { shape = 'unknown'; }
 
+    // v2.11.4：形态先记下来，**再**判断有没有大按钮。
+    // 豆瓣收藏列表页本来就没有大按钮（/people/* 不匹配任何提取器），
+    // 但它的形态照样得算 —— 「浮窗滚动自动关」就是按 feed 形态开的。
+    // 以前这里 `!bm.button` 直接 return 'unknown'，会让 feed 永远判不出来。
     this._pageShape = shape;
+
+    if (!bm || !bm.button) return shape;
 
     // 皮肤：只有档案页换；离开档案页必须能褪回普通蓝，
     // 否则用户从作者主页点进一条博文后，会看到一个「整理档案」按钮去提单条内容。
@@ -674,6 +700,38 @@ class MediaExtractor {
     } catch (e) { /* 显隐失败不影响提取 */ }
 
     return shape;
+  }
+
+  /**
+   * 算并应用「浮窗自动收起」的生效值（v2.11.4）。
+   *
+   * 抽成独立方法的原因：有两条路会走到它，而且互相走不到对方那里 ——
+   *   ① `refreshConfig()`：正常页面（有 mediaType）；
+   *   ② 豆瓣收藏列表页：在 `if (!mediaType)` 分支里，那里在 refreshConfig 之前就 return 了。
+   * 两处各写一遍判定迟早会漂移，所以只留这一份。
+   *
+   * 判定顺序（用户意愿 > 页面形态 > 站点组默认）：
+   *   · 用户显式设过（站点覆盖 / 老配置全局关）→ 完全听它，形态不得覆盖
+   *   · 否则：社交站默认开 ∪ feed 形态开
+   *
+   * @param {Object|null} eff `site-config.resolve()` 的结果；传 null 表示「配置还没读过」，
+   *        此时只有 feed 形态能开启，不会凭空给任意站点打开。
+   */
+  _applyAutoDismiss(eff) {
+    if (typeof ClipMateBrowseDismiss === 'undefined' || !ClipMateBrowseDismiss.setEnabled) return;
+    const e = eff || {};
+    const feedShape = this._pageShape === 'feed';
+
+    const autoDismissOn = e.autoDismissExplicit
+      ? (e.autoDismiss !== false)
+      : (e.autoDismiss === true || feedShape);
+
+    // feed 形态放宽开窗宽限期：浮窗是「抓完详情页才弹」的，350ms 盖不住惯性滚动。
+    // 只放宽时间，位移阈值仍是 200px —— 与微博首页完全一致。
+    if (typeof ClipMateBrowseDismiss.setGlide === 'function') {
+      ClipMateBrowseDismiss.setGlide(feedShape ? ClipMateBrowseDismiss.GLIDE_MS_FEED : 350);
+    }
+    ClipMateBrowseDismiss.setEnabled(autoDismissOn);
   }
 
   /**
@@ -1078,14 +1136,32 @@ class MediaExtractor {
       
       // 保存当前使用的提取器实例，供modal-manager等组件访问
       this.currentExtractor = extractor;
+
+      // v2.11.4：指定提取源。
+      // 唯一的用户是豆瓣收藏列表页：把条目详情页 HTML 抓回来、用 DOMParser 解析成
+      // 另一份文档，让同一个提取器去读那一份（不再维护第二套选择器）。
+      // 不传 doc 的调用方（其余全部）走当前页面，行为与改造前逐字相同。
+      // 用完必须还原：提取器实例会被工厂复用，不还原的话用户之后在详情页点大按钮
+      // 会读到列表页那份文档，得到一条「空白记录」。
+      const altDoc = (extraOpts && extraOpts.doc) || null;
+      const altUrl = (extraOpts && extraOpts.pageUrl) || '';
+      const altSourceOn = !!(altDoc && typeof extractor.setSource === 'function');
+      if (altSourceOn) extractor.setSource(altDoc, altUrl);
       
 
       // 3. 提取原始数据
       const rawDataStartTime = performance.now();
-      const rawData = await extractor.extractAllFields(Object.assign({
-        context,
-        shortcode: this.activeShortcode
-      }, extraOpts || {}));
+      const rawData = await (async () => {
+        try {
+          return await extractor.extractAllFields(Object.assign({
+            context,
+            shortcode: this.activeShortcode
+          }, extraOpts || {}));
+        } finally {
+          // 无论成功失败都要还原提取源，否则下一次提取会读错文档
+          if (altSourceOn) extractor.setSource(null);
+        }
+      })();
       ClipMateLog.debug(`原始数据提取完成，耗时: ${(performance.now() - rawDataStartTime).toFixed(2)}ms`);
       
       // 4. 映射到通用字段
@@ -1558,6 +1634,13 @@ if (typeof WeiboSpaMixin !== 'undefined') {
 // 只提供 _initXFeedButtons / _onXPostExtract 两个方法，与 IG / 微博 / 抖音 / 快手互不重叠。
 if (typeof XSpaMixin !== 'undefined') {
   Object.assign(MediaExtractor.prototype, XSpaMixin);
+}
+
+// v2.11.4：豆瓣「想看 / 在看 / 看过」列表页逐条小按钮（movie.douban.com/people/*）。
+// 只提供 _initDoubanListButtons / _onDoubanListItemExtract / _doubanDocLooksTv 三个方法，
+// 与 IG / 微博 / X / 抖音 / 快手的方法名互不重叠。
+if (typeof DoubanListMixin !== 'undefined') {
+  Object.assign(MediaExtractor.prototype, DoubanListMixin);
 }
 
 // v2.5.77 批 3：抖音弹窗接管（只在 www.douyin.com、且识别不出类型时才会被调用）。

@@ -206,8 +206,10 @@ function testManifestScope() {
   // → 39 变 40、37 变 38。
   // v2.11.0：新增红果短剧三个域名（hongguoduanju.com / www.hongguoduanju.com /
   // www.novelquickapp.com，都是 /detail* 详情页）→ 40 变 43、38 变 41。
-  eq('matches 总数 = 43', matches.length, 43);
-  eq('非抖音 matcher 数量 = 41', matches.filter((m) => !m.includes('douyin')).length, 41);
+  // v2.11.4：新增豆瓣收藏三态 `https://movie.douban.com/people/*`
+  // （想看 / 在看 / 看过，逐条小按钮）→ 43 变 44、41 变 42。
+  eq('matches 总数 = 44', matches.length, 44);
+  eq('非抖音 matcher 数量 = 42', matches.filter((m) => !m.includes('douyin')).length, 42);
 }
 
 /* ==================== 二、检测器：新入口一律「放弃」 ==================== */

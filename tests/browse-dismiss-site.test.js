@@ -351,8 +351,31 @@ ok('通用页隐藏 siteOnly 项',
 ok('schema 里 autoDismiss 标记为 siteOnly + 站点可覆盖',
   /key: 'autoDismiss'[\s\S]{0,560}siteOverridable: true[\s\S]{0,60}siteOnly: true/.test(SCHEMA));
 
-ok('content-main 改用 eff.autoDismiss（不再直读全局键）',
-  /ClipMateBrowseDismiss\.setEnabled\(eff\.autoDismiss !== false\)/.test(R('ClipMate_chrome/src/content/content-main.js')));
+// v2.11.4：判定从 refreshConfig 里抽成了 `_applyAutoDismiss`（豆瓣收藏列表页走不到
+// refreshConfig，但同样需要滚动自动关）。所以不能再盯着那一行源码，要盯两件事：
+//   ① refreshConfig 把 eff 交给这个方法（判据仍以 eff 为准，不直读全局键）
+//   ② 判定只有一份实现 —— 方法定义 1 次 + 调用 2 次（refreshConfig / 列表页）≥ 3 次
+{
+  const CM = R('ClipMate_chrome/src/content/content-main.js');
+  ok('content-main 把 eff 交给 _applyAutoDismiss（判据仍走 eff，不直读全局键）',
+    /this\._applyAutoDismiss\(eff\)/.test(CM) &&
+    /ClipMateBrowseDismiss\.setEnabled\(autoDismissOn\)/.test(CM));
+
+  ok('自动收起的判定只有一份实现（refreshConfig 与豆瓣列表页共用）',
+    /_applyAutoDismiss\(eff\)\s*\{/.test(CM) &&
+    (CM.match(/_applyAutoDismiss\(/g) || []).length >= 3,
+    '出现 ' + (CM.match(/_applyAutoDismiss\(/g) || []).length + ' 次');
+
+  // feed 形态（豆瓣收藏三态）自行开启；用户显式设过则完全听用户
+  ok('feed 形态会开自动收起，但用户显式设置优先',
+    /e\.autoDismissExplicit\s*\?/.test(CM) &&
+    /e\.autoDismiss === true \|\| feedShape/.test(CM));
+
+  // 开窗宽限期：feed 形态放宽，其余站仍是 350ms
+  ok('feed 形态的开窗宽限期单独放宽（抓完才弹窗，350ms 盖不住惯性滚动）',
+    /setGlide\(feedShape \? ClipMateBrowseDismiss\.GLIDE_MS_FEED : 350\)/.test(CM) &&
+    /GLIDE_MS_FEED = 1000/.test(R('ClipMate_chrome/src/content/ui/browse-dismiss.js')));
+}
 
 // ---------------- 汇总 ----------------
 
