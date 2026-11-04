@@ -213,10 +213,16 @@
       return Math.min(raw, Math.max(240, window.innerHeight - 16));
     },
 
-    /** 渲染后按内容收紧高度（minimized/collapsed/maximized 状态不动） */
-    _autoFitHeight() {
+    /**
+     * 渲染后按内容收紧高度（minimized/collapsed/maximized 状态不动）。
+     * v2.9.9：加 force —— createFloatingWindow 里 show() 完就调这里，而那时
+     * this.isOpen 还是 false（它在 createFloatingWindow 返回后才置 true），
+     * 不带 force 会被下面的守卫直接拦掉 → 高度自适应从未生效、窗口永远是初始 800。
+     */
+    _autoFitHeight(force) {
       const fw = this.floatingWindow;
-      if (!fw || !this.isOpen) return;
+      if (!fw) return;
+      if (!force && !this.isOpen) return;
       if (typeof fw.autoFitHeight === 'function') fw.autoFitHeight(this._maxHeightPx());
       // v2.9.7 真机修复：高度贴合内容后（内容多时顶到上限 800），底部可能超出视口
       //（豆瓣实测 y=165 + 800 = 965 > 877）。这里把整窗收回屏内，保证「不移出浏览器窗口」。
@@ -389,6 +395,9 @@
           fw.y = pos.y;
           if (typeof fw.updatePosition === 'function') fw.updatePosition();
         }
+        // v2.9.9：稳态时内容布局已定（字体/图片加载完），高度再收一次，
+        // 首渲染时的估算可能偏大偏小。此时 this.isOpen 已为 true，无需 force。
+        this._autoFitHeight();
         this._syncPair();
       };
       this._anchorTimer = setTimeout(this._anchorStep, 200);
@@ -585,7 +594,9 @@
       this.floatingWindow.show();
 
       // v2.9.7：高度贴合内容 + 记录联动基准（按钮与浮窗从此一起动）
-      this._autoFitHeight();
+      // v2.9.9：force=true —— 此时 this.isOpen 尚未置 true（在外层 showMediaModal 里），
+      // 不带 force 会被守卫拦掉，高度自适应整个失效（微博实测：表格 196px、窗口却 800）。
+      this._autoFitHeight(true);
       this._syncPair();
       // v2.9.8：按钮此刻还在 busy 态（文字「提取中」比稳态宽一个字），
       // 上面的锚定是按瞬态 rect 算的 —— 等按钮回稳态后再校准一次。

@@ -466,6 +466,42 @@ console.log('H. 静态接线');
     /_anchorStep = \(\) => \{/.test(MODAL_SRC));
   ok('关窗时清掉校准定时器',
     /clearTimeout\(this\._anchorTimer\)/.test(MODAL_SRC));
+  ok('createFloatingWindow 里自适应带 force（v2.9.9：isOpen 尚未置 true，不带会被守卫拦掉）',
+    /this\._autoFitHeight\(true\);/.test(MODAL_SRC));
+  ok('_autoFitHeight 支持 force 参数（isOpen=false 时强制执行）',
+    /_autoFitHeight\(force\) \{/.test(MODAL_SRC) && /if \(!force && !this\.isOpen\) return;/.test(MODAL_SRC));
+  ok('autoFitHeight 把内容区上下 padding 算进高度（v2.9.9 治底部裁行）',
+    /paddingTop[\s\S]{0,80}paddingBottom/.test(WINDOW_SRC));
+  ok('autoFitHeight 把折叠手柄高度算进总高（流内元素）',
+    /handleH = this\.collapseHandle \?/.test(WINDOW_SRC));
+}
+
+/* ============================================================ */
+console.log('J. v2.9.9 高度自适应真机回归');
+
+{
+  // 复刻微博现场：内容区 padding 15×2、折叠手柄 20，表格 196
+  const t = setup();
+  t.fw.contentElement.style.padding = '15px';
+  t.stubScroll(t.fw.contentElement, 196); // jsdom 里 firstElementChild 为空 → 量 content 自身
+  t.fw.headerElement && Object.defineProperty(t.fw.headerElement, 'offsetHeight', { configurable: true, get() { return 120; } });
+  t.fw.collapseHandle && Object.defineProperty(t.fw.collapseHandle, 'offsetHeight', { configurable: true, get() { return 20; } });
+  t.fw._heightCap = 800;
+  t.fw.autoFitHeight();
+  eq('padding(30) + 手柄(20) 都计入 → 196+30+120+20+12=378', t.fw.height, 378);
+}
+
+{
+  // force 时序回归：isOpen=false（createFloatingWindow 现场）也必须生效
+  const t = setup();
+  t.mm.isOpen = false;
+  t.mm.setUiConstraints({ width: 320, maxHeight: 600 });
+  t.stubScroll(t.fw.contentElement, 5000);
+  t.mm._autoFitHeight(true);
+  eq('isOpen=false + force → 仍收紧到上限', t.fw.height, 600);
+  const h0 = t.fw.height;
+  t.mm._autoFitHeight(false);
+  eq('isOpen=false 不带 force → 不动（保留守卫）', t.fw.height, h0);
 }
 
 /* ============================================================ */

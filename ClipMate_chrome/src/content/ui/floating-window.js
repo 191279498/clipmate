@@ -624,15 +624,27 @@ class MediaFloatingWindow {
     let needed = 0;
     try {
       const inner = content.firstElementChild || content;
-      needed = Math.ceil((inner && inner.scrollHeight) || content.scrollHeight || 0);
+      const innerH = Math.ceil((inner && inner.scrollHeight) || content.scrollHeight || 0);
+      // v2.9.9：内容区自己有上下内边距（.floating-window-content padding 15px×2），
+      // 只量 inner.scrollHeight 会永远矮 30px、底部裁掉一行 —— 必须加回来。
+      let padTB = 0;
+      try {
+        const cs = (typeof getComputedStyle === 'function') ? getComputedStyle(content) : null;
+        if (cs) padTB = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+      } catch (e2) { padTB = 0; }
+      needed = innerH + Math.ceil(padTB);
     } catch (e) { needed = 0; }
     if (!needed) return; // 量不到就不猜，维持当前高度
 
     let headerH = 0;
     try { headerH = this.headerElement ? this.headerElement.offsetHeight : 0; } catch (e) { headerH = 0; }
 
+    // v2.9.9：展开态底部还有折叠手柄（20px，流内元素）；resize 手柄是 absolute 不占流。
+    let handleH = 0;
+    try { handleH = this.collapseHandle ? (this.collapseHandle.offsetHeight || 0) : 0; } catch (e) { handleH = 0; }
+
     const cap = Math.max(240, Math.min(capOverride || this._heightCap || 800, (typeof window !== 'undefined' ? window.innerHeight - 16 : 800)));
-    this.height = Math.max(this.minHeight, Math.min(needed + headerH + 12, cap));
+    this.height = Math.max(this.minHeight, Math.min(needed + headerH + handleH + 12, cap));
     this.updateSize();
   }
   
