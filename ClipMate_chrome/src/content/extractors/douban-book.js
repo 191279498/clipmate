@@ -20,8 +20,20 @@ function _resolveDoubanBookCountryFallback(code) {
 class DoubanBookExtractor extends BaseExtractor {
   constructor() {
     super();
+    this.doc = document;
+    this.pageUrl = window.location.href;
     this.siteName = 'douban_book';
     this.authorCache = new Map(); // 豆瓣作者信息缓存
+  }
+
+  /**
+   * v2.11.5：换一份文档当提取源（豆瓣收藏列表页逐条按钮用）。
+   * 传 null 还原成当前页面；其余所有调用方不碰这个方法，行为与改造前逐字相同。
+   */
+  setSource(doc, url) {
+    this.doc = doc || document;
+    this.pageUrl = url || window.location.href;
+    return this;
   }
 
   async extractSpecificFields() {
@@ -37,14 +49,14 @@ class DoubanBookExtractor extends BaseExtractor {
       fields['发布日期'] = this.formatDate(await this.getDoubanField('出版年'));
       fields['简介'] = this.getDoubanIntro();
       fields['网络评分'] = this.getDoubanRating();
-      fields['豆瓣链接'] = this.formatUrl(window.location.href);
+      fields['豆瓣链接'] = this.formatUrl(this.pageUrl);
       fields['URL'] = '';
       fields['ISBN'] = await this.getDoubanField('ISBN');
       fields['篇幅'] = await this.getDoubanField('页数');
     
       fields['其他信息'] = await this.getDoubanOtherInfo();
       fields['我的进度'] = this.extractMyProgress();
-      BaseExtractor.assignProgressTimeFields(fields);
+      BaseExtractor.assignProgressTimeFields(fields, { root: this.doc });
       
       return fields;
     } catch (error) {
@@ -60,7 +72,7 @@ class DoubanBookExtractor extends BaseExtractor {
    */
   extractMyProgress() {
     try {
-      const container = document.querySelector('#interest_sect_level');
+      const container = this.doc.querySelector('#interest_sect_level');
       if (!container) return '';
       const text = container.textContent;
       if (text.includes('想看') || text.includes('想读')) return '想看';
@@ -352,7 +364,7 @@ class DoubanBookExtractor extends BaseExtractor {
       let hasNoCountryCode = false;
       
       // 策略1: 从#info部分直接提取作者字段中的国家代码（最高优先级，因为控制台显示这里有[英]标记）
-      const infoElement = document.querySelector('#info');
+      const infoElement = this.doc.querySelector('#info');
       if (infoElement) {
         const infoText = infoElement.textContent;
         
@@ -434,7 +446,7 @@ class DoubanBookExtractor extends BaseExtractor {
       
       // 策略2: 从作者链接元素提取国家代码
       if (!hasCountryCode) {
-        const authorLinks = document.querySelectorAll('#info a[href^="/author/"]');
+        const authorLinks = this.doc.querySelectorAll('#info a[href^="/author/"]');
         
         authorLinks.forEach(link => {
           const linkText = link.textContent.trim();
@@ -495,7 +507,7 @@ class DoubanBookExtractor extends BaseExtractor {
       
       // 策略3: 从创作者版块提取
       if (!hasCountryCode) {
-        const creatorSection = document.querySelector('#authors, #author-intro, .subject-cast, .intro-section.creator, .authors-section');
+        const creatorSection = this.doc.querySelector('#authors, #author-intro, .subject-cast, .intro-section.creator, .authors-section');
         if (creatorSection) {
           const authorElements = creatorSection.querySelectorAll('.author, .author-item, .subject-cast-item');
           
@@ -694,7 +706,7 @@ class DoubanBookExtractor extends BaseExtractor {
       
       // 1. 优先从创作者版块提取（带角色区分，新版豆瓣页面）- 最高优先级
       // 更新选择器以匹配实际HTML结构，特别添加#authors选择器
-      const creatorSection = document.querySelector('#authors, #author-intro, .subject-cast, .intro-section.creator, .authors-section');
+      const creatorSection = this.doc.querySelector('#authors, #author-intro, .subject-cast, .intro-section.creator, .authors-section');
       
       if (creatorSection) {
         // 尝试多个选择器组合以支持不同页面结构，特别添加.authors-list .author
@@ -759,7 +771,7 @@ class DoubanBookExtractor extends BaseExtractor {
       // 支持多种链接格式：/author/ 和 /search/
       if (allAuthors.length === 0) {
         // 使用更通用的选择器，支持多种链接格式
-        const infoElement = document.querySelector('#info');
+        const infoElement = this.doc.querySelector('#info');
         if (infoElement) {
           // 先获取所有链接
           const allLinks = Array.from(infoElement.querySelectorAll('a'));
@@ -887,7 +899,7 @@ class DoubanBookExtractor extends BaseExtractor {
       
       // 3. 兼容旧版页面：从字段列表提取（降级方案）
       if (allAuthors.length === 0) {
-        const infoItems = document.querySelectorAll('#info');
+        const infoItems = this.doc.querySelectorAll('#info');
         
         if (infoItems.length > 0) {
           const infoText = infoItems[0].textContent;
@@ -937,7 +949,7 @@ class DoubanBookExtractor extends BaseExtractor {
       if (allAuthors.length === 0) {
         
         // 从meta标签提取
-        const metaAuthor = document.querySelector('meta[property="book:author"]');
+        const metaAuthor = this.doc.querySelector('meta[property="book:author"]');
         if (metaAuthor) {
           const authorName = metaAuthor.getAttribute('content') || '';
           if (authorName) {
@@ -947,7 +959,7 @@ class DoubanBookExtractor extends BaseExtractor {
         
         // 尝试从JSON-LD数据提取
         try {
-          const jsonLdScript = document.querySelector('script[type="application/ld+json"]');
+          const jsonLdScript = this.doc.querySelector('script[type="application/ld+json"]');
           if (jsonLdScript) {
             const jsonData = JSON.parse(jsonLdScript.textContent);
             if (jsonData && jsonData.author) {
@@ -977,7 +989,7 @@ class DoubanBookExtractor extends BaseExtractor {
       if (allAuthors.length === 0) {
         
         // 查找页面中可能的作者信息
-        const possibleAuthorElements = document.querySelectorAll('.author-item, .subject-cast a, #info .attrs');
+        const possibleAuthorElements = this.doc.querySelectorAll('.author-item, .subject-cast a, #info .attrs');
         for (const el of possibleAuthorElements) {
           let authorName = '';
           
@@ -1107,7 +1119,7 @@ class DoubanBookExtractor extends BaseExtractor {
         
         // 查找当前页面中对应的作者链接元素
         let authorElement = null;
-        const allLinks = document.querySelectorAll('a[href*="/author/"], a[href*="/personage/"]');
+        const allLinks = this.doc.querySelectorAll('a[href*="/author/"], a[href*="/personage/"]');
         for (const link of allLinks) {
           const href = link.getAttribute('href');
           if (href && (processedAuthorUrl.includes(href) || href.includes(processedAuthorUrl))) {
@@ -1143,7 +1155,7 @@ class DoubanBookExtractor extends BaseExtractor {
         
         // 尝试从页面中查找更多可能的作者信息来源
         // 3.1 检查#info部分的作者相关元素
-        const infoSection = document.getElementById('info');
+        const infoSection = this.doc.getElementById('info');
         if (infoSection) {
           const authorTags = infoSection.querySelectorAll('a[href*="/author/"], a[href*="/personage/"]');
           for (const tag of authorTags) {
@@ -1163,7 +1175,7 @@ class DoubanBookExtractor extends BaseExtractor {
       if (!fullName) {
         
         // 查找页面中可能包含作者名称的其他元素
-        const nameElements = document.querySelectorAll('a[href*="/author/"] span, a[href*="/personage/"] span');
+        const nameElements = this.doc.querySelectorAll('a[href*="/author/"] span, a[href*="/personage/"] span');
         for (const element of nameElements) {
           let text = element.textContent.trim();
           // 过滤国别信息
@@ -1190,7 +1202,7 @@ class DoubanBookExtractor extends BaseExtractor {
       
       // 智能提取英文名称的逻辑
       if (!/[a-zA-Z]/.test(fullName)) {
-        const englishName = this.extractAdjacentEnglishName(document.querySelector(`a[href*="${processedAuthorUrl.split('/').pop()}"]`));
+        const englishName = this.extractAdjacentEnglishName(this.doc.querySelector(`a[href*="${processedAuthorUrl.split('/').pop()}"]`));
         if (englishName) {
           fullName = `${fullName} ${englishName}`;
         }
@@ -1312,7 +1324,7 @@ class DoubanBookExtractor extends BaseExtractor {
       const aliases = fieldAliases[fieldName] || [fieldName];
       
       // 策略1: 尝试使用传统的选择器 #info span.pl, #info .pl
-      const infoItems = document.querySelectorAll('#info span.pl, #info .pl');
+      const infoItems = this.doc.querySelectorAll('#info span.pl, #info .pl');
       const strategy = '策略1';
       
       
@@ -1347,7 +1359,7 @@ class DoubanBookExtractor extends BaseExtractor {
       }
       
       // 策略2: 尝试使用新的选择器结构（适应豆瓣页面更新）
-      const newInfoItems = document.querySelectorAll('.subject clearfix #info .pl');
+      const newInfoItems = this.doc.querySelectorAll('.subject clearfix #info .pl');
       const strategy2 = '策略2';
       
       
@@ -1385,7 +1397,7 @@ class DoubanBookExtractor extends BaseExtractor {
       }
       
       // 策略3: 使用更宽松的正则表达式查找
-      const infoElement = document.querySelector('#info');
+      const infoElement = this.doc.querySelector('#info');
       const strategy3 = '策略3';
       
       if (infoElement) {
@@ -1419,7 +1431,7 @@ class DoubanBookExtractor extends BaseExtractor {
       }
       
       // 策略4: 尝试直接查找包含字段名的行
-      const infoText = document.querySelector('#info')?.textContent || '';
+      const infoText = this.doc.querySelector('#info')?.textContent || '';
       const lines = infoText.split(/[\n\r]+/);
       const strategy4 = '策略4';
       
@@ -1452,7 +1464,7 @@ class DoubanBookExtractor extends BaseExtractor {
       const strategy5 = '策略5';
       
       if (fieldName === '出版社') {
-        const publisherEl = document.querySelector('#info a[href*="/publishers/"]');
+        const publisherEl = this.doc.querySelector('#info a[href*="/publishers/"]');
         if (publisherEl) {
           return publisherEl.textContent.trim();
         }
@@ -1505,14 +1517,14 @@ class DoubanBookExtractor extends BaseExtractor {
       // 老实现从 #link-report 往下找**第一个** .intro，命中的必然是那份短摘要 ——
       // 用户看到的就是「简介不完整、结尾有 …」。这跟设置页的字数上限无关：
       // 摘要本身只有几百字，永远到不了 500 的上限，所以把上限改成 0 也不会变长。
-      const fullEl = document.querySelector('#link-report .all .intro')
-        || document.querySelector('#link-report .all');
+      const fullEl = this.doc.querySelector('#link-report .all .intro')
+        || this.doc.querySelector('#link-report .all');
       const fullText = this.readIntroText(fullEl);
       if (fullText) return fullText;
 
       // 退路：没有 .all 结构的老页面 → 按「内容简介」标题找它的下一个兄弟节点。
       // 查找包含"内容简介"的标题元素
-      const contentIntroTitle = Array.from(document.querySelectorAll('#link-report h2, .related_info h2')).find(
+      const contentIntroTitle = Array.from(this.doc.querySelectorAll('#link-report h2, .related_info h2')).find(
         titleEl => titleEl.textContent.includes('内容简介')
       );
       
@@ -1577,12 +1589,12 @@ class DoubanBookExtractor extends BaseExtractor {
 
       // 1) 官方微数据：<strong class="ll rating_num" property="v:average">9.1</strong>
       let rating =
-        pick(document.querySelector('#interest_sectl [property="v:average"]')) ||
-        pick(document.querySelector('[property="v:average"]'));
+        pick(this.doc.querySelector('#interest_sectl [property="v:average"]')) ||
+        pick(this.doc.querySelector('[property="v:average"]'));
       if (rating) return rating;
 
       // 2) 兜底：评分区里标注为「豆瓣评分」的那一格
-      const wraps = document.querySelectorAll('#interest_sectl .rating_wrap');
+      const wraps = this.doc.querySelectorAll('#interest_sectl .rating_wrap');
       for (const wrap of wraps) {
         const label = wrap.querySelector('.rating_logo');
         if (label && /豆瓣评分/.test(label.textContent || '')) {
@@ -1594,7 +1606,7 @@ class DoubanBookExtractor extends BaseExtractor {
       // 3) 再兜底：评分区里只有一个评分时取它（防止豆瓣改掉微数据标签）
       //    但「好友评分」那格要排除——书籍页的好友评分就在 #interest_sectl 里面，
       //    它不是你自己的豆瓣评分，拿它顶上会误导。
-      const nums = document.querySelectorAll('#interest_sectl strong.rating_num');
+      const nums = this.doc.querySelectorAll('#interest_sectl strong.rating_num');
       if (nums.length === 1) {
         const wrap = nums[0].closest('.rating_wrap');
         const label = wrap ? wrap.querySelector('.rating_logo') : null;
@@ -1739,7 +1751,7 @@ class DoubanBookExtractor extends BaseExtractor {
       const parts = [];
       
       // 首先尝试按DOM顺序提取
-      const infoElement = document.querySelector('#info');
+      const infoElement = this.doc.querySelector('#info');
       if (infoElement) {
         
         // 定义需要排除的主字段
@@ -1787,7 +1799,7 @@ class DoubanBookExtractor extends BaseExtractor {
               
               let foundTranslators = false;
               for (const selector of authorElementsSelectors) {
-                const authorElements = document.querySelectorAll(selector);
+                const authorElements = this.doc.querySelectorAll(selector);
                 if (authorElements.length > 0) {
                   for (const el of authorElements) {
                     const roleEl = el.querySelector('.role');
@@ -1832,7 +1844,7 @@ class DoubanBookExtractor extends BaseExtractor {
               let publisher = await this.getDoubanField('出版社');
               if (!publisher) {
                 // 尝试直接从链接中提取
-                const publisherLink = document.querySelector('#info a[href*="publishers"]');
+                const publisherLink = this.doc.querySelector('#info a[href*="publishers"]');
                 if (publisherLink) {
                   publisher = publisherLink.textContent.trim();
                 }
@@ -1846,7 +1858,7 @@ class DoubanBookExtractor extends BaseExtractor {
               let series = await this.getDoubanField('丛书');
               if (!series) {
                 // 尝试从特定链接提取
-                const seriesLink = document.querySelector('#info a[href*="series"]');
+                const seriesLink = this.doc.querySelector('#info a[href*="series"]');
                 if (seriesLink) {
                   series = seriesLink.textContent.trim();
                 }
@@ -1890,7 +1902,7 @@ class DoubanBookExtractor extends BaseExtractor {
         
         let foundTranslators = false;
         for (const selector of authorElementsSelectors) {
-          const authorElements = document.querySelectorAll(selector);
+          const authorElements = this.doc.querySelectorAll(selector);
           if (authorElements.length > 0) {
             for (const el of authorElements) {
               const roleEl = el.querySelector('.role');
@@ -1934,7 +1946,7 @@ class DoubanBookExtractor extends BaseExtractor {
         let publisher = await this.getDoubanField('出版社');
         if (!publisher) {
           // 尝试直接从链接中提取
-          const publisherLink = document.querySelector('#info a[href*="publishers"]');
+          const publisherLink = this.doc.querySelector('#info a[href*="publishers"]');
           if (publisherLink) {
             publisher = publisherLink.textContent.trim();
           }
@@ -1953,7 +1965,7 @@ class DoubanBookExtractor extends BaseExtractor {
         let series = await this.getDoubanField('丛书');
         if (!series) {
           // 尝试从特定链接提取
-          const seriesLink = document.querySelector('#info a[href*="series"]');
+          const seriesLink = this.doc.querySelector('#info a[href*="series"]');
           if (seriesLink) {
             series = seriesLink.textContent.trim();
           }
@@ -1980,7 +1992,7 @@ class DoubanBookExtractor extends BaseExtractor {
       
       // 如果仍然没有提取到任何信息，尝试从整个info区域提取所有文本并整理
       if (!result) {
-        const infoElement = document.querySelector('#info');
+        const infoElement = this.doc.querySelector('#info');
         if (infoElement) {
           const infoText = infoElement.textContent.trim();
           const lines = infoText.split(/[\n\r]+/).map(line => line.trim()).filter(line => line);
@@ -2106,7 +2118,7 @@ class DoubanBookExtractor extends BaseExtractor {
   extractFromJsonLd(fieldName) {
     try {
       
-      const jsonLdScript = document.querySelector('script[type="application/ld+json"]');
+      const jsonLdScript = this.doc.querySelector('script[type="application/ld+json"]');
       if (!jsonLdScript) {
         return '';
       }
@@ -2199,7 +2211,7 @@ class DoubanBookExtractor extends BaseExtractor {
     
     try {
       // 提取更多元数据
-      const metaTags = document.querySelectorAll('meta');
+      const metaTags = this.doc.querySelectorAll('meta');
       metaTags.forEach(tag => {
         const property = tag.getAttribute('property');
         const name = tag.getAttribute('name');

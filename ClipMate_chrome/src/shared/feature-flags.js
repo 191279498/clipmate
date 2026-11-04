@@ -103,9 +103,9 @@
     },
     {
       key: 'doubanListButtons',
-      sites: ['movie.douban.com'],
+      sites: ['movie.douban.com', 'book.douban.com', 'www.douban.com'],
       label: '收藏列表逐条按钮',
-      hint: '「想看 / 在看 / 看过」列表页每条挂一颗小按钮，点一下直接出浮窗；关掉后只能点进详情页再提取',
+      hint: '影视「想看 / 在看 / 看过」、读书「想读 / 在读 / 读过」、游戏「想玩 / 在玩 / 玩过」，每条挂一颗小按钮；关掉后只能点进详情页再提取',
       legacyKey: null,
       defaultEnabled: true,
       appliesTo: 'buttons'

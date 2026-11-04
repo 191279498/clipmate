@@ -98,7 +98,39 @@ class MediaExtractor {
       
       // 初始化各个组件
       await this.initComponents();
-      
+
+      // v2.11.5：豆瓣收藏列表页（影视 / 读书 / 游戏）走独立通道。
+      //
+      // 为什么必须放在 detectMediaType() **之前**、而且不能塞进 `if (!mediaType)`：
+      // 收藏页地址不命中 media-detector 的 /subject/ 规则，会落到「按正文猜类型」兜底，
+      // 返回字符串 'unknown' 或 'movie'（**都是真值**）。v2.11.4 把挂按钮放在那个分支里，
+      // 结果分支一次都没进过，整套逐条按钮从未生效（真机按钮数 = 0）。
+      // 现在只认地址白名单，不问媒体类型；同时提前 return，跳过详情页那套
+      // 字段映射 / 自动提取（否则进列表页会自动弹一个空浮窗）。
+      const listKind = (typeof PageShape !== 'undefined' && PageShape.doubanListKind)
+        ? PageShape.doubanListKind(location.hostname, location.pathname) : null;
+      if (listKind) {
+        this._pageShape = 'feed';
+        try {
+          // 只藏不摘：摘掉后 _applyPageShape 会因 !bm.button 提前 return，
+          // 而且这一页本来就不该有全局大按钮。
+          if (this.buttonManager && typeof this.buttonManager.setVisible === 'function') {
+            this.buttonManager.setVisible(false);
+          }
+        } catch (e) { /* 藏按钮失败不影响逐条按钮 */ }
+
+        this._applyAutoDismiss(null);   // 列表页按 feed 形态开「滚动自动关浮窗」
+        if (this._featureOn('doubanListButtons') && typeof this._initDoubanListButtons === 'function') {
+          try {
+            this._initDoubanListButtons(listKind);
+          } catch (e) {
+            ClipMateLog.debug('[豆瓣列表] 逐条按钮挂载失败: ' + (e && e.message));
+          }
+        }
+        this.isInitialized = true;
+        return;
+      }
+
       // 检测媒体类型
       const mediaType = this.detectMediaType();
       if (!mediaType) {
@@ -182,27 +214,6 @@ class MediaExtractor {
           // 清理失败不许影响初始化流程
         }
 
-        // v2.11.4：豆瓣收藏三态（想看 / 在看 / 看过）。
-        //
-        // 它同样没有「这一页的媒体类型」—— 那是一整页条目，不是单条内容，
-        // 所以会走到这里、大按钮刚被上面摘掉。要做的只是把逐条小按钮挂上。
-        //
-        // 三件事的顺序不能换：
-        //   ① 先算页面形态（feed）→ 这一步顺带决定「滚动自动关浮窗」
-        //   ② 应用自动收起（本分支走不到 refreshConfig，得单独调一次）
-        //   ③ 挂按钮
-        // 挂完照样 return：这一页的全局按钮就是不该存在，交给小按钮。
-        if (/^movie\.douban\.com$/i.test(location.hostname) &&
-            this._featureOn('doubanListButtons') &&
-            typeof this._initDoubanListButtons === 'function') {
-          try {
-            this._applyPageShape();
-            this._applyAutoDismiss(null);
-            this._initDoubanListButtons();
-          } catch (e) {
-            ClipMateLog.debug('[豆瓣] 列表逐条按钮挂载失败（不影响其他功能）: ' + (e && e.message));
-          }
-        }
         return;
       }
 

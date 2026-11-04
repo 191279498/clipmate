@@ -46,13 +46,23 @@
       (t.indexOf('共') > -1 && t.indexOf('集') > -1);
   }
 
+  /** 列表条目属于哪一类 → 用哪个提取器（影视还要再分电影 / 剧集） */
+  function forcedTypeOf(kind, doc) {
+    if (kind === 'book') return 'book';
+    if (kind === 'game') return 'game';
+    return docLooksTv(doc) ? 'tv' : 'movie';
+  }
+
   const DoubanListMixin = {
     /**
      * 挂上逐条按钮。幂等：重复调用直接返回。
+     * @param {string} [kind] 由 content-main 的页面白名单判定结果，仅用于日志。
      */
-    _initDoubanListButtons() {
+    _initDoubanListButtons(kind) {
       const host = String((typeof location !== 'undefined' && location.hostname) || '').toLowerCase();
-      if (host !== 'movie.douban.com') return;
+      // 共享原型的铁律：mixin 的每个方法在所有站点都会被调到，第一行必须自带门禁。
+      // 路径级的门禁在按钮组件的 start() 里再判一次（那边有各站的选择器表）。
+      if (!/^(?:movie\.douban\.com|book\.douban\.com|www\.douban\.com)$/i.test(host)) return;
 
       if (this.doubanListButtons) return;
       if (typeof window.DoubanListButtons === 'undefined' ||
@@ -61,6 +71,7 @@
         return;
       }
 
+      safeLog('[MediaExtractor] 豆瓣列表逐条按钮启动：' + (kind || host));
       this.doubanListButtons = new window.DoubanListButtons({
         onExtract: (target) => this._onDoubanListItemExtract(target)
       });
@@ -76,6 +87,7 @@
     async _onDoubanListItemExtract(target) {
       const url = target && target.subjectUrl;
       const id = target && target.subjectId;
+      const kind = (target && target.kind) || 'movie';
       const anchor = (target && target.anchor) || null;
       if (!url || !id) return false;
 
@@ -100,16 +112,16 @@
       }
 
       // ③ 交给统一提取流程，只把「读哪份文档」换掉。
-      //    activeShortcode 用条目编号：缓存键变成 `movie.douban.com/p/<id>`，
-      //    同一条点两次命中缓存、不同条目互不污染（列表页地址对所有条目都一样，
-      //    不改这个就是「点谁都弹第一条」）。
+      //    activeShortcode 用带站点的缓存键：读书 / 影视的 subject 编号都是纯数字，
+      //    不带上域名就是「在读书页点到影视那条缓存」；列表页几十条地址还完全相同，
+      //    不改就是「点谁都弹第一条」。
       const prevShortcode = this.activeShortcode;
-      this.activeShortcode = id;
+      this.activeShortcode = res.key || id;
       try {
         return await this.handleExtract({
           doc: res.doc,
           pageUrl: res.url,
-          forceMediaType: docLooksTv(res.doc) ? 'tv' : 'movie',
+          forceMediaType: forcedTypeOf(kind, res.doc),
           // 浮窗贴在刚点的那颗小按钮下方（列表页没有大按钮可贴）
           anchorEl: anchor
         });
@@ -125,6 +137,11 @@
     /** 给单测用的纯函数出口（不改页面状态） */
     _doubanDocLooksTv(doc) {
       return docLooksTv(doc);
+    },
+
+    /** 给单测用的纯函数出口：三类条目各自该用哪个提取器 */
+    _doubanForcedType(kind, doc) {
+      return forcedTypeOf(kind, doc);
     }
   };
 

@@ -2,14 +2,26 @@
 class DoubanGameExtractor extends BaseExtractor {
   constructor() {
     super();
+    this.doc = document;
+    this.pageUrl = window.location.href;
     this.siteName = 'douban_game';
     ClipMateLog.debug('===== DoubanGameExtractor 初始化 =====');
+  }
+
+  /**
+   * v2.11.5：换一份文档当提取源（豆瓣收藏列表页逐条按钮用）。
+   * 传 null 还原成当前页面；其余所有调用方不碰这个方法，行为与改造前逐字相同。
+   */
+  setSource(doc, url) {
+    this.doc = doc || document;
+    this.pageUrl = url || window.location.href;
+    return this;
   }
 
   // 提取JSON-LD结构化数据
   extractJsonLdData() {
     try {
-      const scriptTags = document.querySelectorAll('script[type="application/ld+json"]');
+      const scriptTags = this.doc.querySelectorAll('script[type="application/ld+json"]');
       for (const script of scriptTags) {
         try {
           const data = JSON.parse(script.textContent);
@@ -57,7 +69,7 @@ class DoubanGameExtractor extends BaseExtractor {
   extractRating() {
     
     // 方法1: 从评分区域提取
-    const ratingElement = document.querySelector('.rating_num');
+    const ratingElement = this.doc.querySelector('.rating_num');
     if (ratingElement) {
       const ratingText = ratingElement.textContent.trim();
       const rating = this.parseRating(ratingText);
@@ -82,7 +94,7 @@ class DoubanGameExtractor extends BaseExtractor {
   extractDescription() {
     
     // 方法1: 优先从豆瓣游戏特有的简介区域提取 (.mod.item-desc p)
-    const descElement = document.querySelector('.mod.item-desc p');
+    const descElement = this.doc.querySelector('.mod.item-desc p');
     if (descElement) {
       const descText = this.cleanText(descElement.textContent);
       if (descText && descText.length > 30) {
@@ -120,7 +132,7 @@ class DoubanGameExtractor extends BaseExtractor {
 
   // 提取游戏类型
   extractGameType() {
-    const typeElements = document.querySelectorAll('.thing-attr a[href^="/game/explore?genres="]');
+    const typeElements = this.doc.querySelectorAll('.thing-attr a[href^="/game/explore?genres="]');
     if (typeElements && typeElements.length > 0) {
       const types = Array.from(typeElements)
         .map(el => this.cleanText(el.textContent))
@@ -176,7 +188,7 @@ class DoubanGameExtractor extends BaseExtractor {
     
     // 1. 从h1标题中提取原作名（中文名称 外国名称格式）
     try {
-      const h1Element = document.querySelector('h1');
+      const h1Element = this.doc.querySelector('h1');
       if (h1Element) {
         const h1Text = this.cleanText(h1Element.textContent);
         // 尝试分离中英文标题
@@ -206,7 +218,7 @@ class DoubanGameExtractor extends BaseExtractor {
     
     // 2. 从meta keywords中提取原作名
     try {
-      const metaKeywords = document.querySelector('meta[name="keywords"]');
+      const metaKeywords = this.doc.querySelector('meta[name="keywords"]');
       if (metaKeywords && metaKeywords.getAttribute('content')) {
         const keywords = metaKeywords.getAttribute('content').split(',');
         for (let i = 1; i < keywords.length; i++) {
@@ -223,7 +235,7 @@ class DoubanGameExtractor extends BaseExtractor {
     
     // 3. 从页面标题中提取原作名
     try {
-      const pageTitle = document.title;
+      const pageTitle = this.doc.title;
       if (pageTitle) {
         // 尝试匹配多种标题格式
         const titlePatterns = [
@@ -293,7 +305,7 @@ class DoubanGameExtractor extends BaseExtractor {
     
     try {
       // 方法1: 从.thing-attr中的别名标签提取
-      const dtElements = document.querySelectorAll('.thing-attr dt');
+      const dtElements = this.doc.querySelectorAll('.thing-attr dt');
       
       for (let i = 0; i < dtElements.length; i++) {
         const dt = dtElements[i];
@@ -325,7 +337,7 @@ class DoubanGameExtractor extends BaseExtractor {
       }
       
       // 方法2: 备用方案 - 从整个.thing-attr区域搜索别名信息
-      const thingAttrElement = document.querySelector('.thing-attr');
+      const thingAttrElement = this.doc.querySelector('.thing-attr');
       if (thingAttrElement) {
         const thingAttrText = thingAttrElement.textContent;
         
@@ -360,7 +372,7 @@ class DoubanGameExtractor extends BaseExtractor {
     
     try {
       // 方法1: 优先从.thing-attr中的平台标签提取
-      const dtElements = document.querySelectorAll('.thing-attr dt');
+      const dtElements = this.doc.querySelectorAll('.thing-attr dt');
       for (let i = 0; i < dtElements.length; i++) {
         const dt = dtElements[i];
         const dtText = dt.textContent.trim();
@@ -402,7 +414,7 @@ class DoubanGameExtractor extends BaseExtractor {
       }
       
       // 方法2: 从链接中提取平台信息
-      const platformElements = document.querySelectorAll('.thing-attr a[href^="/game/explore?platforms="]');
+      const platformElements = this.doc.querySelectorAll('.thing-attr a[href^="/game/explore?platforms="]');
       if (platformElements && platformElements.length > 0) {
         const platforms = Array.from(platformElements)
           .map(el => this.cleanText(el.textContent))
@@ -448,7 +460,7 @@ class DoubanGameExtractor extends BaseExtractor {
     if (!dateText) {
       
       // 1. 先尝试找到.thing-attr容器内的所有dt-dd对
-      const attrContainer = document.querySelector('.thing-attr');
+      const attrContainer = this.doc.querySelector('.thing-attr');
       if (attrContainer) {
         // 优先查找明确标记为"发行日期"的元素
         const releaseDateDts = attrContainer.querySelectorAll('dt');
@@ -492,7 +504,7 @@ class DoubanGameExtractor extends BaseExtractor {
       if (!dateText) {
         
         // 查找特定的游戏信息区域
-        const gameInfoSections = document.querySelectorAll('.subject-info, .game-info, .info');
+        const gameInfoSections = this.doc.querySelectorAll('.subject-info, .game-info, .info');
         for (const section of gameInfoSections) {
           const textContent = section.textContent;
           
@@ -518,7 +530,7 @@ class DoubanGameExtractor extends BaseExtractor {
 
   // 根据标签文本提取对应的值（增强版本，支持带冒号和部分匹配）
   extractAttributeValueByLabel(labelText) {
-    const labelElements = document.querySelectorAll('.thing-attr dt');
+    const labelElements = this.doc.querySelectorAll('.thing-attr dt');
     for (const labelEl of labelElements) {
       const elementText = labelEl.textContent.trim();
       // 支持完全匹配或标签文本包含搜索的文本
@@ -540,7 +552,7 @@ class DoubanGameExtractor extends BaseExtractor {
     fields['游戏名'] = this.extractTitle();
     fields['平台'] = this.extractPlatforms();
     fields['发行日期'] = this.extractReleaseDate();
-    fields['豆瓣链接'] = window.location.href;
+    fields['豆瓣链接'] = this.pageUrl;
     fields['URL'] = ''; // URL字段留空
     
     // 提取原作名信息
@@ -572,6 +584,7 @@ class DoubanGameExtractor extends BaseExtractor {
     }
     fields['我的进度'] = this.extractMyProgress();
     BaseExtractor.assignProgressTimeFields(fields, {
+      root: this.doc,
       containerSelector: '.collection-section',
       progressMap: { '想玩': '标记时间', '在玩': '开始时间', '玩过': '结束时间' }
     });
@@ -589,7 +602,7 @@ class DoubanGameExtractor extends BaseExtractor {
    */
   extractMyProgress() {
     try {
-      const resultEl = document.querySelector('.collection-result');
+      const resultEl = this.doc.querySelector('.collection-result');
       if (!resultEl) return '';
       const text = resultEl.textContent;
       if (text.includes('想玩')) return '想玩';

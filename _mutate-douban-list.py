@@ -28,6 +28,9 @@ DM = os.path.join(SRC, 'content', 'extractors', 'douban-movie.js')
 LF = os.path.join(SRC, 'content', 'ui', 'douban-list-fetch.js')
 LB = os.path.join(SRC, 'content', 'ui', 'douban-list-buttons.js')
 LH = os.path.join(SRC, 'content', 'ui', 'douban-list-handler.js')
+DB = os.path.join(SRC, 'content', 'extractors', 'douban-book.js')
+DG = os.path.join(SRC, 'content', 'extractors', 'douban-game.js')
+MF = os.path.join(ROOT, 'ClipMate_chrome', 'manifest.json')
 
 # (编号, 说明, 目标文件, 原文, 改成)
 MUTATIONS = [
@@ -35,15 +38,15 @@ MUTATIONS = [
         'M1',
         'page-shape 不判列表页（豆瓣收藏三页不算 feed → 大按钮不藏、浮窗不自动关）',
         PS,
-        "    if (matchAny(LIST_PAGES[host], path)) return 'feed';",
+        "    if (doubanListKind(host, path)) return 'feed';",
         "    if (false) return 'feed';",
     ),
     (
         'M2',
         '白名单写成「整站都算列表」（详情页 / 影评页的大按钮全被藏掉）',
         PS,
-        "      /^\\/people\\/[^/]+\\/(wish|do|collect)\\/?$/i",
-        "      /.*/",
+        "    'movie.douban.com': [\n      /^\\/people\\/[^/]+\\/(wish|do|collect)\\/?$/i\n    ],",
+        "    'movie.douban.com': [\n      /.*/\n    ],",
     ),
     (
         'M3',
@@ -82,7 +85,7 @@ MUTATIONS = [
     ),
     (
         'M8',
-        'setSource 只认 url 不认 doc（文档没换，只有链接变了）',
+        '影视 setSource 只认 url 不认 doc（文档没换，只有链接变了）',
         DM,
         "    this.doc = doc || document;",
         "    this.doc = document;",
@@ -91,15 +94,15 @@ MUTATIONS = [
         'M9',
         '抓取层不查缓存（同一条点两次就打两次豆瓣）',
         LF,
-        "      var cachedDoc = this.cached(id);",
+        "      var cachedDoc = this.cached(key);",
         "      var cachedDoc = null;",
     ),
     (
         'M10',
         '去掉单请求闸门（连点会并发打好几个详情页，风控暴露面翻倍）',
         LF,
-        "      if (this._busy) return { ok: false, id: id, reason: '上一个还在抓，稍等一下' };",
-        "      if (false) return { ok: false, id: id, reason: '上一个还在抓，稍等一下' };",
+        "      if (this._busy) return { ok: false, id: id, key: key, reason: '上一个还在抓，稍等一下' };",
+        "      if (false) return { ok: false, id: id, key: key, reason: '上一个还在抓，稍等一下' };",
     ),
     (
         'M11',
@@ -119,24 +122,89 @@ MUTATIONS = [
         'M13',
         '收藏页判定放宽成「哪一页都挂」（详情页 / 用户主页也冒按钮）',
         LB,
-        "        return COLLECT_PATH.test(String(location.pathname || ''));",
-        "        return true;",
+        "      kind: 'movie', host: 'movie.douban.com', path: COLLECT_PATH,",
+        "      kind: 'movie', host: 'movie.douban.com', path: /.*/,",
     ),
     (
         'M14',
         '缓存键不按条目编号算（列表页几十条地址相同 → 点哪条都弹第一条）',
         LH,
-        "      this.activeShortcode = id;",
+        "      this.activeShortcode = res.key || id;",
         "      this.activeShortcode = prevShortcode;",
     ),
     (
         'M15',
-        '不提「这份文档像不像剧集」（电视剧会被当成电影处理）',
+        '不判「这份文档像不像剧集」（电视剧会被当成电影处理）',
         LH,
-        "          forceMediaType: docLooksTv(res.doc) ? 'tv' : 'movie',",
+        "          forceMediaType: forcedTypeOf(kind, res.doc),",
         "          forceMediaType: 'movie',",
     ),
+    # ---------------- v2.11.5 新增 ----------------
+    (
+        'M16',
+        '★ 初始化又绑回媒体类型（v2.11.4 那个血案：收藏页 mediaType 非空 → 一颗按钮都不挂）',
+        CM,
+        "      if (listKind) {",
+        "      if (listKind && !this.detectMediaType()) {",
+    ),
+    (
+        'M17',
+        '白名单出口恒返回 null（三站列表页全部认不出来）',
+        PS,
+        "    if (!matchAny(LIST_PAGES[host], String(pathname || '/'))) return null;",
+        "    if (true) return null;",
+    ),
+    (
+        'M18',
+        '按钮规格表漏了游戏（游戏列表一颗按钮都不挂）',
+        LB,
+        "      kind: 'game', host: 'www.douban.com', path: GAMES_PATH,",
+        "      kind: 'game', host: 'never.invalid', path: GAMES_PATH,",
+    ),
+    (
+        'M19',
+        '读书提取器换源不换文档（读到列表页，整表全空）',
+        DB,
+        "    this.doc = doc || document;",
+        "    this.doc = document;",
+    ),
+    (
+        'M20',
+        '游戏提取器换源不换文档（读到列表页，整表全空）',
+        DG,
+        "    this.doc = doc || document;",
+        "    this.doc = document;",
+    ),
+    (
+        'M21',
+        '缓存键不带站点（读书与影视同号会互相串）',
+        LF,
+        "      return (p.host || pageHost()) + '/p/' + p.id;",
+        "      return '/p/' + p.id;",
+    ),
+    (
+        'M22',
+        '读书条目被当成影视提取（字段全错）',
+        LH,
+        "    if (kind === 'book') return 'book';",
+        "    if (kind === 'book') return 'movie';",
+    ),
+    (
+        'M23',
+        '详情页也开滚动关窗（用户拍板：详情页不要开）',
+        CM,
+        "    const feedShape = this._pageShape === 'feed';",
+        "    const feedShape = true;",
+    ),
+    (
+        'M24',
+        'manifest 漏了读书 people 路径（读书页根本不注入脚本）',
+        MF,
+        '        "https://book.douban.com/people/*",\n',
+        '',
+    ),
 ]
+
 
 
 def run_test():

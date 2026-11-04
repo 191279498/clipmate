@@ -25,9 +25,26 @@
 (function (global) {
   'use strict';
 
-  // 协议可省：列表页里偶尔出现 `//movie.douban.com/subject/xxx` 这种写法
-  var SUBJECT_RE = /^(?:https?:)?\/\/movie\.douban\.com\/subject\/(\d+)/i;
+  // 协议可省：列表页里偶尔出现 `//movie.douban.com/subject/xxx` 这种写法。
+  // v2.11.5：三类详情页 —— 影视/读书走 /subject/<id>，游戏走 /game/<id>。
+  var SUBJECT_RE = /^(?:https?:)?\/\/([^/]+)\/(subject|game)\/(\d+)/i;
+  var RELATIVE_RE = /^\/(subject|game)\/(\d+)/i;
   var FETCH_TIMEOUT = 15000;   // 单次请求上限，超时按「失败」处理，不重试
+
+  /** 把条目地址拆成 {host, seg, id}；带域名和纯相对路径都认 */
+  function parseSubject(url) {
+    var raw = String(url || '');
+    var m = SUBJECT_RE.exec(raw);
+    if (m) return { host: m[1].toLowerCase(), seg: m[2].toLowerCase(), id: m[3] };
+    m = RELATIVE_RE.exec(raw);
+    if (m) return { host: '', seg: m[1].toLowerCase(), id: m[2] };
+    return null;
+  }
+
+  function pageHost() {
+    try { return String(location.hostname || '').toLowerCase(); }
+    catch (e) { return 'movie.douban.com'; }
+  }
 
   // 豆瓣风控页的特征。命中任意一条就熔断，不再发请求。
   // 都是真机上见过的形态：验证码跳转域、异常提示文案、登录页重定向。
@@ -58,14 +75,28 @@
 
     /** 从条目地址里取 subject 编号；不是条目页返回空串 */
     subjectIdOf: function (url) {
-      var m = SUBJECT_RE.exec(String(url || ''));
-      return m ? m[1] : '';
+      var p = parseSubject(url);
+      return p ? p.id : '';
     },
 
-    /** 归一化成可请求的条目地址（去掉查询串与尾部斜杠，补回结尾斜杠） */
+    /**
+     * v2.11.5：缓存键必须带站点。
+     * 读书 / 影视的 subject 编号都是纯数字，同一编号在两站可能各指一样东西；
+     * 只按数字缓存会「在读书页点到影视的缓存」。列表页几十条地址又完全相同，
+     * 所以这个键同时承担了 tab 缓存（activeShortcode）的去重职责。
+     */
+    cacheKeyOf: function (url) {
+      var p = parseSubject(url);
+      if (!p) return '';
+      return (p.host || pageHost()) + '/p/' + p.id;
+    },
+
+    /** 归一化成可请求的条目地址（按原站点拼回，去掉查询串与尾部斜杠） */
     normalize: function (url) {
-      var id = this.subjectIdOf(url);
-      return id ? ('https://movie.douban.com/subject/' + id + '/') : '';
+      var p = parseSubject(url);
+      if (!p) return '';
+      var host = p.host || pageHost();
+      return 'https://' + host + '/' + p.seg + '/' + p.id + '/';
     },
 
     isBusy: function () { return this._busy === true; },
@@ -109,16 +140,17 @@
     async load(url) {
       var id = this.subjectIdOf(url);
       if (!id) return { ok: false, reason: '这个条目没有可访问的详情页' };
-      if (this._blocked) return { ok: false, id: id, reason: this._blocked };
+      var key = this.cacheKeyOf(url);
+      if (this._blocked) return { ok: false, id: id, key: key, reason: this._blocked };
 
       // 命中内存缓存就直接给，不再打豆瓣（用户明确要求「同一部点第二次不该再请求」）
-      var cachedDoc = this.cached(id);
+      var cachedDoc = this.cached(key);
       if (cachedDoc) {
-        log('缓存命中', id);
-        return { ok: true, doc: cachedDoc, url: this.normalize(url), id: id, cached: true };
+        log('缓存命中', key);
+        return { ok: true, doc: cachedDoc, url: this.normalize(url), id: id, key: key, cached: true };
       }
 
-      if (this._busy) return { ok: false, id: id, reason: '上一个还在抓，稍等一下' };
+      if (this._busy) return { ok: false, id: id, key: key, reason: '上一个还在抓，稍等一下' };
 
       var target = this.normalize(url);
       this._busy = true;
@@ -162,8 +194,9 @@
         var doc = new DOMParser().parseFromString(html, 'text/html');
         var title = (doc.title || '').trim();
 
-        // ④ 条目下架 / 页面结构变了：主标题和 #info 都读不到，就别把空表端给用户
-        if (!doc.querySelector('h1') && !doc.querySelector('#info')) {
+        // ④ 条目下架 / 页面结构变了：主标题和主要信息区都读不到，就别把空表端给用户。
+        //    三类详情页的信息区不同：影视/读书是 #info，游戏页是 #content 里的评分与属性。
+        if (!doc.querySelector('h1') && !doc.querySelector('#info') && !doc.querySelector('#content')) {
           return {
             ok: false, id: id,
             reason: title ? ('这个条目打不开（' + title.slice(0, 12) + '）') : '这个条目打不开'
@@ -172,8 +205,8 @@
 
         log('抓到', target, 'html', html.length, 'bytes');
         // 只缓存「确认可用」的文档：失败/风控页一律不进缓存，否则下次点会拿到坏数据
-        this.remember(id, doc);
-        return { ok: true, doc: doc, url: target, id: id };
+        this.remember(key, doc);
+        return { ok: true, doc: doc, url: target, id: id, key: key };
       } catch (e) {
         var msg = (e && e.message) || '';
         if (msg === 'timeout') return { ok: false, id: id, reason: '等了 ' + (FETCH_TIMEOUT / 1000) + ' 秒没返回' };

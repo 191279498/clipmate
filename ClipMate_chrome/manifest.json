@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "采媒灵",
   "short_name": "采媒灵",
-  "version": "2.11.4",
+  "version": "2.11.5",
   "description": "从多个媒体网站提取结构化信息，支持书籍、影视、游戏的统一字段映射",
   "minimum_chrome_version": "116",
   "permissions": [
@@ -59,9 +59,11 @@
     {
       "matches": [
         "https://book.douban.com/subject/*",
+        "https://book.douban.com/people/*",
         "https://movie.douban.com/subject/*",
         "https://movie.douban.com/people/*",
         "https://www.douban.com/game/*",
+        "https://www.douban.com/people/*/games*",
         "https://www.douban.com/personage/*",
         "https://game.douban.com/subject/*",
         "https://bgm.tv/subject/*",

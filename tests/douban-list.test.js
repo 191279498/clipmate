@@ -118,9 +118,17 @@ section('一、页面形态（page-shape）');
   eq('收藏页的子路径（分页之类）不算 feed',
     shape('movie.douban.com', '/people/48250148/wish/xx'), 'unknown');
 
-  // —— 别的豆瓣子域完全不受影响
-  eq('读书页不受影响', shape('book.douban.com', '/people/48250148/wish'), 'unknown');
-  eq('www 主页不受影响', shape('www.douban.com', '/people/48250148/wish'), 'unknown');
+  // —— v2.11.5：读书 / 游戏三态也纳入，但别的路径一个都不许被带进来
+  eq('读书想读 → feed', shape('book.douban.com', '/people/48250148/wish'), 'feed');
+  eq('读书在读 → feed', shape('book.douban.com', '/people/48250148/do'), 'feed');
+  eq('读书读过 → feed', shape('book.douban.com', '/people/48250148/collect'), 'feed');
+  eq('游戏三态（同一个 path，靠 ?action= 区分）→ feed',
+    shape('www.douban.com', '/people/48250148/games'), 'feed');
+  eq('www 的普通收藏路径不算 feed',
+    shape('www.douban.com', '/people/48250148/wish'), 'unknown');
+  eq('读书详情页不受影响', shape('book.douban.com', '/subject/1084336/'), 'unknown');
+  eq('游戏详情页不受影响', shape('www.douban.com', '/game/26243433/'), 'unknown');
+  eq('www 用户主页不受影响', shape('www.douban.com', '/people/48250148/'), 'unknown');
 
   // —— 微博 / X 的老规则必须一字不变（这两站是 v2.10.0 的既有行为）
   eq('微博首页仍是 feed', shape('weibo.com', '/'), 'feed');
@@ -131,9 +139,14 @@ section('一、页面形态（page-shape）');
   eq('没登记的站仍是 unknown', shape('www.douyin.com', '/'), 'unknown');
 
   // —— 白名单必须只认 pathname，不看 query（query 天天变，进去就漏）
-  ok('LIST_PAGES 只对 movie.douban.com 生效',
-    Object.keys(PS.LIST_PAGES).length === 1 && !!PS.LIST_PAGES['movie.douban.com'],
-    Object.keys(PS.LIST_PAGES));
+  eq('LIST_PAGES 覆盖影视 / 读书 / 游戏三站',
+    Object.keys(PS.LIST_PAGES).sort(),
+    ['book.douban.com', 'douban.com', 'movie.douban.com']);
+  eq('doubanListKind 影视 → movie', PS.doubanListKind('movie.douban.com', '/people/x/wish'), 'movie');
+  eq('doubanListKind 读书 → book', PS.doubanListKind('book.douban.com', '/people/x/do'), 'book');
+  eq('doubanListKind 游戏 → game', PS.doubanListKind('www.douban.com', '/people/x/games'), 'game');
+  eq('doubanListKind 详情页 → null', PS.doubanListKind('movie.douban.com', '/subject/1292052/'), null);
+  eq('doubanListKind 别站 → null', PS.doubanListKind('weibo.com', '/people/x/wish'), null);
 
   // —— 形态判定不能被「有没有大按钮」绑架（v2.11.4 修的那个死结）
   ok('shapeOf 是纯函数，不读 DOM 里的按钮',
@@ -273,7 +286,13 @@ section('三、抓取模块（douban-list-fetch）');
   eq('取条目编号（标准地址）', LF.subjectIdOf('https://movie.douban.com/subject/10441174/'), '10441174');
   eq('取条目编号（带查询串）', LF.subjectIdOf('https://movie.douban.com/subject/10441174/?from=x'), '10441174');
   eq('取条目编号（无尾部斜杠）', LF.subjectIdOf('https://movie.douban.com/subject/10441174'), '10441174');
-  eq('取条目编号（相对地址）', LF.subjectIdOf('/subject/10441174/'), '');
+  eq('取条目编号（相对地址）', LF.subjectIdOf('/subject/10441174/'), '10441174');
+  eq('取条目编号（读书详情）', LF.subjectIdOf('https://book.douban.com/subject/3894842/'), '3894842');
+  eq('取条目编号（游戏详情）', LF.subjectIdOf('https://www.douban.com/game/26243433/'), '26243433');
+  eq('缓存键带站点（读书和影视同号不撞）',
+    LF.cacheKeyOf('https://book.douban.com/subject/3894842/'), 'book.douban.com/p/3894842');
+  eq('缓存键带站点（游戏）',
+    LF.cacheKeyOf('https://www.douban.com/game/26243433/'), 'www.douban.com/p/26243433');
   eq('不是条目页 → 空', LF.subjectIdOf('https://movie.douban.com/people/48250148/wish'), '');
   eq('空值 → 空', LF.subjectIdOf(''), '');
   eq('归一化补全协议与尾斜杠',
@@ -644,8 +663,8 @@ section('六、端到端（点按钮 → 抓详情页 → 出字段）');
   ok('端到端：提取源是详情页，不是列表页',
     String(host.lastData['豆瓣链接']).indexOf('/people/') === -1, host.lastData['豆瓣链接']);
   eq('端到端：按钮变绿', first.getAttribute('data-state'), 'ok');
-  eq('端到端：缓存键按条目编号算（列表页几十条地址相同，不区分就会互相串）',
-    host.lastShortcode, firstId);
+  eq('端到端：缓存键带站点 + 条目号（列表页几十条地址相同，不区分就会互相串）',
+    host.lastShortcode, 'movie.douban.com/p/' + firstId);
   // 存档是《基和皮尔 第一季》= 剧集：不判这一条的话，电视剧会走电影分支（集数 / 单集片长错位）
   eq('端到端：剧集会标成 tv', host.lastOpts.forceMediaType, 'tv');
 
@@ -685,20 +704,91 @@ section('六、端到端（点按钮 → 抓详情页 → 出字段）');
 /* ============================================================
  * 七、接线检查：源码层面确认「该挂的都挂上了」
  * ==========================================================*/
-section('七、接线（源码断言）');
+section('七、接线（源码断言）· v2.11.5 重点');
 {
   const CM = fs.readFileSync(P('src/content/content-main.js'), 'utf8');
   const MF = fs.readFileSync(P('manifest.json'), 'utf8');
+  const FF = fs.readFileSync(P('src/shared/feature-flags.js'), 'utf8');
+
+  /** 从源码里抠出一个方法（按大括号配对），返回方法体文本 */
+  function extractMethod(src, signature) {
+    const start = src.indexOf(signature);
+    if (start === -1) return null;
+    let depth = 0;
+    for (let j = src.indexOf('{', start); j < src.length; j++) {
+      if (src[j] === '{') depth++;
+      else if (src[j] === '}') {
+        depth--;
+        if (depth === 0) return src.slice(start, j + 1);
+      }
+    }
+    return null;
+  }
 
   ok('mixin 已 Object.assign 进 MediaExtractor 原型',
     /if \(typeof DoubanListMixin !== 'undefined'\) \{\s*Object\.assign\(MediaExtractor\.prototype, DoubanListMixin\);/.test(CM));
 
-  ok('无媒体类型分支里挂了豆瓣列表按钮',
-    /_initDoubanListButtons\(\)/.test(CM) &&
-    /movie\\\.douban\\\.com\$\/i\.test\(location\.hostname\)/.test(CM));
+  // ---------------------------------------------------------------- 分支前提（血案）
+  // v2.11.4 把「挂按钮」放进 `if (!mediaType)`，前提是收藏页会被判成没有媒体类型。
+  // 这里用**真实存档 + 真实 URL** 跑一遍上游判定，把这个前提的反面证据钉死。
+  {
+    const dom = new JSDOM(F('douban-list-wish-grid.html'), {
+      url: 'https://movie.douban.com/people/48250148/wish',
+      runScripts: 'outside-only'
+    });
+    const w = dom.window;
+    w.eval('window.WBR={runtime:{sendMessage:function(){return Promise.resolve({configs:{}});}}};');
+    w.eval(fs.readFileSync(P('src/content/utils/media-detector.js'), 'utf8'));
+    const D = w.MediaTypeDetector;
+    const d = new D();
+    d.siteConfigs = d.getDefaultConfigs();   // loadConfigs 是 async，这里给确定的配置
+    const detected = d.detect('https://movie.douban.com/people/48250148/wish', w.document);
+    ok('真实收藏页经 media-detector 判定返回的是真值（不是 null / 空串）',
+      !!detected, detected);
+    ok('因此 if (!mediaType) 恒假 —— 挂按钮绝不能放进那个分支',
+      !!detected);
+  }
 
-  ok('该分支里同时应用了自动收起（否则滚动不会关窗）',
-    /this\._applyPageShape\(\);\s*this\._applyAutoDismiss\(null\);\s*this\._initDoubanListButtons\(\);/.test(CM));
+  // ---------------------------------------------------------------- 初始化顺序
+  const initBody = extractMethod(CM, '  async init() {');
+  ok('能从 content-main 抠出 init() 方法体', !!initBody);
+  if (initBody) {
+    const call = initBody.indexOf('_initDoubanListButtons(');
+    // 必须带缩进和花括号：新分支的注释里也写了 `if (!mediaType)` 这几个字，
+    // 直接 indexOf 会命中注释，断言就变成假绿（v2.5.20 起反复踩过的坑）。
+    const branch = initBody.indexOf('      if (!mediaType) {');
+    const detect = initBody.indexOf('this.detectMediaType()');
+    ok('init() 里确实调用了 _initDoubanListButtons', call > -1);
+    ok('挂按钮在 detectMediaType() 之前（不依赖媒体类型）',
+      call > -1 && detect > -1 && call < detect, { call, detect });
+    ok('挂按钮不在 if (!mediaType) 分支里（v2.11.4 的血案）',
+      call > -1 && branch > -1 && call < branch, { call, branch });
+    ok('用 doubanListKind 白名单认页面，不猜类型',
+      /PageShape\.doubanListKind\(location\.hostname, location\.pathname\)/.test(initBody));
+    ok('白名单分支里先记 feed 形态再应用滚动关窗',
+      /this\._pageShape = 'feed'/.test(initBody) &&
+      /this\._applyAutoDismiss\(null\)/.test(initBody));
+    ok('白名单分支提前 return，不跑详情页那套自动提取',
+      /this\.isInitialized = true;\s*return;/.test(initBody));
+    ok('白名单分支把大按钮藏掉（只藏不摘）',
+      /this\.buttonManager\.setVisible\(false\)/.test(initBody));
+  }
+
+  // ---------------------------------------------------------------- 详情页不开滚动关窗
+  {
+    const w = makePage({
+      url: 'https://movie.douban.com/subject/1292052/',
+      scripts: ['src/content/utils/page-shape.js', 'src/shared/site-config.js']
+    });
+    const shape = w.PageShape.shapeOf({
+      hostname: 'movie.douban.com', pathname: '/subject/1292052/', mediaType: 'movie'
+    });
+    const eff = w.ClipMateSites.resolve({}, 'movie.douban.com');
+    eq('豆瓣详情页形态不是 feed', shape, 'unknown');
+    eq('豆瓣详情页站点默认不开自动收起（用户拍板：详情页不要开）', eff.autoDismiss, false);
+    // 二·B 已真跑过：非 feed + 非显式 → _applyAutoDismiss 不开
+    ok('两者组合 → 详情页不会滚动关窗', shape !== 'feed' && eff.autoDismiss !== true);
+  }
 
   ok('extractFromCurrentPage 支持换源并把 doc 传给提取器',
     /const altDoc = \(extraOpts && extraOpts\.doc\) \|\| null;/.test(CM) &&
@@ -709,8 +799,18 @@ section('七、接线（源码断言）');
   ok('换源用完必须还原（否则工厂复用的实例会一直读错文档）',
     /if \(altSourceOn\) extractor\.setSource\(null\);/.test(CM));
 
-  ok('manifest 注入了 people 路径',
-    /"https:\/\/movie\.douban\.com\/people\/\*"/.test(MF));
+  const manifest = JSON.parse(MF);
+  const matches = manifest.content_scripts[0].matches;
+  eq('manifest matches 数（v2.11.4 的 44 + 读书/游戏两条）', matches.length, 46);
+  ok('读书 people 路径已注入',
+    matches.indexOf('https://book.douban.com/people/*') > -1);
+  ok('游戏 games 路径已注入',
+    matches.indexOf('https://www.douban.com/people/*/games*') > -1);
+  ok('影视 people 路径仍在',
+    matches.indexOf('https://movie.douban.com/people/*') > -1);
+
+  ok('feature flag 覆盖三站',
+    /sites: \['movie\.douban\.com', 'book\.douban\.com', 'www\.douban\.com'\]/.test(FF));
 
   ok('manifest 带上了三个新脚本',
     /douban-list-fetch\.js/.test(MF) && /douban-list-buttons\.js/.test(MF) &&
@@ -720,6 +820,135 @@ section('七、接线（源码断言）');
   ok('handler 脚本排在 content-main 之前',
     MF.indexOf('douban-list-handler.js') < MF.indexOf('content-main.js') &&
     MF.indexOf('douban-list-fetch.js') < MF.indexOf('content-main.js'));
+}
+
+/* ============================================================
+ * 八、三站 × 四种 DOM 结构：逐条按钮真的挂上去了吗（真实存档）
+ * ==========================================================*/
+section('八、三站四结构（真实存档 · 逐条按钮）');
+{
+  const CASES = [
+    ['影视·网格', 'douban-list-wish-grid.html',
+      'https://movie.douban.com/people/48250148/wish', '.item', 'movie', '/subject/'],
+    ['影视·列表', 'douban-list-wish-list.html',
+      'https://movie.douban.com/people/48250148/wish?mode=list', '.item', 'movie', '/subject/'],
+    ['读书·网格', 'douban-book-wish-grid.html',
+      'https://book.douban.com/people/48250148/wish', 'li.subject-item', 'book', '/subject/'],
+    ['读书·列表', 'douban-book-wish-list.html',
+      'https://book.douban.com/people/48250148/wish?mode=list', 'li.item', 'book', '/subject/'],
+    ['游戏', 'douban-game-wish.html',
+      'https://www.douban.com/people/48250148/games?action=wish', 'div.common-item', 'game', '/game/']
+  ];
+
+  for (const [label, file, url, itemSel, kind, urlPart] of CASES) {
+    const w = makePage({
+      url, html: F(file),
+      scripts: ['src/content/ui/douban-list-fetch.js', 'src/content/ui/douban-list-buttons.js']
+    });
+    const items = w.document.querySelectorAll(itemSel);
+    let seen = null;
+    const btns = new w.DoubanListButtons({
+      onExtract: (t) => { seen = t; return Promise.resolve(true); }
+    });
+    btns.start();
+
+    const all = w.document.querySelectorAll('.clipmate-douban-item-btn');
+    ok(label + '：每条都挂上按钮', items.length > 0 && all.length === items.length,
+      { items: items.length, buttons: all.length });
+    const ids = Array.prototype.map.call(all, (b) => b.getAttribute('data-cm-subject'));
+    ok(label + '：编号不重复（不会点谁都弹第一条）', new Set(ids).size === ids.length);
+    ok(label + '：编号都是纯数字', ids.every((x) => /^\d+$/.test(String(x))), ids.slice(0, 3));
+    ok(label + '：详情地址指向对应站', all[0] && String(all[0].__cmUrl).indexOf(urlPart) > -1,
+      all[0] && all[0].__cmUrl);
+
+    if (all[0]) {
+      all[0].click();
+      await new Promise((r) => setTimeout(r, 0));
+      eq(label + '：点击时告诉接线层这是哪一类', seen && seen.kind, kind);
+    }
+    btns.stop();
+    eq(label + '：stop() 后按钮全清', w.document.querySelectorAll('.clipmate-douban-item-btn').length, 0);
+  }
+}
+
+/* ============================================================
+ * 九、读书 / 游戏提取器也能「换一份文档来读」
+ *     只改了 movie 而漏了这两个，换源提取会读到列表页 → 整表全空
+ * ==========================================================*/
+section('九、读书 / 游戏提取器换源');
+{
+  const SPECS = [
+    {
+      label: '读书', cls: 'DoubanBookExtractor', file: 'douban-book.js',
+      detail: 'douban-book-1084336.html', list: 'douban-book-wish-grid.html',
+      detailUrl: 'https://book.douban.com/subject/1084336/',
+      listUrl: 'https://book.douban.com/people/48250148/wish'
+    },
+    {
+      label: '游戏', cls: 'DoubanGameExtractor', file: 'douban-game.js',
+      detail: 'douban-game-26243433.html', list: 'douban-game-wish.html',
+      detailUrl: 'https://www.douban.com/game/26243433/',
+      listUrl: 'https://www.douban.com/people/48250148/games?action=wish'
+    }
+  ];
+
+  for (const sp of SPECS) {
+    const scripts = BASE_SCRIPTS.concat([
+      'src/content/extractors/base-extractor.js',
+      'src/content/extractors/' + sp.file
+    ]);
+    const detailHtml = F(sp.detail);
+
+    const w1 = makePage({ url: sp.detailUrl, html: detailHtml, scripts });
+    const e1 = new w1[sp.cls]();
+    const direct = await e1.extractAllFields();
+    ok(sp.label + '：当前页提取拿到非空字段',
+      Object.keys(direct).filter((k) => direct[k] !== '' && direct[k] != null).length >= 5,
+      Object.keys(direct).length);
+
+    const w2 = makePage({ url: sp.listUrl, html: F(sp.list), scripts });
+    const altDoc = new w2.DOMParser().parseFromString(detailHtml, 'text/html');
+    const e2 = new w2[sp.cls]();
+    ok(sp.label + '：有 setSource', typeof e2.setSource === 'function');
+    ok(sp.label + '：新实例默认 doc = 当前页', e2.doc === w2.document);
+    eq(sp.label + '：新实例默认 pageUrl = 当前地址', e2.pageUrl, sp.listUrl);
+
+    e2.setSource(altDoc, sp.detailUrl);
+    const fromAlt = await e2.extractAllFields();
+    eq(sp.label + '：换源字段集合与直接提取一致',
+      Object.keys(fromAlt).sort(), Object.keys(direct).sort());
+    const diff = Object.keys(direct).filter(
+      (k) => JSON.stringify(direct[k]) !== JSON.stringify(fromAlt[k]));
+    eq(sp.label + '：换源每个字段值都一致（没读到列表页）', diff, []);
+    ok(sp.label + '：换源后地址字段是详情页',
+      String(fromAlt['豆瓣链接'] || '').indexOf('/people/') === -1,
+      fromAlt['豆瓣链接']);
+
+    e2.setSource(null);
+    ok(sp.label + '：setSource(null) 回到当前页', e2.doc === w2.document);
+  }
+}
+
+/* ============================================================
+ * 十、三站各自该用哪个提取器
+ * ==========================================================*/
+section('十、按站点选提取器（forcedTypeOf）');
+{
+  const w = makePage({
+    url: 'https://movie.douban.com/people/x/wish',
+    scripts: ['src/content/ui/douban-list-handler.js']
+  });
+  const M = w.DoubanListMixin;
+  ok('mixin 已导出', !!M);
+  if (M) {
+    eq('读书 → book', M._doubanForcedType('book', null), 'book');
+    eq('游戏 → game', M._doubanForcedType('game', null), 'game');
+    eq('影视（电影）→ movie', M._doubanForcedType('movie', null), 'movie');
+    const tvDoc = new w.DOMParser().parseFromString(
+      '<html><body><div id="info">集数: 10 单集片长: 22分钟</div></body></html>', 'text/html');
+    eq('影视（剧集）→ tv', M._doubanForcedType('movie', tvDoc), 'tv');
+    eq('读书不受 #info 影响', M._doubanForcedType('book', tvDoc), 'book');
+  }
 }
 
 /* ============================================================

@@ -88,12 +88,44 @@
    * 命中即 `feed`：藏大按钮（改挂逐条小按钮）、并且按 feed 开「滚动自动关浮窗」。
    */
   var LIST_PAGES = {
-    // 豆瓣收藏三态（v2.11.4）：想看 / 在看 / 看过。
+    // 影视收藏三态（v2.11.4）：想看 / 在看 / 看过。
     // 网格与列表两种视图是同一地址（只差 ?mode=），pathname 完全一致，一条规则覆盖。
     'movie.douban.com': [
       /^\/people\/[^/]+\/(wish|do|collect)\/?$/i
+    ],
+    // 读书收藏三态（v2.11.5）：想读 / 在读 / 读过。地址词与影视同名，靠域名区分。
+    'book.douban.com': [
+      /^\/people\/[^/]+\/(wish|do|collect)\/?$/i
+    ],
+    // 游戏收藏三态（v2.11.5）：想玩 / 在玩 / 玩过。
+    // 三者是同一个路径 `/people/<id>/games`，靠 ?action=wish|do|collect 区分，
+    // 所以只看 pathname 就够，不用碰 query。host 已被 normalizeHost 去掉 www.
+    'douban.com': [
+      /^\/people\/[^/]+\/games\/?$/i
     ]
   };
+
+  /** 命中列表页时告诉调用方这是哪一类（决定用哪个提取器）；没命中返回 null */
+  var LIST_KINDS = {
+    'movie.douban.com': 'movie',
+    'book.douban.com': 'book',
+    'douban.com': 'game'
+  };
+
+  /**
+   * v2.11.5：给 content-main 的初始化用。
+   *
+   * 为什么必须有这个出口：v2.11.4 把「挂小按钮」放在 `if (!mediaType)` 分支里，
+   * 前提是收藏页会被判成「没有媒体类型」—— 实测是错的：路径不命中 /subject/ 后
+   * media-detector 会落到按正文兜底，返回字符串 'unknown'（真值）或 'movie'，
+   * 那个分支一次都没进过，整套功能从未生效。
+   * 现在初始化不再问媒体类型，直接用这张白名单认页面。
+   */
+  function doubanListKind(hostname, pathname) {
+    var host = normalizeHost(hostname);
+    if (!matchAny(LIST_PAGES[host], String(pathname || '/'))) return null;
+    return LIST_KINDS[host] || null;
+  }
 
   /** 需要盯着地址变化的站点（站内跳转不刷新文档，不盯就会「进了详情页还没按钮」） */
   var WATCHED_HOSTS = ['weibo.com', 'm.weibo.cn', 'x.com', 's.weibo.com'];
@@ -122,8 +154,8 @@
     // ② 整页内容流
     if (ALWAYS_FEED_HOSTS.indexOf(host) !== -1) return 'feed';
 
-    // ②.5 只认白名单的列表页（豆瓣收藏三态）—— 没命中继续往下走，绝不改名
-    if (matchAny(LIST_PAGES[host], path)) return 'feed';
+    // ②.5 只认白名单的列表页（豆瓣影视 / 读书 / 游戏收藏页）—— 没命中继续往下走，绝不改名
+    if (doubanListKind(host, path)) return 'feed';
 
     // ③ 没配规则的站点：不知道，保持原样
     var rules = RULES[host];
@@ -151,8 +183,10 @@
     shapeOf: shapeOf,
     shouldHideMainButton: shouldHideMainButton,
     watches: watches,
+    doubanListKind: doubanListKind,
     RULES: RULES,
     LIST_PAGES: LIST_PAGES,
+    LIST_KINDS: LIST_KINDS,
     ALWAYS_FEED_HOSTS: ALWAYS_FEED_HOSTS
   };
 
