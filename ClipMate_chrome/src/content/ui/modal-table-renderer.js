@@ -133,6 +133,11 @@
         }
         return `<span class="data-field">${html}</span>`;
       }
+      // v2.11.2：影视类的「URL」格是「站名：地址」多段拼串（见 _mergeLinksIntoUrl），
+      // 整串不是合法 URL，走不到下面的 isUrl 分支，所以单独渲染：前缀灰字 + 地址可点。
+      if ((mediaType === 'movie' || mediaType === 'tv' || mediaType === 'media') && fieldName === 'URL' && displayValue) {
+        return this._buildMergedLinkCell(displayValue);
+      }
       if (this.isUrl(displayValue)) {
         // 社交类的「URL」显示成「点击访问」
         const isVisitLink = (mediaType === 'social' && fieldName === 'URL');
@@ -150,11 +155,40 @@
       return `<span class="data-field">${displayValue}</span>`;
     },
 
+    /**
+     * 影视类「URL」合并格的渲染（v2.11.2）
+     *
+     * 输入形如「红果短剧：https://…，IMDB：https://…」。输出：站名灰字 + 地址蓝色可点，
+     * 段与段之间用灰色中文逗号连接 —— 与「其他信息」的「名：值，名：值」同一套观感。
+     * 用户 2026-11-04 拍板：折叠阈值单独放宽到 200 字（三个链接通常 110～150 字，能一次看全），
+     * 不跟着其它字段的 120 字走。
+     */
+    _buildMergedLinkCell(displayValue) {
+      const LIMIT = 200;
+      const text = String(displayValue);
+      const html = text.split('，').map((seg) => {
+        const s = seg.trim();
+        if (!s) return '';
+        const m = s.match(/^([^：]{1,20})：\s*(https?:\/\/\S+)$/);
+        if (!m) return `<span>${s}</span>`;
+        return `<span style="color:#888;">${m[1]}：</span>` +
+          `<a href="${m[2]}" target="_blank" rel="noopener noreferrer" style="color:#056BF4;text-decoration:underline;word-break:break-all;">${m[2]}</a>`;
+      }).filter(Boolean).join('<span style="color:#888;">，</span>');
+
+      if (text.length > LIMIT) {
+        return `<span class="data-field is-clampable">${html}</span><span class="data-field-toggle">展开</span>`;
+      }
+      return `<span class="data-field">${html}</span>`;
+    },
+
     createTable() {
     const startTime = performance.now();
     ClipMateLog.debug('===== 开始创建表格内容 =====');
 
     // 根据需求，所有字段都需要完整显示，包括空字符串字段
+    // v2.11.2：影视类每次渲染前重算一次「URL 合并格」（幂等），
+    // 这样跨站补链补到 IMDB / TMDB / Bangumi 之后刷新一次就能看见，不必另找调用点。
+    if (typeof this._mergeLinksIntoUrl === 'function') this._mergeLinksIntoUrl();
     const fieldsToRender = this.fieldOrder;
 
     // 根据展示模式生成不同的表格结构
@@ -198,11 +232,10 @@
         // 使用fieldMappings处理字段显示名称
         let displayName = this.fieldMappings && this.fieldMappings[fieldName] ? this.fieldMappings[fieldName] : fieldName;
 
-        // 媒体类型特定的字段显示名称映射
+        // v2.11.2：这里原本把 movie/tv 的「URL」列改名叫「豆瓣链接」，
+        // 与字段清单里真正的「豆瓣链接」列撞名（红果页因此出现两行「豆瓣链接」）。
+        // 改名已删除，URL 就叫 URL。
         const mediaType = this.getMediaType();
-        if ((mediaType === 'movie' || mediaType === 'tv') && fieldName === 'URL') {
-          displayName = '豆瓣链接';
-        }
         const headerClass = this.isEditMode ? 'sortable-header' : 'sortable-header-disabled';
         const headerTitle = this.isEditMode ? '双击编辑' : '请先进入编辑模式';
 
@@ -248,10 +281,7 @@
         // 使用fieldMappings处理字段显示名称
         let displayName = this.fieldMappings && this.fieldMappings[fieldName] ? this.fieldMappings[fieldName] : fieldName;
 
-        // 媒体类型特定的字段显示名称映射
-        if (mediaType === 'movie' && fieldName === 'URL') {
-          displayName = '豆瓣链接';
-        }
+        // v2.11.2：横向模式的同名改名补丁一并删除（与纵向保持一致）
         tableHTML += `<th data-field="${fieldName}" class="${headerClass}" title="${headerTitle}">${displayName}</th>`;
       }
 

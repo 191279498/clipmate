@@ -103,10 +103,14 @@ function src(p) { return fs.readFileSync(p, 'utf8'); }
   // 回归：其他大类的列一个都不能变
   eq('书籍仍是 17 列', MT.getDisplayOrder('book').length, 17);
   eq('社交仍是 7 列', MT.getDisplayOrder('social').length, 7);
-  truthy('影视清单未被动过（24 项、首项「名字」、末项「结束时间」）',
-    MT.MEDIA_FIELD_LISTS.media.length === 24
+  truthy('影视清单 22 项（v2.11.2：三键并进 URL，首项「名字」、末项「结束时间」）',
+    MT.MEDIA_FIELD_LISTS.media.length === 22
       && MT.MEDIA_FIELD_LISTS.media[0] === '名字'
-      && MT.MEDIA_FIELD_LISTS.media[23] === '结束时间',
+      && MT.MEDIA_FIELD_LISTS.media[21] === '结束时间'
+      && MT.MEDIA_FIELD_LISTS.media.indexOf('URL') !== -1
+      && MT.MEDIA_FIELD_LISTS.media.indexOf('IMDB') === -1
+      && MT.MEDIA_FIELD_LISTS.media.indexOf('TMDB') === -1
+      && MT.MEDIA_FIELD_LISTS.media.indexOf('Bangumi') === -1,
     '长度 ' + MT.MEDIA_FIELD_LISTS.media.length);
 
   /* ==================== 2. 日期补齐 ==================== */

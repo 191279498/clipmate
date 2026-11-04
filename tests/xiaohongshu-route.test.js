@@ -560,7 +560,7 @@ function main() {
     /\{ pattern: \/www\\\.xiaohongshu\\\.com\\\/explore\\\/\//.test(factory));
 
   // 8.7 版本号
-  eq('版本号已升到 2.11.1', manifest.version, '2.11.1');
+  eq('版本号已升到 2.11.2', manifest.version, '2.11.2');
 
   // 8.8 mediaType 为空的那条分支也必须挂跟随
   //

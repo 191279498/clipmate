@@ -240,8 +240,10 @@
       else if (mediaType === 'media' || this.isMediaTypeSubtype(mediaType, 'media')) {
         // 影视类使用统一的默认顺序作为后备
         // v2.5.67：「标签」插在「别名」之后（与 media-types.js 的清单顺序一致）
+        // v2.11.2：IMDB / TMDB / Bangumi 三列撤销，改成在「URL」一格内合并展示
+        // （见 modal-data-processor 的 _mergeLinksIntoUrl），这里只同步兜底顺序。
         const mediaDefaultOrder = ['名字', '别名', '标签', '影视类型', '上映日期', '简介', '网络评分',
-          '原作名', 'IMDB', 'TMDB', 'Bangumi', '导演', '编剧', '主演', '片长', '集数', '单集片长', '其他信息'];
+          '原作名', '豆瓣链接', 'URL', '导演', '编剧', '主演', '片长', '集数', '单集片长', '其他信息'];
 
         // 按照指定顺序重新排列字段
         const newFieldOrder = [];
