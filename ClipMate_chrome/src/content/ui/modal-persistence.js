@@ -340,6 +340,11 @@
         return 'book';
       }
       // 影视类型检测
+      // v2.11.0：红果短剧全站固定是「剧集」，不走下面「有集数才判 tv」的推断 ——
+      // 它的字段表本来就是 tv 那份，推断只会让话题多绕一圈。
+      if (url.includes('hongguoduanju.com') || url.includes('novelquickapp.com')) {
+        return 'tv';
+      }
       if (url.includes('movie.douban.com') || url.includes('www.imdb.com') || url.includes('www.themoviedb.org')) {
         // 对于电影网站，进一步判断是否为电视剧
         if (this.data && (this.data['集数'] || this.data['单集片长'])) {

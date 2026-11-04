@@ -11,7 +11,7 @@
  * 钉住的四件事：
  *   1) settings-schema：默认值 / 脏值回退 / 越界收敛 / 嵌套补丁不吞兄弟键；
  *   2) feature-flags：新位置优先、旧键回退、缺省=开（升级不改变既有行为）；
- *   3) 设置页渲染：通用 6 项、23 个站、站点专属开关只挂在对应站上；
+ *   3) 设置页渲染：通用 6 项、24 个站、站点专属开关只挂在对应站上；
  *   4) 写盘形状：站点开关写「快照 + 只改一项」、功能开关**双写** config 与旧键、撤销能回退。
  *
  * 跑法（项目根目录）：
@@ -267,8 +267,9 @@ async function main() {
   ok('页面实例已创建', !!page);
   // v2.9.6：autoDismiss 转为站点级（siteOnly），通用页少一行
   eq('通用页渲染 12 项', doc.querySelectorAll('#generalGroups .row').length, 12);
-  eq('站点页渲染 23 个站', doc.querySelectorAll('.site').length, 23);
-  eq('关于页站点数', doc.getElementById('aboutSiteCount').textContent, '23 个');
+  // v2.11.0：新增红果短剧 → 23 个站变 24 个
+  eq('站点页渲染 24 个站', doc.querySelectorAll('.site').length, 24);
+  eq('关于页站点数', doc.getElementById('aboutSiteCount').textContent, '24 个');
   eq('版本号显示', doc.getElementById('brandVersion').textContent, 'v2.8.5');
 
   // 站点专属开关只挂在对应站上

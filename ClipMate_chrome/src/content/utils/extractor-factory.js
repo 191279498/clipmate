@@ -184,7 +184,16 @@ class ExtractorFactory {
     // MobyGames 游戏（只认详情页 /game/<数字ID>/<slug>/，17 种子页由 manifest 的 exclude_matches 挡掉）
     { className: 'MobygamesGameExtractor', entries: [
       { hostname: 'www.mobygames.com', types: ['game'] }
-    ], log: 'MobyGames 游戏提取器注册成功' }
+    ], log: 'MobyGames 游戏提取器注册成功' },
+    // 红果短剧（v2.11.0）：全站都是**影视 / 剧集**，所以注册成 tv 而不是 movie ——
+    // 「影视类型」字段据此写「剧集」（见各影视提取器的 mediaType === 'movie' ? '电影' : '剧集'）。
+    // 三个域名共用同一套数据：不带 www 的 hongguoduanju.com、带 www 的、以及
+    // 实测会跳到主域的 www.novelquickapp.com。
+    { className: 'HongguoMovieExtractor', entries: [
+      { hostname: 'hongguoduanju.com', types: ['tv'] },
+      { hostname: 'www.hongguoduanju.com', types: ['tv'] },
+      { hostname: 'www.novelquickapp.com', types: ['tv'] }
+    ], log: '红果短剧提取器注册成功' }
   ];
 
   // 注册默认的提取器
@@ -431,7 +440,14 @@ class ExtractorFactory {
       // MobyGames 游戏 URL 模式（详情页 /game/<数字ID>/<slug>/，恰好两层；
       // 17 种子页与 /game/ 列表页由 manifest 的 exclude_matches 先挡一层，
       // 这里再用 id+slug 的严格形态兜一层）
-      { pattern: /www\.mobygames\.com\/game\/\d+\/[^/?#]+\/?(?:[?#]|$)/, hostname: 'www.mobygames.com', mediaType: 'game' }
+      { pattern: /www\.mobygames\.com\/game\/\d+\/[^/?#]+\/?(?:[?#]|$)/, hostname: 'www.mobygames.com', mediaType: 'game' },
+
+      // 红果短剧（v2.11.0）：只认详情页 /detail?series_id=…
+      // 首页 / 榜单 / 分类 / 播放页 manifest 都不注入，这里再卡一道路径。
+      // 三个域名共用（www.novelquickapp.com 实测会跳主域，用户要求一起认）。
+      { pattern: /^https:\/\/hongguoduanju\.com\/detail(?:[?#]|$)/, hostname: 'hongguoduanju.com', mediaType: 'tv' },
+      { pattern: /^https:\/\/www\.hongguoduanju\.com\/detail(?:[?#]|$)/, hostname: 'www.hongguoduanju.com', mediaType: 'tv' },
+      { pattern: /^https:\/\/www\.novelquickapp\.com\/detail(?:[?#]|$)/, hostname: 'www.novelquickapp.com', mediaType: 'tv' }
     ];
 
     for (const { pattern, hostname, mediaType, excludeQuery } of urlPatterns) {

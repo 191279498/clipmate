@@ -23,6 +23,10 @@
     { name: 'IMDb', domain: 'www.imdb.com', group: '影视' },
     // Bangumi 的三个域名指向同一套条目数据
     { name: 'Bangumi', domain: 'bgm.tv', domains: ['bangumi.tv', 'chii.in'], group: '影视' },
+    // v2.11.0：红果短剧。全站只有「剧集」一种形态，三个域名指向同一套数据
+    // （不带 www 的主域、带 www 的、以及实测会跳主域的 novelquickapp）。
+    // 三条域名合成一行，设置页不会重复长出三个「红果短剧」。
+    { name: '红果短剧', domain: 'hongguoduanju.com', domains: ['www.hongguoduanju.com', 'www.novelquickapp.com'], group: '影视' },
 
     // ---- 书籍 ----
     { name: '豆瓣读书', domain: 'book.douban.com', group: '书籍' },

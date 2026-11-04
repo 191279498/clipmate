@@ -99,6 +99,26 @@ class MediaTypeDetector {
         type: 'game',
         patterns: ['/game/']
       },
+      // 红果短剧（v2.11.0）：全站只有一个可提取形态 —— 详情页 /detail?series_id=…，
+      // 它就是「影视 / 剧集」。首页、榜单、分类、播放页都不注入脚本（见 manifest），
+      // 这里再加 noContentFallback：路径对不上就直接放弃，绝不退回按正文猜类型
+      // （正文里「短剧 / 演员 / 热播」这些词会把首页猜成 movie 或 social）。
+      // 这份配置与 background.getMediaConfigs() 必须逐字对齐。
+      'hongguoduanju.com': {
+        type: 'tv',
+        patterns: ['/detail'],
+        noContentFallback: true
+      },
+      'www.hongguoduanju.com': {
+        type: 'tv',
+        patterns: ['/detail'],
+        noContentFallback: true
+      },
+      'www.novelquickapp.com': {
+        type: 'tv',
+        patterns: ['/detail'],
+        noContentFallback: true
+      },
       'www.douyin.com': {
         // v2.7.11：抖音改多规则 —— `/user/<sec_uid>` 是作者个人主页（人物档案），
         // 但同一个路径**带 `?modal_id=` 时是作品弹窗**（在主页上点开一条视频就是它），

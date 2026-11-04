@@ -44,6 +44,8 @@
     douban_movie:      'movie.douban.com',
     imdb:              'www.imdb.com',
     bgm_movie:         'bgm.tv',
+    // v2.11.0：红果短剧（siteName 见 HongguoMovieExtractor.siteName）
+    hongguo:           'hongguoduanju.com',
     // 游戏
     douban_game:       'www.douban.com',
     steam:             'store.steampowered.com',

@@ -511,6 +511,23 @@ class BackgroundService {
         type: 'game',
         patterns: ['/game/']
       },
+      // 红果短剧（v2.11.0）：详见 media-detector.getDefaultConfigs() 的同名条目，
+      // 两份必须逐字对齐，否则会出现「按钮出来了但提取器找不到」或反之。
+      'hongguoduanju.com': {
+        type: 'tv',
+        patterns: ['/detail'],
+        noContentFallback: true
+      },
+      'www.hongguoduanju.com': {
+        type: 'tv',
+        patterns: ['/detail'],
+        noContentFallback: true
+      },
+      'www.novelquickapp.com': {
+        type: 'tv',
+        patterns: ['/detail'],
+        noContentFallback: true
+      },
       // ===== 社交平台（v2.5.64 补齐：此前这些站不在表里，
       // 媒体类型只能靠「按正文关键词猜」，猜错会提取出别类的字段）=====
       'www.douyin.com': {

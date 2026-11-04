@@ -204,8 +204,10 @@ function testManifestScope() {
   // v2.7.39：新增微博搜索页 `https://s.weibo.com/*`（逐帖小按钮，用户 2026-11-01 拍板
   // 「搜索页也要覆盖」；它与 weibo.com 是两个域名，不单独注入就一颗按钮都没有）
   // → 39 变 40、37 变 38。
-  eq('matches 总数 = 40', matches.length, 40);
-  eq('非抖音 matcher 数量 = 38', matches.filter((m) => !m.includes('douyin')).length, 38);
+  // v2.11.0：新增红果短剧三个域名（hongguoduanju.com / www.hongguoduanju.com /
+  // www.novelquickapp.com，都是 /detail* 详情页）→ 40 变 43、38 变 41。
+  eq('matches 总数 = 43', matches.length, 43);
+  eq('非抖音 matcher 数量 = 41', matches.filter((m) => !m.includes('douyin')).length, 41);
 }
 
 /* ==================== 二、检测器：新入口一律「放弃」 ==================== */

@@ -533,7 +533,7 @@ function section7() {
   truthy('[接] spa-handler 顶部注释说明两处弹层同构',
     SPA.indexOf('/profile/*') > -1 && SPA.indexOf('页内播放弹层') > -1);
 
-  eq('[构] 版本号已升到 2.10.1', MANIFEST.version, '2.10.1');
+  eq('[构] 版本号已升到 2.11.0', MANIFEST.version, '2.11.0');
 
   // 关连播：必须是一个独立的 MAIN world 块，document_start
   const blocks = MANIFEST.content_scripts || [];
