@@ -555,7 +555,7 @@ function setHeaderInnerText(w, text) {
 
   /* ==================== 12. 版本号 ==================== */
   section('12. 版本号');
-  eq('manifest 版本已升到 2.11.6', MF.version, '2.11.6');
+  eq('manifest 版本已升到 2.11.7', MF.version, '2.11.7');
 
   /* ==================== 真机形态预览 ==================== */
   if (process.argv.includes('--dump')) {

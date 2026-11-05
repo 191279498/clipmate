@@ -421,8 +421,27 @@ section('四、列表按钮（douban-list-buttons）');
     eq('网格视图：条目数 15', items.length, 15);
 
     let inTitle = 0;
-    mounted.forEach((b) => { if (b.parentNode && b.parentNode.classList.contains('title')) inTitle++; });
-    eq('网格视图：按钮全部落在 .title 里（不另起一行）', inTitle, mounted.length);
+    mounted.forEach((b) => { if (b.closest('.title')) inTitle++; });
+    // v2.11.7：按钮从标题里搬到了条目上（绝对定位），否则标题长短会让每一条位置都不一样
+    eq('网格视图：没有一颗按钮落在标题里', inTitle, 0);
+
+    let direct = 0;
+    items.forEach((it) => {
+      for (let k = 0; k < it.children.length; k++) {
+        if (it.children[k].classList.contains('clipmate-douban-item-btn')) direct++;
+      }
+    });
+    eq('网格视图：按钮是条目的直接子节点', direct, items.length);
+
+    const css = w.document.getElementById('clipmate-douban-item-style');
+    ok('按钮用绝对定位（不占文档流 → 行高不会变）',
+      !!css && /\.clipmate-douban-item-btn\{[^}]*position:absolute/.test(css.textContent));
+    ok('按钮不再用 inline-block + 负 margin 撑在标题里',
+      !!css && !/inline-block/.test(css.textContent) && !/margin:-5px/.test(css.textContent));
+
+    let hosts = 0;
+    items.forEach((it) => { if (it.style.position === 'relative') hosts++; });
+    eq('网格视图：每个条目都成了定位祖先', hosts, items.length);
 
     let withSubject = 0;
     mounted.forEach((b) => { if (/^\d+$/.test(b.getAttribute('data-cm-subject') || '')) withSubject++; });
@@ -462,9 +481,17 @@ section('四、列表按钮（douban-list-buttons）');
 
     let inTitle = 0;
     w.document.querySelectorAll('.clipmate-douban-item-btn').forEach((b) => {
-      if (b.parentNode && b.parentNode.classList.contains('title')) inTitle++;
+      if (b.closest('.title')) inTitle++;
     });
-    eq('列表视图：按钮全部落在 .title 里', inTitle, items.length);
+    eq('列表视图：按钮也不在标题里（每行位置才统一）', inTitle, 0);
+
+    let direct = 0;
+    items.forEach((it) => {
+      for (let k = 0; k < it.children.length; k++) {
+        if (it.children[k].classList.contains('clipmate-douban-item-btn')) direct++;
+      }
+    });
+    eq('列表视图：按钮是条目的直接子节点', direct, items.length);
     btns.stop();
   }
 
@@ -704,7 +731,7 @@ section('六、端到端（点按钮 → 抓详情页 → 出字段）');
 /* ============================================================
  * 七、接线检查：源码层面确认「该挂的都挂上了」
  * ==========================================================*/
-section('七、接线（源码断言）· v2.11.6 重点');
+section('七、接线（源码断言）· v2.11.7 重点');
 {
   const CM = fs.readFileSync(P('src/content/content-main.js'), 'utf8');
   const MF = fs.readFileSync(P('manifest.json'), 'utf8');
@@ -772,6 +799,32 @@ section('七、接线（源码断言）· v2.11.6 重点');
       /this\.isInitialized = true;\s*return;/.test(initBody));
     ok('白名单分支把大按钮藏掉（只藏不摘）',
       /this\.buttonManager\.setVisible\(false\)/.test(initBody));
+  }
+
+  // ---------------------------------------------------------------- 落点设置（v2.11.7）
+  {
+    const SCHEMA = fs.readFileSync(P('src/shared/settings-schema.js'), 'utf8');
+    const HANDLER = fs.readFileSync(P('src/content/ui/douban-list-handler.js'), 'utf8');
+    const BTNS = fs.readFileSync(P('src/content/ui/douban-list-buttons.js'), 'utf8');
+
+    ok('设置页有这个开关（settings-schema 里登记了 doubanListBtnLayout）',
+      /key: 'doubanListBtnLayout'/.test(SCHEMA));
+    ok('默认值是 A', /key: 'doubanListBtnLayout'[\s\S]{0,400}?default: 'A'/.test(SCHEMA));
+    ok('三个选项都在（A / B / C）',
+      /key: 'doubanListBtnLayout'[\s\S]{0,600}?value: 'A'[\s\S]{0,200}?value: 'B'[\s\S]{0,200}?value: 'C'/.test(SCHEMA));
+    ok('落点是全局项（不跟站点覆盖走，避免三个站各设一套）',
+      /key: 'doubanListBtnLayout'[\s\S]{0,700}?path: \['settings', 'doubanListBtnLayout'\]/.test(SCHEMA) &&
+      !/key: 'doubanListBtnLayout'[\s\S]{0,700}?siteOverridable: true/.test(SCHEMA));
+
+    ok('content-main 读了这一项', /config\.settings\.doubanListBtnLayout/.test(CM));
+    ok('content-main 把读到的落点交给已挂好的按钮（改完立刻生效）',
+      /this\.doubanListButtons\.setLayout\(this\.doubanListBtnLayout\)/.test(CM));
+    ok('列表页分支自己读一次配置（否则设置永远不生效）',
+      !!initBody && /await this\.refreshConfig\(\)/.test(initBody) &&
+      initBody.indexOf('await this.refreshConfig()') < initBody.indexOf('_initDoubanListButtons('));
+    ok('初始化按钮时把落点传下去', /layout: this\.doubanListBtnLayout/.test(HANDLER));
+    ok('按钮组件支持 setLayout 且做了归一化',
+      /setLayout\(mode\)/.test(BTNS) && /function normalizeLayout\(mode\)/.test(BTNS));
   }
 
   // ---------------------------------------------------------------- 详情页不开滚动关窗
@@ -1023,6 +1076,169 @@ section('十一、点击 → 建 mapper → 提取（端到端）');
   const buildsBefore = builds;
   eq('熔断时返回失败', await click('book'), false);
   eq('熔断时不建 mapper', builds, buildsBefore);
+}
+
+/* ============================================================
+ * 十二、小按钮落点 A / B / C（v2.11.7：默认 A + 设置里可切换）
+ * ==========================================================*/
+section('十二、小按钮落点 A / B / C（v2.11.7）');
+{
+  const URL_GRID = 'https://movie.douban.com/people/48250148/wish';
+  const URL_LIST = 'https://movie.douban.com/people/48250148/wish?mode=list';
+
+  const mk = (url, file) => makePage({
+    url,
+    html: F(file),
+    scripts: ['src/content/ui/douban-list-fetch.js', 'src/content/ui/douban-list-buttons.js']
+  });
+  const rect = (left, top, width, height) => ({
+    left, top, width, height, right: left + width, bottom: top + height, x: left, y: top
+  });
+  const stub = (el, r) => { el.getBoundingClientRect = () => r; };
+
+  // —— 影视网格：条目 675×164、封面框 80×158、封面图 80×114（2026-11-04 真机量的）
+  const w = mk(URL_GRID, 'douban-list-wish-grid.html');
+  const item = w.document.querySelector('.item');
+  stub(item, rect(100, 200, 675, 164));
+  stub(item.querySelector('.pic'), rect(100, 200, 80, 158));
+  stub(item.querySelector('.pic img'), rect(100, 200, 80, 114));
+
+  const B1 = new w.DoubanListButtons({ onExtract: async () => true, layout: 'A' });
+  B1.start();
+  const btn = item.querySelector('.clipmate-douban-item-btn');
+  ok('按钮挂上了', !!btn);
+
+  // 纵向基准线 = 封面图下缘 114（不是封面框底 158：框会被行高拉伸）
+  eq('默认 A：贴封面图右下角（右缘内缩 4、下缘内缩 4）',
+    [btn.style.left, btn.style.top], ['52px', '86px']);
+
+  eq('切到 B', B1.setLayout('B'), 'B');
+  eq('B：封面图正下方 +4、水平居中对齐封面',
+    [btn.style.left, btn.style.top], ['28px', '118px']);
+  ok('换模式不重建按钮（还是同一个节点）',
+    item.querySelector('.clipmate-douban-item-btn') === btn);
+  ok('换模式后条目归属没变', btn.getAttribute('data-cm-subject') === '10441174',
+    btn.getAttribute('data-cm-subject'));
+
+  eq('切到 C', B1.setLayout('C'), 'C');
+  eq('C：条目最右侧内缩 10，纵向与 A 同一条基准线',
+    [btn.style.left, btn.style.top], ['641px', '86px']);
+
+  eq('小写也认（c → C）', B1.setLayout('c'), 'C');
+  eq('脏值一律回 A（绝不把按钮弄没）', B1.setLayout('M'), 'A');
+  eq('回到 A 的坐标', [btn.style.left, btn.style.top], ['52px', '86px']);
+
+  // 构造器上的初始模式（设置页刚打开就是这个值）
+  const w2 = mk(URL_GRID, 'douban-list-wish-grid.html');
+  const it2 = w2.document.querySelector('.item');
+  stub(it2, rect(0, 0, 675, 164));
+  stub(it2.querySelector('.pic'), rect(0, 0, 80, 158));
+  stub(it2.querySelector('.pic img'), rect(0, 0, 80, 114));
+  const B2 = new w2.DoubanListButtons({ onExtract: async () => true, layout: 'b' });
+  B2.start();
+  eq('构造器传小写 b 也归一化成 B', B2.layout, 'B');
+  const btn2 = it2.querySelector('.clipmate-douban-item-btn');
+  eq('构造器传 B 时第一屏就是 B 的位置',
+    [btn2.style.left, btn2.style.top], ['28px', '118px']);
+
+  // —— 行高被标题行数撑开时，纵向仍必须一致（这就是「整齐」的硬指标）
+  {
+    const wu = mk(URL_GRID, 'douban-list-wish-grid.html');
+    const its = wu.document.querySelectorAll('.item');
+    // 第 1 行 164 高、第 2 行 208 高（标题多两行），封面框也跟着被拉伸 158 / 202，
+    // 但两张海报图一样高 114 —— 按钮必须落在同一个 y 上。
+    stub(its[0], rect(0, 0, 675, 164));
+    stub(its[0].querySelector('.pic'), rect(0, 0, 80, 158));
+    stub(its[0].querySelector('.pic img'), rect(0, 0, 80, 114));
+    stub(its[1], rect(0, 200, 675, 208));
+    stub(its[1].querySelector('.pic'), rect(0, 200, 80, 202));
+    stub(its[1].querySelector('.pic img'), rect(0, 200, 80, 114));
+    const UB = new wu.DoubanListButtons({ onExtract: async () => true, layout: 'A' });
+    UB.start();
+    const b0 = its[0].querySelector('.clipmate-douban-item-btn');
+    const b1 = its[1].querySelector('.clipmate-douban-item-btn');
+    eq('行高 164 与 208 的两行，按钮同一 y（不跟行高漂）', [b0.style.top, b1.style.top],
+      ['86px', '86px']);
+    eq('两行按钮同一 x', [b0.style.left, b1.style.left], ['52px', '52px']);
+    UB.stop();
+  }
+
+  // —— 游戏页（真机 2026-11-05 量的：条目 675×159、封面框 102×138、下方只剩 21px）
+  {
+    const wg = makePage({
+      url: 'https://www.douban.com/people/48250148/games?action=wish',
+      html: F('douban-game-wish.html'),
+      scripts: ['src/content/ui/douban-list-fetch.js', 'src/content/ui/douban-list-buttons.js']
+    });
+    const gis = wg.document.querySelectorAll('div.common-item');
+    // 第 1 行 159 高、第 2 行 180 高（简介长的行更高），封面框都是 138
+    stub(gis[0], rect(0, 0, 675, 159));
+    stub(gis[0].querySelector('.pic'), rect(0, 0, 102, 138));
+    stub(gis[1], rect(0, 200, 675, 180));
+    stub(gis[1].querySelector('.pic'), rect(0, 200, 102, 138));
+    const GB = new wg.DoubanListButtons({ onExtract: async () => true, layout: 'B' });
+    GB.start();
+    const gb = gis[0].querySelector('.clipmate-douban-item-btn');
+    const gb2 = gis[1].querySelector('.clipmate-douban-item-btn');
+    eq('游戏页 B：水平居中对齐封面（102 宽 → 左 39）', gb.style.left, '39px');
+    eq('游戏页 B：下方只留 21px → 贴条目内下缘 135（不被裁掉）', gb.style.top, '135px');
+    eq('游戏页 B：行高不同也落在同一个 y（按最矮那行算一次）',
+      [gb.style.top, gb2.style.top], ['135px', '135px']);
+    eq('游戏页 B 的按钮不会探出条目', Number(String(gb.style.top).replace('px', '')) + 24 <= 159, true);
+    GB.stop();
+  }
+
+  // —— 列表视图（没有封面）：A/B/C 都退回「日期左侧 8px、垂直居中」
+  const w3 = mk(URL_LIST, 'douban-list-wish-list.html');
+  const items3 = w3.document.querySelectorAll('.item');
+  items3.forEach((it, i) => {
+    stub(it, rect(100, 200 + i * 28, 675, 28));
+    stub(it.querySelector('.date'), rect(718, 206 + i * 28, 66, 16));
+  });
+  const B3 = new w3.DoubanListButtons({ onExtract: async () => true, layout: 'A' });
+  B3.start();
+
+  const xs = new Set();
+  w3.document.querySelectorAll('.clipmate-douban-item-btn').forEach((b) => xs.add(b.style.left));
+  eq('列表视图：所有行同一个 x（这就是「整齐」）', xs.size, 1);
+  eq('列表视图：x = 日期左缘（条目内 618）− 按钮 24 − 间距 8', [...xs][0], '586px');
+
+  const firstBtn = items3[0].querySelector('.clipmate-douban-item-btn');
+  eq('列表视图：垂直居中于日期（不压日期、不出屏）', firstBtn.style.top, '2px');
+
+  B3.setLayout('C');
+  const xs2 = new Set();
+  w3.document.querySelectorAll('.clipmate-douban-item-btn').forEach((b) => xs2.add(b.style.left));
+  eq('列表视图就算选 C 也还是同一列（否则会压住日期）', [...xs2], ['586px']);
+
+  B3.stop();
+  eq('stop 后条目 position 还原为空（不给豆瓣留改动）', items3[0].style.position, '');
+  eq('stop 后按钮全摘', w3.document.querySelectorAll('.clipmate-douban-item-btn').length, 0);
+
+  // —— 条目本身已经是定位祖先 → 一个字节都不改
+  const w4 = mk(URL_GRID, 'douban-list-wish-grid.html');
+  const it4 = w4.document.querySelector('.item');
+  it4.style.position = 'absolute';
+  stub(it4, rect(0, 0, 675, 164));
+  stub(it4.querySelector('.pic'), rect(0, 0, 80, 158));
+  stub(it4.querySelector('.pic img'), rect(0, 0, 80, 114));
+  const B4 = new w4.DoubanListButtons({ onExtract: async () => true });
+  B4.start();
+  eq('条目原本就定位好了 → 不去改它', it4.style.position, 'absolute');
+  B4.stop();
+  eq('stop 时也不会把它清空', it4.style.position, 'absolute');
+
+  // —— 量不到尺寸（隐藏条目 / 还没排版）→ 按钮照样挂着，只是先不定位
+  const w5 = mk(URL_LIST, 'douban-list-wish-list.html');
+  const it5 = w5.document.querySelector('.item');
+  stub(it5, rect(0, 0, 0, 0));
+  const B5 = new w5.DoubanListButtons({ onExtract: async () => true, layout: 'A' });
+  B5.start();
+  eq('量不到条目尺寸也不崩，按钮照样挂着',
+    w5.document.querySelectorAll('.clipmate-douban-item-btn').length, 30);
+  const btn5 = it5.querySelector('.clipmate-douban-item-btn');
+  eq('量不到尺寸时先不写坐标（等 resize / 图片 load 再排）', btn5.style.left, '');
+  B5.stop();
 }
 
 /* ============================================================

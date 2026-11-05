@@ -73,6 +73,9 @@
 
       safeLog('[MediaExtractor] 豆瓣列表逐条按钮启动：' + (kind || host));
       this.doubanListButtons = new window.DoubanListButtons({
+        // v2.11.7：落点由设置页决定（A 封面右下角 / B 封面下方 / C 条目最右），
+        // 默认 A；组件内部还会再归一化一次（脏值回 A）。
+        layout: this.doubanListBtnLayout,
         onExtract: (target) => this._onDoubanListItemExtract(target)
       });
       this.doubanListButtons.start();

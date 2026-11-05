@@ -68,7 +68,7 @@ const flags = require(path.join(ROOT, 'shared', 'feature-flags.js'));
 
 console.log('\n【一】设置项定义 settings-schema');
 
-eq('共 13 个设置项', schema.ITEMS.length, 13);
+eq('共 14 个设置项', schema.ITEMS.length, 14);
 eq('站点可单独设的 6 项', schema.siteItems().map((i) => i.key),
   ['autoExtract', 'autoExtractDelay', 'autoCopy', 'autoCopyFormat', 'showButton', 'autoDismiss']);
 ok('autoDismiss 是 siteOnly（只在站点卡片，通用页不显示）',
@@ -88,6 +88,11 @@ eq('showButton 缺省 → true', schema.read({}, schema.byKey('showButton')), tr
 eq('主题默认跟随系统', schema.read({}, schema.byKey('theme')), 'system');
 eq('老配置里的 default 当跟随系统', schema.read({ theme: 'default' }, schema.byKey('theme')), 'system');
 eq('主题三个选项', schema.byKey('theme').options.map((o) => o.value), ['system', 'light', 'dark']);
+
+// v2.11.7：豆瓣收藏列表小按钮落点
+eq('小按钮落点默认 A', schema.read({}, schema.byKey('doubanListBtnLayout')), 'A');
+eq('小按钮落点脏值回 A', schema.read({ settings: { doubanListBtnLayout: 'X' } }, schema.byKey('doubanListBtnLayout')), 'A');
+eq('小按钮落点三个选项', schema.byKey('doubanListBtnLayout').options.map((o) => o.value), ['A', 'B', 'C']);
 eq('简介长度三项的落点', ['descSocial', 'descPerson', 'descOther'].map((k) => schema.byKey(k).path.join('.')),
   ['settings.descLimits.social', 'settings.descLimits.person', 'settings.descLimits.other']);
 eq('简介长度默认值与搬进设置页之前完全一致',
@@ -269,7 +274,17 @@ async function main() {
 
   ok('页面实例已创建', !!page);
   // v2.9.6：autoDismiss 转为站点级（siteOnly），通用页少一行
-  eq('通用页渲染 12 项', doc.querySelectorAll('#generalGroups .row').length, 12);
+  eq('通用页渲染 13 项', doc.querySelectorAll('#generalGroups .row').length, 13);
+
+  // v2.11.7：豆瓣收藏列表小按钮落点（A / B / C）
+  const layoutRow = doc.querySelector('#generalGroups .row[data-key="doubanListBtnLayout"]');
+  ok('豆瓣列表落点这一行渲染出来了', !!layoutRow);
+  const layoutSel = layoutRow && layoutRow.querySelector('select');
+  ok('它是下拉选择（不是开关）', !!layoutSel);
+  eq('三个选项 A/B/C', layoutSel ? layoutSel.options.length : 0, 3);
+  eq('默认选中 A（用户没设过就是封面右下角）', layoutSel ? layoutSel.value : null, 'A');
+  ok('没被错误地标成「不生效」', layoutRow && !layoutRow.classList.contains('disabled'),
+    layoutRow && layoutRow.className);
   // v2.11.0：新增红果短剧 → 23 个站变 24 个
   eq('站点页渲染 24 个站', doc.querySelectorAll('.site').length, 24);
   eq('关于页站点数', doc.getElementById('aboutSiteCount').textContent, '24 个');
@@ -572,6 +587,17 @@ async function main() {
   themeSel.dispatchEvent(new win.Event('change'));
   await tick(40);
   eq('切回浅色', doc.documentElement.getAttribute('data-theme'), 'light');
+
+  // v2.11.7：落点下拉改完只写 settings.doubanListBtnLayout，同层兄弟键不许被吃掉
+  const layoutSel2 = doc.querySelector('#generalGroups .row[data-key="doubanListBtnLayout"] select');
+  sent.length = 0;
+  layoutSel2.value = 'B';
+  layoutSel2.dispatchEvent(new win.Event('change'));
+  await tick(40);
+  const layoutPatch = sent[sent.length - 1].config;
+  eq('改落点写进 settings.doubanListBtnLayout', layoutPatch.settings.doubanListBtnLayout, 'B');
+  ok('同层兄弟键没被吃掉（enableCache 还在）', layoutPatch.settings.enableCache === true, layoutPatch.settings);
+  ok('没有顺手把顶层键塞进来', !('autoCopyFormat' in layoutPatch), Object.keys(layoutPatch));
 
   console.log('\n' + '─'.repeat(56));
   if (fails.length) {

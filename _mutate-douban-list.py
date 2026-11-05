@@ -31,6 +31,7 @@ LH = os.path.join(SRC, 'content', 'ui', 'douban-list-handler.js')
 DB = os.path.join(SRC, 'content', 'extractors', 'douban-book.js')
 DG = os.path.join(SRC, 'content', 'extractors', 'douban-game.js')
 MF = os.path.join(ROOT, 'ClipMate_chrome', 'manifest.json')
+SC = os.path.join(SRC, 'shared', 'settings-schema.js')
 
 # (编号, 说明, 目标文件, 原文, 改成)
 MUTATIONS = [
@@ -106,10 +107,10 @@ MUTATIONS = [
     ),
     (
         'M11',
-        '按钮挂到条目根上而不是标题里（另起一行 / 撑高卡片）',
+        '只写横向坐标、纵向不定位（按钮全挤在条目顶边）',
         LB,
-        "      title.appendChild(btn);",
-        "      item.appendChild(btn);",
+        "      btn.style.left = t.left + 'px';\n      btn.style.top = t.top + 'px';",
+        "      btn.style.left = t.left + 'px';",
     ),
     (
         'M12',
@@ -223,6 +224,126 @@ MUTATIONS = [
         LH,
         '          forceMediaType: forcedType,',
         "          forceMediaType: 'movie',",
+    ),
+    # ---------------- v2.11.7：小按钮落点 A / B / C ----------------
+    (
+        'M28',
+        '按钮又塞回标题里（标题长短不同 → 每条位置都不一样，用户报的那个问题）',
+        LB,
+        '      item.appendChild(btn);\n      this._place(btn, item, spec);',
+        '      pair.title.appendChild(btn);\n      this._place(btn, item);',
+    ),
+    (
+        'M29',
+        '定位方式退回 static（按钮回到文档流里 → 撑高行高、位置跟文字跑）',
+        LB,
+        "      + 'position:absolute;z-index:2;'",
+        "      + 'position:static;z-index:2;'",
+    ),
+    (
+        'M30',
+        'A 落点算错（没内缩，按钮压到封面最边上）',
+        LB,
+        '          left = cx + cw - BTN_SIZE - EDGE_INSET;',
+        '          left = cx + cw - BTN_SIZE;',
+    ),
+    (
+        'M31',
+        '列表视图按钮紧贴日期（没有间距，视觉上压住日期）',
+        LB,
+        '  var RAIL_GAP = 8;        // 无封面时：按钮右缘距日期左缘',
+        '  var RAIL_GAP = 0;        // 故意：紧贴日期',
+    ),
+    (
+        'M32',
+        'C 的纵向不用统一基准线（改成跟随条目高度居中 → 长标题行会低一截）',
+        LB,
+        '          left = iw - BTN_SIZE - RIGHT_INSET;\n          top = baseY - BTN_SIZE - EDGE_INSET;',
+        '          left = iw - BTN_SIZE - RIGHT_INSET;\n          top = (ih - BTN_SIZE) / 2;',
+    ),
+    (
+        'M44',
+        'B 不按最矮那行收口（游戏页 159/180 两种行高 → 每行 y 不一样）',
+        LB,
+        '        if (anchor.h > 0 && bY + BTN_SIZE > anchor.h) bY = Math.max(0, anchor.h - BTN_SIZE);',
+        '        if (false) bY = Math.max(0, anchor.h - BTN_SIZE);',
+    ),
+    (
+        'M43',
+        '纵向基准线退回「封面框底」（框会被行高拉伸 → 每行 y 都不一样，用户报的那个乱）',
+        LB,
+        '          if (imr.height >= MIN_COVER && imr.height >= pr.height * 0.5) {',
+        '          if (false) {',
+    ),
+    (
+        'M33',
+        '列表视图不退回「日期左侧」（按钮跑去条目右缘，压住日期）',
+        LB,
+        "      var date = item.querySelector('.date');",
+        '      var date = null;',
+    ),
+    (
+        'M34',
+        '换落点不重排（设置页改了不生效，得刷新页面）',
+        LB,
+        "      this.sync();\n      log('落点改为 ' + next);",
+        "      if (false) this.sync();\n      log('落点改为 ' + next);",
+    ),
+    (
+        'M35',
+        '脏值不归一化（配置里写了 M 就真按 M 走，按钮坐标全乱）',
+        LB,
+        '    return LAYOUTS.indexOf(m) === -1 ? DEFAULT_LAYOUT : m;',
+        '    return m || DEFAULT_LAYOUT;',
+    ),
+    (
+        'M36',
+        '小写不认（设置里存成 b/c 就失效，等同回到 A）',
+        LB,
+        "    var m = String(mode == null ? '' : mode).toUpperCase();",
+        "    var m = String(mode == null ? '' : mode);",
+    ),
+    (
+        'M37',
+        'stop 时不还原条目 position（给豆瓣留下永久布局改动）',
+        LB,
+        '      this._restoreHosts();',
+        '      if (false) this._restoreHosts();',
+    ),
+    (
+        'M38',
+        '把已经是定位祖先的条目强行改成 relative（覆盖豆瓣自己的布局）',
+        LB,
+        "        if (pos && pos !== 'static') return;   // 本身已经是定位祖先，别动",
+        '        if (false) return;',
+    ),
+    (
+        'M39',
+        '设置项默认值改成 B（用户没设过就默认压在封面下方）',
+        SC,
+        "      default: 'A',",
+        "      default: 'B',",
+    ),
+    (
+        'M40',
+        'content-main 不读落点设置（永远按 A 走，设置页变成摆设）',
+        CM,
+        '        const layoutRaw = config.settings && config.settings.doubanListBtnLayout;',
+        "        const layoutRaw = 'A';",
+    ),
+    (
+        'M41',
+        '列表页不读配置（features 恒空、落点恒 A）',
+        CM,
+        "        await this.refreshConfig();\n\n        this._pageShape = 'feed';",
+        "        await Promise.resolve();\n\n        this._pageShape = 'feed';",
+    ),
+    (
+        'M42',
+        '初始化按钮时不传落点（设置页选 B/C 也一直按 A 画）',
+        LH,
+        '        layout: this.doubanListBtnLayout,',
+        "        layout: 'A',",
     ),
 ]
 

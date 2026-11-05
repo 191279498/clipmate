@@ -221,6 +221,23 @@
       max: 2000,
       unit: 'px'
     },
+    // v2.11.7：豆瓣收藏列表「逐条小按钮」的落点。全局项（不跟随站点覆盖）——
+    // 三种落点是同一套几何规则，分站设没有意义。
+    // 默认 A：三站一套规则、零撑高、不压文字；B / C 给用户自己挑。
+    {
+      key: 'doubanListBtnLayout',
+      group: 'ui',
+      label: '豆瓣收藏列表小按钮位置',
+      hint: 'A 封面右下角（默认，三站统一）；B 封面正下方（不遮封面，游戏页会略微探出）；C 条目最右侧。只影响豆瓣「想看 / 在读 / 想玩」这类收藏列表页；列表视图没有封面，一律放在日期左侧。',
+      type: 'select',
+      path: ['settings', 'doubanListBtnLayout'],
+      default: 'A',
+      options: [
+        { value: 'A', label: 'A · 封面右下角（推荐）' },
+        { value: 'B', label: 'B · 封面正下方' },
+        { value: 'C', label: 'C · 条目最右侧' }
+      ]
+    },
     {
       key: 'enableCache',
       group: 'perf',

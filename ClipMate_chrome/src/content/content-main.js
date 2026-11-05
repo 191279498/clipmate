@@ -68,6 +68,7 @@ class MediaExtractor {
     this.autoCopy = false;       // 提取成功后是否自动复制（来自 popup，v2.5.45 接线）
     this.autoCopyFormat = 'markdown'; // 自动复制用哪种格式 notion|markdown|plaintext（v2.5.66）
     this.features = {};          // v2.8.0：本站点专属功能开关（逐条按钮等），见 feature-flags.js
+    this.doubanListBtnLayout = 'A'; // v2.11.7：豆瓣收藏列表小按钮落点（A/B/C），见 settings-schema.js
     this._autoExtractTimer = null;
     this.modalWatcher = null;    // InstagramModalWatcher 实例
   }
@@ -110,6 +111,11 @@ class MediaExtractor {
       const listKind = (typeof PageShape !== 'undefined' && PageShape.doubanListKind)
         ? PageShape.doubanListKind(location.hostname, location.pathname) : null;
       if (listKind) {
+        // v2.11.7：这条分支在正常流程的 refreshConfig 之前就 return 了，
+        // 所以**必须自己读一次配置** —— 否则 `features` 永远是空的、
+        // 「逐条按钮」开关和小按钮落点（A/B/C）永远按默认值走，设置页改了不生效。
+        await this.refreshConfig();
+
         this._pageShape = 'feed';
         try {
           // 只藏不摘：摘掉后 _applyPageShape 会因 !bm.button 提前 return，
@@ -605,6 +611,20 @@ class MediaExtractor {
         this.features = (flags && typeof flags.resolveAll === 'function')
           ? flags.resolveAll(location.hostname, result || {})
           : {};
+
+        // v2.11.7：豆瓣收藏列表「逐条小按钮」的落点（A 封面右下角 / B 封面下方 / C 条目最右）。
+        // 全局项，不走站点覆盖；脏值一律回 A —— 读不到配置绝不能把按钮弄没。
+        // 已经挂好的按钮当场换位（设置页改完立刻生效，不用刷新页面）。
+        const layoutRaw = config.settings && config.settings.doubanListBtnLayout;
+        this.doubanListBtnLayout = (typeof window.DoubanListButtons !== 'undefined' &&
+          window.DoubanListButtons && typeof window.DoubanListButtons.normalizeLayout === 'function')
+          ? window.DoubanListButtons.normalizeLayout(layoutRaw)
+          : (layoutRaw === 'B' || layoutRaw === 'C' ? layoutRaw : 'A');
+        if (this.doubanListButtons && typeof this.doubanListButtons.setLayout === 'function') {
+          try {
+            this.doubanListButtons.setLayout(this.doubanListBtnLayout);
+          } catch (e) { /* 换落点失败不影响提取 */ }
+        }
 
         // v2.8.0：缓存开关一并从 config 读，只在「与当前状态不同」时才应用
         //（setCacheEnabled(false) 会清本地缓存，重复调用没必要）
