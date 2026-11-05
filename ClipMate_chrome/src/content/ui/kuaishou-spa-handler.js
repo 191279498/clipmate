@@ -170,6 +170,22 @@
       } catch (e) { /* 日志失败不许影响主流程 */ }
     },
 
+    /**
+     * 换按钮皮肤（v2.12.2）。
+     *
+     * 快手在**个人主页点开作品是页内弹层、地址一个字都不变**（真机 2026-11-05 截图确认），
+     * 所以 `_applyPageShape()` 那条「地址变了才重算」的路救不了它 —— 必须在这里显式换装。
+     * 换肤只改配色 + 图标 + 待命文案，不碰位置/显隐；任何失败都不许影响提取。
+     *
+     * @param {'default'|'arch'} skin
+     */
+    _ksApplySkin(skin) {
+      try {
+        var bm = this.buttonManager;
+        if (bm && typeof bm.setSkin === 'function') bm.setSkin(skin);
+      } catch (e) { /* 换肤失败不影响提取 */ }
+    },
+
     // ===================== 二、状态变化 =====================
 
     /**
@@ -267,6 +283,9 @@
       this.initUI();
       await this.refreshConfig();
       this._showKuaishouButton();
+      // v2.12.2：已经接管到「正在看的那一条」= 提的是单条作品，按钮必须是普通蓝「提取」。
+      // 不能指望 _applyPageShape：主页上点开作品地址不变，那边永远不会重算。
+      this._ksApplySkin('default');
       this._bindKuaishouAnchor();
       this._ksActivated = true;
       this.isInitialized = true;
@@ -358,6 +377,8 @@
         }
         await this.refreshConfig();
         this._showKuaishouButton();
+        // v2.12.2：回到整页人物档案，按钮必须换回档案例皮
+        this._ksApplySkin('arch');
         this._ksLog('info', '回到个人主页（mediaType=person）');
       } catch (e) {
         this._ksLog('warn', '回到个人主页失败：' + (e && e.message));

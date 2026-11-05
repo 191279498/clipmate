@@ -12,6 +12,32 @@ class ButtonManager {
   get LABEL_ARCH() { return '整理档案'; }
 
   /**
+   * v2.12.2：当前皮肤下的「待命文案 / 待命 title」。
+   *
+   * 为什么必须单开两个 getter：以前 `_restoreButtonSoon()` 里写死
+   * `_renderButton('normal', this.LABEL_IDLE)` —— 它不知道此刻穿的是哪套皮肤。
+   * 于是档案页上点完一次，成功态 3 秒后按钮被打回「提取」，图标和深蓝金边却还是档案装，
+   * 真机表现为「按钮换了张脸」（用户 2026-11-05 截图报的）。
+   * 现在所有「回到常态」的入口都取这两个值，皮肤一变文案自动跟上，不再各写一份。
+   */
+  get _idleLabel() {
+    return this._skin === 'arch' ? this.LABEL_ARCH : this.LABEL_IDLE;
+  }
+
+  get _idleTitle() {
+    return this._skin === 'arch'
+      ? '点击整理作者档案，拖动可移动按钮位置'
+      : '点击提取页面媒体信息，拖动可移动按钮位置';
+  }
+
+  /** 成功态那句「点击再次…」，同样跟皮肤走（档案页说「提取」也别扭） */
+  get _againTitle() {
+    return this._skin === 'arch'
+      ? '点击再次整理，拖动可移动按钮位置'
+      : '点击再次提取，拖动可移动按钮位置';
+  }
+
+  /**
    * 吉祥物形象 —— v2.9.2 起每态一张全身像（矢量 SVG）。
    *
    * 分工变了：以前是「一张脸 + 角标」，现在头像本身也带情绪，
@@ -120,12 +146,14 @@ class ButtonManager {
         const url = this._mascotUrl(st);
         if (url) face.style.backgroundImage = 'url("' + url + '")';
       }
-      // 待命文案跟着换；「提取中」「完成」「重试」这些瞬态文案一律不动
+      // 待命文案/提示跟着换；「提取中」「完成」「重试」这些瞬态文案一律不动
+      // （v2.12.2：文案表统一由 _idleLabel / _idleTitle 提供，不再在这里手写两条 if）
       const last = this.button.lastChild;
       if (last && last.nodeType === 3) {
-        if (last.textContent === this.LABEL_IDLE) last.textContent = this.LABEL_ARCH;
-        else if (last.textContent === this.LABEL_ARCH) last.textContent = this.LABEL_IDLE;
+        const cur = String(last.textContent || '');
+        if (cur === this.LABEL_IDLE || cur === this.LABEL_ARCH) last.textContent = this._idleLabel;
       }
+      this.button.title = this.isReady ? this._idleTitle : '扩展正在初始化，稍等一下再点';
     } catch (e) { /* 换肤失败不影响提取本身 */ }
   }
 
@@ -176,7 +204,7 @@ class ButtonManager {
     // v2.8.5：图标换成吉祥物头像，文字从「提取信息」缩成「提取」
     //   —— 头像本身承载了「这是什么」的识别成本；v2.9.2 起四个状态各有形态，
     //      见 _MASCOT_BY_STATE（举纸 / 抱绿勾 / 哭）。
-    this._renderButton('normal', this.LABEL_IDLE);
+    this._renderButton('normal', this._idleLabel);
     this.button.title = '扩展正在初始化，稍等一下再点';
     // v2.5.60：创建即置灰，等点击动作接上之后再放开
     this.button.disabled = true;
@@ -590,7 +618,7 @@ class ButtonManager {
     this.button.classList.remove('loading', 'error');
     this.button.classList.add('success');
     this._renderButton('success', this.LABEL_OK);
-    this.button.title = '点击再次提取，拖动可移动按钮位置';
+    this.button.title = this._againTitle;
     this._restoreButtonSoon();
   }
 
@@ -614,10 +642,10 @@ class ButtonManager {
       this._restoreTimer = null;
       if (!this.button) return;
       this.button.classList.remove('success', 'error');
-      this._renderButton('normal', this.LABEL_IDLE);
+      this._renderButton('normal', this._idleLabel);
       // v2.5.60：还没就绪的按钮不能借这个定时器放开
       this.button.disabled = !this.isReady;
-      this.button.title = this.isReady ? '点击提取页面媒体信息，拖动可移动按钮位置' : '扩展正在初始化，稍等一下再点';
+      this.button.title = this.isReady ? this._idleTitle : '扩展正在初始化，稍等一下再点';
     }, 3000);
   }
 
@@ -741,7 +769,7 @@ class ButtonManager {
     if (this.button) {
       this.button.classList.remove('pending');
       this.button.disabled = false;
-      this.button.title = '点击提取页面媒体信息，拖动可移动按钮位置';
+      this.button.title = this._idleTitle;
     }
   }
 

@@ -86,6 +86,51 @@
       }
     },
 
+    /**
+     * v2.12.2：作者主页上的「只换装」监听。
+     *
+     * 为什么需要它：抖音个人主页 `/user/<sec_uid>`（地址里没有 modal_id）会被识别成 person，
+     * 走的是正常 init 全流程；而上面那个弹窗监听只在「类型识别为空」的分支里挂，
+     * 主页永远进不去 —— 于是主页上点开一条作品时，没有任何人通知按钮换装。
+     * 真机实证（2026-11-05）：按钮仍是金黄边的「整理档案」，点下去提的却是这一条作品。
+     *
+     * 为什么**不复用** _startDouyinModalWatcher 那条通道：
+     * 它管的是「摘按钮 / 贴位 / 按作品缓存 / 熔断」，其中 `_deactivateDouyinModal()`
+     * 关弹层时会把按钮摘掉；而主页关掉弹层后按钮必须回来（还得是档案装）。
+     * 复用必然踩这个坑，所以这里只做一件事：按「弹层开没开」换皮肤，
+     * **一个字节都不碰显隐、位置、缓存、提取类型**。
+     *
+     * 判据用弹层本身在不在（DouyinModalContext.watch），不看地址栏 ——
+     * 实测抖音几秒后会把 `?modal_id=` 抹掉，看地址会在弹层还开着时误判成「主页」。
+     *
+     * @returns {boolean} true = 已挂上（或本来就在跑）
+     */
+    _startDouyinPersonSkinWatcher() {
+      if (this._douyinPersonSkinWatch) return true;
+      if (!this._isDouyinModalHost()) return false;
+      // 完整弹窗接管已在跑（类型为空那条分支）→ 那边已经是唯一主人，不重复挂
+      if (this._douyinWatch) return false;
+      // 只在档案页挂；其他形态的换装由 _applyPageShape 负责
+      if (this._pageShape !== 'person') return false;
+
+      var ctx = (typeof DouyinModalContext !== 'undefined') ? DouyinModalContext : null;
+      if (!ctx || typeof ctx.watch !== 'function') return false;
+
+      var self = this;
+      this._douyinPersonSkinWatch = ctx.watch(function (evt) {
+        // watch 的回调是同步的，内部任何异常都必须自己兜住
+        try {
+          var bm = self.buttonManager;
+          if (!bm || typeof bm.setSkin !== 'function') return;
+          // 弹层开着 = 正在看某一条作品 → 普通蓝「提取」；关掉 = 回到整页档案 → 档案装
+          bm.setSkin(evt && evt.opened ? 'default' : 'arch');
+        } catch (e) { /* 换肤失败不影响提取 */ }
+      }, { debounceMs: 320 });
+
+      this._douyinLog('info', '主页换装监听已启动（弹层开→普通蓝，关→档案装）');
+      return true;
+    },
+
     /** 读「抖音弹窗提取（试验）」开关，缺省 = 开 */
     async _readDouyinModalEnabled() {
       try {

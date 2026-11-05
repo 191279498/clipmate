@@ -193,9 +193,11 @@ ok('档案皮肤下成功/失败/提取中仍用原图标（else 分支走原 ma
   /rel = \(map && map\[state\]\) \|\| this\._MASCOT_FALLBACK;/.test(BUTTON_MANAGER));
 ok('setSkin 幂等（同皮肤直接返回）', /if \(this\._skin === next\) return;/.test(BUTTON_MANAGER));
 ok('setSkin 切 class', /classList\.toggle\('clipmate-arch', next === 'arch'\)/.test(BUTTON_MANAGER));
+// v2.12.2：待命文案改由 _idleLabel 统一提供（因为 _restoreButtonSoon 也要用同一份），
+// 判定条件仍是「只有当前是待命文案才换」，瞬态文案（提取中/完成/重试）一个字节都不碰。
 ok('setSkin 只换「提取 ⇄ 整理档案」，不动瞬态文案',
-  /last\.textContent === this\.LABEL_IDLE/.test(BUTTON_MANAGER) &&
-  /last\.textContent === this\.LABEL_ARCH/.test(BUTTON_MANAGER));
+  /cur === this\.LABEL_IDLE \|\| cur === this\.LABEL_ARCH/.test(BUTTON_MANAGER) &&
+  /last\.textContent = this\._idleLabel;/.test(BUTTON_MANAGER));
 ok('_skin 默认是 default', /this\._skin = 'default';/.test(BUTTON_MANAGER));
 
 const iconPath = path.join(SRC, 'icons/mascot/hero-archive.svg');

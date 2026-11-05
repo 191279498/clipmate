@@ -352,6 +352,17 @@ class MediaExtractor {
       if (typeof this._startXhsSpa === 'function') {
         try { this._startXhsSpa(); } catch (e) { /* 挂不上不影响任何提取 */ }
       }
+      // v2.12.2：抖音作者主页的「只换装」监听。
+      //
+      // 主页 `/user/<sec_uid>` 会被识别成 person → 走正常 init，**不会**进
+      // `if (!mediaType)` 那条分支，所以完整弹窗监听（_startDouyinModalWatcher）
+      // 在主页上永远不挂。结果是：主页上点开一条作品，按钮仍顶着「整理档案」的
+      // 金黄边皮肤，点下去提的却是这一条 —— 用户 2026-11-05 报的「样式切换有问题」。
+      // 这里补一个只管皮肤的轻监听：弹层开→普通蓝，关→档案装。
+      // 门禁全在 mixin 内部（只认 www.douyin.com + 当前形态 person），其他站直接返回 false。
+      if (typeof this._startDouyinPersonSkinWatcher === 'function') {
+        try { this._startDouyinPersonSkinWatcher(); } catch (e) { /* 挂不上不影响任何提取 */ }
+      }
       ClipMateLog.debug(`初始化耗时: ${(performance.now() - startTime).toFixed(2)}ms`);
       ClipMateLog.debug('===== 媒体提取器初始化完成 =====');
       

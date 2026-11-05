@@ -127,8 +127,31 @@
     return LIST_KINDS[host] || null;
   }
 
-  /** 需要盯着地址变化的站点（站内跳转不刷新文档，不盯就会「进了详情页还没按钮」） */
-  var WATCHED_HOSTS = ['weibo.com', 'm.weibo.cn', 'x.com', 's.weibo.com'];
+  /**
+   * 需要盯着地址变化的站点（站内跳转不刷新文档，不盯就会「进了详情页还没按钮」）。
+   *
+   * v2.12.2 扩到「所有有个人档案页的社交站」：皮肤与显隐只有 `_applyPageShape()`
+   * 一个出口，而它原来只在 init / 读配置 / 这里的地址监听三处跑。快手 / 小红书 /
+   * YouTube / TikTok 都是「换地址不换文档」的 SPA —— 从主页点开一条作品时没人重算，
+   * 按钮就一直顶着档案例皮的「整理档案」，点下去提的却是单条作品。
+   * 这些站点的非档案页在 shapeOf 里一律是 unknown（没有 RULES 规则），
+   * 所以重算只会换皮肤，不会碰任何站点自己的显隐逻辑。
+   *
+   * **刻意排除两个站**：
+   *   · www.douyin.com —— 抖音会把 `?modal_id=` 抹掉，地址监听会在弹层还开着时
+   *     误判成「回到主页」把皮肤换回档案装。它由 `_startDouyinPersonSkinWatcher()`
+   *     按「弹层本身在不在」判断。
+   *   · www.instagram.com —— 有自己的入口显隐（_syncInstagramEntryVisibility），
+   *     再管一遍会跟弹层打架。
+   */
+  var WATCHED_HOSTS = [
+    'weibo.com', 'm.weibo.cn', 'x.com', 's.weibo.com',
+    'kuaishou.com',
+    'xiaohongshu.com',
+    'youtube.com', 'm.youtube.com',
+    'tiktok.com',
+    'space.bilibili.com'
+  ];
 
   function matchAny(list, path) {
     if (!list || !list.length) return false;

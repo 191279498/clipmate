@@ -276,7 +276,7 @@ async function extract(w) {
     truthy('manifest 注入了 space.bilibili.com',
       mf.host_permissions.indexOf('https://space.bilibili.com/*') > -1 &&
       mf.content_scripts[0].matches.indexOf('https://space.bilibili.com/*') > -1);
-    truthy('manifest 版本已升到 2.12.0', mf.version === '2.12.1', mf.version);
+    truthy('manifest 版本已升到 2.12.0', mf.version === '2.12.2', mf.version);
   }
 
   /* ==================== 9. URL 归一化 ==================== */

@@ -203,6 +203,8 @@
       // 所以必须靠 _ksRouteIsDetail 内部剥查询串，不能直接喂给正则。
       var wasDetail = this._ksRouteIsDetail(prev);
       var isDetail = this._ksRouteIsDetail(cur);
+      var wasProfile = this._ksRouteIsProfile(prev);
+      var isProfile = this._ksRouteIsProfile(cur);
 
       if (wasDetail && isDetail) {
         this._ksRouteOnWorkChanged(prev, cur);
@@ -212,8 +214,14 @@
         this._ksRouteEnter();
         return;
       }
-      if (wasDetail) this._ksRouteLeave();
-      // 非详情 → 非详情（网格换栏目）：什么都不用做
+      if (wasDetail) { this._ksRouteLeave(); return; }
+      // 非详情 → 非详情：网格换栏目什么都不用做；
+      // 但「发现 / 同城 / 关注 等处点头像走进个人主页」必须把按钮与人物模板要回来
+      // （v2.12.2：监听启动时在网格页已经把按钮摘掉了，不在这里要，主页上就一个按钮都没有）。
+      if (!wasProfile && isProfile) {
+        this._ksRouteRestoreProfilePerson();
+        this._ksRouteLog('info', '站内走进个人主页，按钮与人物档案模板已恢复');
+      }
     },
 
     // ===================== 三、进详情页 =====================
@@ -315,6 +323,9 @@
       this.initUI();                 // setClickHandler → 按钮从置灰变可点
       await this.refreshConfig();    // 尊重「显示提取按钮」开关
       this._ksRouteShowButton();
+      // v2.12.2：已经站内跳进单条作品详情页 → 按钮换回普通蓝「提取」
+      // （不然从主页点进来时，它还顶着金黄边的「整理档案」去提单条内容）
+      if (typeof this._ksApplySkin === 'function') this._ksApplySkin('default');
 
       this.isInitialized = true;
       this._ksRouteActive = true;
@@ -390,6 +401,8 @@
       var done = function () {
         self.isInitialized = true;
         self._ksRouteShowButton();
+        // 兜底：拿不到 KuaishouSpaMixin 时至少把皮肤换回档案装（幂等，重复调用无害）
+        if (typeof self._ksApplySkin === 'function') self._ksApplySkin('arch');
       };
       try {
         if (typeof this._restoreKuaishouProfilePerson === 'function') {
