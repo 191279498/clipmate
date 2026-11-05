@@ -20,6 +20,8 @@ import subprocess
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(ROOT, 'ClipMate_chrome', 'src')
 TEST = os.path.join(ROOT, 'tests', 'douban-list.test.js')
+# v2.11.8：popup 里的 A/B/C 入口有自己的契约测试，变异要跑那一支
+POPUP_TEST = os.path.join(ROOT, 'tests', 'popup-slim.test.js')
 
 PS = os.path.join(SRC, 'content', 'utils', 'page-shape.js')
 CM = os.path.join(SRC, 'content', 'content-main.js')
@@ -32,6 +34,8 @@ DB = os.path.join(SRC, 'content', 'extractors', 'douban-book.js')
 DG = os.path.join(SRC, 'content', 'extractors', 'douban-game.js')
 MF = os.path.join(ROOT, 'ClipMate_chrome', 'manifest.json')
 SC = os.path.join(SRC, 'shared', 'settings-schema.js')
+PH = os.path.join(SRC, 'popup', 'popup.html')
+PJ = os.path.join(SRC, 'popup', 'popup.js')
 
 # (编号, 说明, 目标文件, 原文, 改成)
 MUTATIONS = [
@@ -345,15 +349,64 @@ MUTATIONS = [
         '        layout: this.doubanListBtnLayout,',
         "        layout: 'A',",
     ),
+    # ---- v2.11.8：popup 里的 A/B/C 入口（跑 popup-slim.test.js） ----
+    (
+        'M45',
+        'popup 不做列表页判定（详情页 / 抖音也露出「小按钮位置」，改了没反应）',
+        PJ,
+        '    if (!this.listKind) {',
+        '    if (false) {',
+        POPUP_TEST,
+    ),
+    (
+        'M46',
+        'popup 无论点哪一档都存 A（切 B/C 看着变了、刷新就回 A）',
+        PJ,
+        "    const ok = await this.saveConfig({ settings: { doubanListBtnLayout: next } }, '已保存');",
+        "    const ok = await this.saveConfig({ settings: { doubanListBtnLayout: 'A' } }, '已保存');",
+        POPUP_TEST,
+    ),
+    (
+        'M47',
+        '高亮写死 A（选了 B 但 A 还亮着，分不清当前档）',
+        PJ,
+        "        const on = btns[i].getAttribute('data-layout') === cur;",
+        "        const on = btns[i].getAttribute('data-layout') === 'A';",
+        POPUP_TEST,
+    ),
+    (
+        'M48',
+        'saveConfig 拿合并后的 settings 再合并（同层 enableCache 等键被吃掉）',
+        PJ,
+        '      this.config.settings = Object.assign({}, prevSettings, patch.settings);',
+        '      this.config.settings = Object.assign({}, this.config.settings, patch.settings);',
+        POPUP_TEST,
+    ),
+    (
+        'M49',
+        'A/B/C 写成本站规则（影视页设了 B、读书页还是 A）',
+        PJ,
+        "    const ok = await this.saveConfig({ settings: { doubanListBtnLayout: next } }, '已保存');",
+        "    const ok = await this.saveConfig({ siteOverrides: { [this.hostname]: { doubanListBtnLayout: next } } }, '已保存');",
+        POPUP_TEST,
+    ),
+    (
+        'M50',
+        'popup 不加载列表页判定表（永远认不出列表页，那一行永不出现）',
+        PH,
+        '  <script src="../content/utils/page-shape.js"></script>\n',
+        '',
+        POPUP_TEST,
+    ),
 ]
 
 
 
-def run_test():
+def run_test(test_path=None):
     env = dict(os.environ)
     env['NODE_PATH'] = 'C:/Users/19127/.workbuddy/binaries/node/workspace/node_modules'
     p = subprocess.run(
-        ['node', TEST],
+        ['node', test_path or TEST],
         cwd=ROOT,
         env=env,
         stdout=subprocess.PIPE,
@@ -369,22 +422,30 @@ def eol_variants(text):
 
 def main():
     originals = {}
-    for mid, desc, target, old, new in MUTATIONS:
+    def spec(item):
+        """(编号, 说明, 文件, 原文, 改成[, 测试文件]) —— 第 6 项省略时跑 douban-list"""
+        return item[5] if len(item) > 5 else TEST
+
+    for item in MUTATIONS:
+        mid, desc, target, old, new = item[:5]
         if target not in originals:
             originals[target] = open(target, 'rb').read()
 
     texts = {k: v.decode('utf-8') for k, v in originals.items()}
 
-    code, out = run_test()
-    print('基线：', '绿' if code == 0 else '红')
-    if code != 0:
-        print(out)
-        print('基线不是绿的，变异测试无意义，直接退出。')
-        return 1
+    for t in (TEST, POPUP_TEST):
+        code, out = run_test(t)
+        print('基线 %s：' % os.path.basename(t), '绿' if code == 0 else '红')
+        if code != 0:
+            print(out)
+            print('基线不是绿的，变异测试无意义，直接退出。')
+            return 1
 
     survived = []
     try:
-        for mid, desc, target, old, new in MUTATIONS:
+        for item in MUTATIONS:
+            mid, desc, target, old, new = item[:5]
+            test_path = spec(item)
             text = texts[target]
             hit = None
             for old_v, new_v in zip(eol_variants(old), eol_variants(new)):
@@ -398,7 +459,7 @@ def main():
             old_v, new_v = hit
 
             io.open(target, 'w', encoding='utf-8', newline='').write(text.replace(old_v, new_v))
-            code, out = run_test()
+            code, out = run_test(test_path)
             status = '变红 ✓' if code != 0 else '仍然全绿 ✗（这条断言是假的）'
             print('%s %s → %s' % (mid, desc, status))
             if code == 0:

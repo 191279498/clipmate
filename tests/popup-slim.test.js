@@ -26,6 +26,8 @@ const HTML_PATH = path.join(POPUP_DIR, 'popup.html');
 const JS_PATH = path.join(POPUP_DIR, 'popup.js');
 const CSS_PATH = path.join(POPUP_DIR, 'popup.css');
 const SITE_CONFIG_PATH = path.join(ROOT, 'src', 'shared', 'site-config.js');
+// v2.11.8：列表页判定与内容脚本共用 page-shape.js，boot 里也要真加载它
+const PAGE_SHAPE_PATH = path.join(ROOT, 'src', 'content', 'utils', 'page-shape.js');
 
 const C = { reset: '\x1b[0m', green: '\x1b[32m', red: '\x1b[31m', dim: '\x1b[2m', bold: '\x1b[1m' };
 let pass = 0;
@@ -126,6 +128,7 @@ function boot(tabUrl, configPatch) {
   win.close = () => { closed = true; };
 
   win.eval(fs.readFileSync(SITE_CONFIG_PATH, 'utf8'));
+  win.eval(fs.readFileSync(PAGE_SHAPE_PATH, 'utf8'));
   // popup.js 里 popupManager 是 const 声明，不会自动挂到 window，补一行导出给测试用
   win.eval(JS_SRC + '\n;window.popupManager = popupManager;');
 
@@ -396,6 +399,96 @@ async function main() {
   ok('未知值 default 按跟随系统处理',
     !themedDark.doc.body.classList.contains('theme-dark') ||
     themedDark.doc.body.classList.contains('theme-light'));
+
+  /* ============ 七、豆瓣收藏列表：popup 里直接切 A/B/C（v2.11.8） ============ */
+  section('七、豆瓣收藏列表：popup 里直接切小按钮 A/B/C');
+
+  // —— 静态：入口只在列表页露，判定与内容脚本共用同一张表
+  ok('popup.html 引了 page-shape.js（列表页判定不另写一套正则）',
+    HTML_RAW.indexOf('../content/utils/page-shape.js') !== -1);
+  ok('popup.html 有 #rowListLayout 这一行', HTML_RAW.indexOf('id="rowListLayout"') !== -1);
+  eq('三颗胶囊就是 A/B/C',
+    (HTML_RAW.match(/class="lay-btn" data-layout="([^"]*)"/g) || [])
+      .map((x) => x.replace(/.*data-layout="/, '').replace('"', '')),
+    ['A', 'B', 'C']);
+  ok('这一行默认收起（不是列表页不占位置）', /id="rowListLayout"[^>]*hidden/.test(HTML_RAW));
+  ok('设置页与 popup 写的是同一个键（否则两处各显各的）',
+    fs.readFileSync(path.join(ROOT, 'src', 'shared', 'settings-schema.js'), 'utf8')
+      .indexOf("path: ['settings', 'doubanListBtnLayout']") !== -1);
+
+  const GRID_URL = 'https://movie.douban.com/people/48250148/wish';
+  const listInst = boot(GRID_URL);
+  await tick(120);
+  const ldoc = listInst.doc;
+  const ons = (d) => Array.from(d.querySelectorAll('.lay-btn'))
+    .filter((b) => b.classList.contains('on'))
+    .map((b) => b.getAttribute('data-layout'));
+
+  ok('影视「想看」页：这一行露出来了', ldoc.getElementById('rowListLayout').hidden === false);
+  eq('默认档位是 A', ons(ldoc), ['A']);
+  eq('A 的说明文字', ldoc.getElementById('listLayoutDesc').textContent, 'A · 封面右下角');
+  eq('三颗胶囊的 aria-pressed 只有 A 是 true',
+    Array.from(ldoc.querySelectorAll('.lay-btn')).map((b) => b.getAttribute('aria-pressed')),
+    ['true', 'false', 'false']);
+
+  // —— 点 B：写全局键，不写本站规则
+  const bBtn = ldoc.querySelector('.lay-btn[data-layout="B"]');
+  bBtn.dispatchEvent(new listInst.win.MouseEvent('click', { bubbles: true }));
+  await tick(80);
+  eq('点 B → settings.doubanListBtnLayout 变 B',
+    listInst.state.config.settings.doubanListBtnLayout, 'B');
+  eq('不写本站规则（三个豆瓣收藏列表共用一份，按域名各存一套会显得「没生效」）',
+    Object.keys(listInst.state.config.siteOverrides || {}).length, 0);
+  ok('底部不出现「本站已单独设置」（这一项不算本站规则）',
+    ldoc.getElementById('footState').hidden === true);
+  eq('高亮切到 B', ons(ldoc), ['B']);
+  eq('说明跟着切', ldoc.getElementById('listLayoutDesc').textContent, 'B · 封面正下方');
+  ok('闪了一下「已保存」', ldoc.getElementById('savedTip').classList.contains('on'));
+
+  // —— 同档位重复点击：不重复落盘
+  const savesBefore = listInst.sent.filter((m) => m.action === 'saveConfig').length;
+  bBtn.dispatchEvent(new listInst.win.MouseEvent('click', { bubbles: true }));
+  await tick(80);
+  eq('再点一次 B 不再发保存', listInst.sent.filter((m) => m.action === 'saveConfig').length, savesBefore);
+
+  // —— 写 settings 不能把同层的兄弟键吃掉（v2.11.8 顺手修的弹窗内存 bug）
+  eq('保存档位后，settings.enableCache 还在',
+    listInst.page.config.settings.enableCache, true);
+
+  // —— 只有列表页露：详情页 / 别的站 / 内部页都不许露
+  const detailPage = boot('https://movie.douban.com/subject/1292052/');
+  await tick(120);
+  ok('影视详情页不露（那里没有逐条小按钮）',
+    detailPage.doc.getElementById('rowListLayout').hidden === true);
+
+  const douyinPage = boot('https://www.douyin.com/video/123');
+  await tick(120);
+  ok('抖音不露', douyinPage.doc.getElementById('rowListLayout').hidden === true);
+
+  const innerPage = boot('chrome://extensions/');
+  await tick(120);
+  ok('浏览器内部页不露', innerPage.doc.getElementById('rowListLayout').hidden === true);
+
+  // —— 三站四结构都要认得（影视网格 / 读书列表视图 / 游戏三态共用一条路径）
+  const bookPage = boot('https://book.douban.com/people/48250148/do?mode=list');
+  await tick(120);
+  ok('读书「在读」列表视图也露', bookPage.doc.getElementById('rowListLayout').hidden === false);
+
+  const gamePage = boot('https://www.douban.com/people/48250148/games?action=wish');
+  await tick(120);
+  ok('游戏「想玩」也露', gamePage.doc.getElementById('rowListLayout').hidden === false);
+
+  // —— 脏值回落 A（与内容脚本 normalizeLayout 同一条规则）
+  const dirty = boot(GRID_URL, { settings: { enableCache: true, doubanListBtnLayout: 'Z' } });
+  await tick(120);
+  eq('配置里是脏值时按 A 显示', ons(dirty.doc), ['A']);
+
+  // —— 点 C 也要真的落成 C（防「只有 B 能用」这类写死）
+  const cBtn = ldoc.querySelector('.lay-btn[data-layout="C"]');
+  cBtn.dispatchEvent(new listInst.win.MouseEvent('click', { bubbles: true }));
+  await tick(80);
+  eq('点 C → 存 C', listInst.state.config.settings.doubanListBtnLayout, 'C');
+  eq('C 的说明文字', ldoc.getElementById('listLayoutDesc').textContent, 'C · 条目最右侧');
 
   // ============ 汇总 ============
   console.log('\n' + '─'.repeat(56));

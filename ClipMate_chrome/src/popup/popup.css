@@ -342,6 +342,109 @@ body {
   padding-top: 6px;
 }
 
+/* ===== 豆瓣列表小按钮落点（v2.11.8） =====
+ * 只在豆瓣收藏列表页出现的一行：左边两行字（名字 + 当前档含义），右边三颗胶囊。
+ * 不用 <select>：三档要「一眼看到全部 + 一次点到位」，下拉要点两下才看到选项。
+ * 高度与 .row 对齐（padding 10px），免得这一行插在开头显得比别的行矮一截。 */
+.lay-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: #111820;
+  border-bottom: 1px solid #EDE9DF;
+}
+
+.lay-row[hidden] {
+  display: none !important;
+}
+
+.lay-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.lay-sub {
+  font-size: 11px;
+  line-height: 1.35;
+  color: #6B7278;
+  margin-top: 1px;
+}
+
+.lay-group {
+  display: flex;
+  flex: 0 0 auto;
+  border: 1px solid #D6D0C2;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.lay-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  min-width: 30px;
+  padding: 4px 0;
+  border: 0;
+  border-left: 1px solid #E3DED3;
+  background: transparent;
+  color: #4A5157;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.lay-btn:first-child {
+  border-left: 0;
+}
+
+.lay-btn:hover {
+  background: #EFEBE0;
+}
+
+.lay-btn.on {
+  background: #056BF4;
+  color: #FFFFFF;
+}
+
+.lay-btn:focus-visible {
+  outline: 2px solid #056BF4;
+  outline-offset: -2px;
+}
+
+/* 深色：未选中用暖灰字，选中用深一档的蓝（与开关的 #2A6BE0 一致） */
+.theme-dark .lay-row {
+  color: #EDE9E0;
+  border-bottom-color: #33302A;
+}
+
+.theme-dark .lay-sub {
+  color: #A39C8E;
+}
+
+.theme-dark .lay-group {
+  border-color: #33302A;
+}
+
+.theme-dark .lay-btn {
+  color: #A39C8E;
+  border-left-color: #33302A;
+}
+
+.theme-dark .lay-btn:hover {
+  background: #2A2724;
+}
+
+.theme-dark .lay-btn.on {
+  background: #2A6BE0;
+  color: #F5F1E8;
+}
+
 /* ===== 开关 ===== */
 .sw {
   appearance: none;

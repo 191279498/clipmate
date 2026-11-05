@@ -43,6 +43,22 @@
     </div>
 
     <main class="pop-rows" id="siteRows">
+      <!-- v2.11.8：豆瓣收藏列表（想看 / 在读 / 想玩…）专属 —— 小按钮三档落点。
+           只在列表页出现：这一项对列表页才有意义，详情页摆出来只会让人以为「改了没用」。
+           注意这是**全局项**（三个豆瓣收藏列表共用），不写本站规则：
+           写成本站规则的话，影视页设了 B、读书页还是 A，用户会以为没生效。 -->
+      <div class="lay-row" id="rowListLayout" hidden>
+        <span class="lay-name">
+          豆瓣列表小按钮
+          <span class="lay-sub" id="listLayoutDesc">A · 封面右下角</span>
+        </span>
+        <span class="lay-group" id="listLayoutGroup" role="group" aria-label="豆瓣列表小按钮位置">
+          <button type="button" class="lay-btn" data-layout="A" aria-pressed="false" title="A · 封面右下角">A</button>
+          <button type="button" class="lay-btn" data-layout="B" aria-pressed="false" title="B · 封面正下方">B</button>
+          <button type="button" class="lay-btn" data-layout="C" aria-pressed="false" title="C · 条目最右侧">C</button>
+        </span>
+      </div>
+
       <label class="row">
         <span class="row-label">自动提取</span>
         <input type="checkbox" class="sw" id="siteAutoExtract">
@@ -95,6 +111,9 @@
   </div>
 
   <script src="../shared/site-config.js"></script>
+  <!-- v2.11.8：列表页判定与内容脚本共用同一张白名单（page-shape.js），
+       不要在 popup 里另写一套正则 —— 两套规则迟早会漂移。 -->
+  <script src="../content/utils/page-shape.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

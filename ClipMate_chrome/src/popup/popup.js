@@ -17,6 +17,27 @@ var WBR = (typeof browser !== "undefined" && browser && browser.runtime) ? brows
 // 合法性校验统一走 ClipMateSites.normalizeCopyFormat()，这里只负责显示。
 var COPY_FORMAT_LABELS = { notion: 'Notion', markdown: 'Markdown', plaintext: '纯文本' };
 
+// v2.11.8：豆瓣收藏列表小按钮的三档落点。
+//
+// 值和 `src/content/ui/douban-list-buttons.js` 的 LAYOUTS 必须一致（那边是唯一权威），
+// 但 popup 不加载那支内容脚本 —— 加载了也会连带拉进它的 DOM 依赖。
+// 所以这里只做「三选一 + 脏值回落 A」，并且存的是**设置页同一个全局键**：
+//   settings.doubanListBtnLayout
+// 两处读写同一份值，不会出现「设置页显示 A、实际却按 B 摆」。
+var LIST_LAYOUTS = ['A', 'B', 'C'];
+var LIST_LAYOUT_DEFAULT = 'A';
+var LIST_LAYOUT_LABELS = {
+  A: 'A · 封面右下角',
+  B: 'B · 封面正下方',
+  C: 'C · 条目最右侧'
+};
+
+/** 把任意输入收敛成合法档位；认不出来一律回 A（与内容脚本的 normalizeLayout 行为一致） */
+function normalizeListLayout(mode) {
+  var m = String(mode == null ? '' : mode).toUpperCase();
+  return LIST_LAYOUTS.indexOf(m) === -1 ? LIST_LAYOUT_DEFAULT : m;
+}
+
 // 本站规则里允许出现的六个键（判断「改过几项」用）
 var SITE_KEYS = ['autoExtract', 'autoExtractDelay', 'autoCopy', 'autoCopyFormat', 'showButton', 'autoDismiss'];
 
@@ -28,6 +49,9 @@ class PopupManager {
     this.hostname = '';
     this.parentDomain = '';
     this.site = null;
+    // v2.11.8：当前标签是不是豆瓣收藏列表页（'movie'|'book'|'game'|null）。
+    // 只有非 null 才显示「小按钮位置」那一行。
+    this.listKind = null;
 
     this.savedTimer = null;
     this.ready = false;
@@ -86,19 +110,44 @@ class PopupManager {
   // ============ 本站 ============
 
   /**
-   * 当前标签的「网站域名」——只认 http/https。
+   * 当前标签解析出的 {hostname, pathname}；只认 http/https，其余一律 null。
    * 为什么不能直接看 hostname：`chrome://extensions/` 的 hostname 是 `extensions`，
    * `chrome-extension://abc/...` 的是 `abc`，它们都会被当成「一个没收录的网站」，
    * 深链就会拼出 `focus=extensions` 这种指向不存在站点的地址。
    */
-  webHost() {
+  webLocation() {
     try {
       const raw = (this.currentTab && this.currentTab.url) || '';
       const u = new URL(raw);
-      if (u.protocol !== 'http:' && u.protocol !== 'https:') return '';
-      return u.hostname || '';
+      if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+      return { hostname: u.hostname || '', pathname: u.pathname || '/' };
     } catch (e) {
-      return '';
+      return null;
+    }
+  }
+
+  /** 当前标签的「网站域名」（内部页 / 扩展页返回空串） */
+  webHost() {
+    const loc = this.webLocation();
+    return loc ? loc.hostname : '';
+  }
+
+  /**
+   * 当前标签是不是豆瓣收藏列表页（v2.11.8）：'movie' | 'book' | 'game' | null。
+   *
+   * 判定复用内容脚本那张白名单（page-shape.js 的 doubanListKind），不在这里另写正则——
+   * 影视 / 读书 / 游戏三站、网格 / 列表两种视图的地址规则只有一份。
+   * page-shape.js 没加载（脚本引错路径）时返回 null：宁可不显示这一行，
+   * 也不要在错误的页面上显示一个改了没用的开关。
+   */
+  doubanListKind() {
+    const loc = this.webLocation();
+    const PS = window.PageShape;
+    if (!loc || !PS || typeof PS.doubanListKind !== 'function') return null;
+    try {
+      return PS.doubanListKind(loc.hostname, loc.pathname) || null;
+    } catch (e) {
+      return null;
     }
   }
 
@@ -129,6 +178,8 @@ class PopupManager {
     hostEl.textContent = host;
     this.parentDomain = Sites.parentDomain(host);
     this.site = Sites.findSite(host);
+    // v2.11.8：列表页判定与「本站是谁」无关，先算好，render() 里决定那一行露不露
+    this.listKind = this.doubanListKind();
 
     if (this.site) {
       nameEl.textContent = this.site.name;
@@ -209,7 +260,61 @@ class PopupManager {
     const hint = document.getElementById('rowBtnHint');
     if (hint) hint.hidden = !!eff.showButton;
 
+    this.renderListLayout();
     this.renderFoot(eff);
+  }
+
+  // ====== 豆瓣列表小按钮落点（v2.11.8） ======
+
+  /**
+   * 渲染那一行：只有豆瓣收藏列表页才显示；档位高亮跟着全局设置走。
+   * 每次 render() 都会调用，所以「恢复默认」「切主题」之类重渲染后高亮不会丢。
+   */
+  renderListLayout() {
+    const row = document.getElementById('rowListLayout');
+    if (!row) return;
+
+    if (!this.listKind) {
+      row.hidden = true;
+      return;
+    }
+    row.hidden = false;
+
+    const cur = normalizeListLayout(this.config.settings && this.config.settings.doubanListBtnLayout);
+
+    const group = document.getElementById('listLayoutGroup');
+    if (group) {
+      const btns = group.querySelectorAll('.lay-btn');
+      for (let i = 0; i < btns.length; i++) {
+        const on = btns[i].getAttribute('data-layout') === cur;
+        btns[i].classList.toggle('on', on);
+        btns[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+      }
+    }
+
+    safeSetText('listLayoutDesc', LIST_LAYOUT_LABELS[cur]);
+  }
+
+  /**
+   * 切档位：写的是**全局** settings.doubanListBtnLayout，不写 siteOverrides。
+   *
+   * 为什么不按本站存：三档是同一套几何规则，用户在影视页选了 B、读书页还是 A，
+   * 只会以为「没生效」。内容脚本那边也读全局键（refreshConfig），两处必须是同一份值。
+   * 因此这一项**不参与**底部「本站已单独设置 N 项」的计数，也不受「恢复默认」影响。
+   *
+   * 与当前值相同时直接返回：避免同档位反复点、每次都发一次保存再闪「已保存」。
+   */
+  async writeListLayout(mode) {
+    const next = normalizeListLayout(mode);
+    const cur = normalizeListLayout(this.config.settings && this.config.settings.doubanListBtnLayout);
+    if (next === cur) {
+      this.renderListLayout();
+      return;
+    }
+
+    const ok = await this.saveConfig({ settings: { doubanListBtnLayout: next } }, '已保存');
+    // 保存失败时 saveConfig 只报错、不改本地状态 → 重新渲染会把高亮拉回旧档
+    if (ok) this.renderListLayout();
   }
 
   /**
@@ -363,6 +468,20 @@ class PopupManager {
       });
     }
 
+    // v2.11.8：豆瓣列表小按钮三颗胶囊。用事件委托 —— 少绑两个监听，
+    // 将来档位增减也不用改这里。
+    const layoutGroup = document.getElementById('listLayoutGroup');
+    if (layoutGroup) {
+      layoutGroup.addEventListener('click', (ev) => {
+        const target = ev.target;
+        const btn = (target && typeof target.closest === 'function') ? target.closest('.lay-btn') : null;
+        if (!btn) return;
+        const mode = btn.getAttribute('data-layout');
+        if (!mode) return;
+        this.writeListLayout(mode);
+      });
+    }
+
     const restore = document.getElementById('restoreGlobal');
     if (restore) {
       restore.addEventListener('click', () => this.restoreGlobal());
@@ -416,10 +535,15 @@ class PopupManager {
       return false;
     }
 
-    // 本地状态同步，避免界面和存储不一致
+    // 本地状态同步，避免界面和存储不一致。
+    // v2.11.8：settings 必须拿**合并前**的旧值做底。原来的写法是先 Object.assign（已经把
+    // this.config.settings 整个换成了 patch.settings），再拿它跟自己去合并 —— 等于只留下
+    // 这次写的那个键，同层的 enableCache / 浮窗尺寸在弹窗内存里凭空消失。
+    // 磁盘上 background 是深合并、没这个问题，所以这个坑只在「popup 会话内」露头。
+    const prevSettings = this.config.settings;
     this.config = Object.assign({}, this.config, patch);
     if (patch.settings) {
-      this.config.settings = Object.assign({}, this.config.settings, patch.settings);
+      this.config.settings = Object.assign({}, prevSettings, patch.settings);
     }
 
     this.flashSaved(tip || '已保存');
