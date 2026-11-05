@@ -15,6 +15,11 @@
  *   - 沉浸流    `douyinImmersiveEnabled`   （v2.5.80）
  * 两条都关 → 连监听都不挂，行为完全等于 v2.5.76。
  *
+ * v2.12.3 补第 5 件事：盯 **pathname** 的站内跳转，管「信息流 ⇄ 作者主页」这一对。
+ * 真机（2026-11-05，3 次复现）：从关注页点作者头像进 `/user/<sec_uid>`，地址换了、
+ * 文档没换，init 不重跑、弹层签名也没变（`closed` → `closed` 不回调），
+ * 按钮就此永久消失。详见 `_startDouyinRouteWatcher()`。
+ *
  * 三条结构保证：
  *   - 域名门禁：`location.hostname !== 'www.douyin.com'` 时每个方法都立刻返回，
  *     其他 30 多个站点连一个监听都不会多。
@@ -74,6 +79,9 @@
 
       this._douyinLog('info', '播放监听已启动（弹窗=' + (modalOn ? '开' : '关')
         + '，沉浸流=' + (immersiveOn ? '开' : '关') + '）');
+      // v2.12.3：这条分支把按钮摘掉了，而「点作者头像进主页」不会让弹层签名变化，
+      // 必须另有一个只看 pathname 的监听把按钮送回来（详见方法注释）。
+      this._startDouyinRouteWatcher();
       return true;
     },
 
@@ -128,7 +136,206 @@
       }, { debounceMs: 320 });
 
       this._douyinLog('info', '主页换装监听已启动（弹层开→普通蓝，关→档案装）');
+      // 从主页点「推荐 / 关注」退回信息流时，按钮要撤（那一页没有整页可提的内容）；
+      // 再次走回主页时也要能回来。这条路和上面那条弹层监听互不重叠，各管一件事。
+      this._douyinPersonPage = true;
+      this._startDouyinRouteWatcher();
       return true;
+    },
+
+    // ===================== 二、站内路由：信息流 ⇄ 作者主页（v2.12.3） =====================
+
+    /**
+     * 盯 `pathname` 的站内跳转。
+     *
+     * 为什么必须有它（真机 2026-11-05，3 次复现，截图 `_shots/dy_bug_nobtn.png`）：
+     *   从关注页 / 推荐页（init 走「类型识别为空」那条路 → 挂弹层监听 + 把按钮摘掉）
+     *   点作者头像进 `/user/<sec_uid>` —— 地址换了、文档没换，init 不会重跑；
+     *   而弹层监听那边 `signature()` 从 `closed` 到 `closed` 一个字节都没变，
+     *   `emit()` 里 `sig === lastSig` 直接 return，**一个回调都不会来**。
+     *   结果：作者主页上彻底没有按钮，怎么点都出不来（只能 F5）。
+     *
+     * 只盯 **pathname**，不盯 href：抖音几秒后会把 `?modal_id=` 抹掉（v2.12.2 踩过），
+     * 盯 href 会在弹层还开着的时候误判成「回到主页」。pathname 在弹层开关时不变，
+     * 天然避开这个坑。
+     *
+     * 250ms 轮询就够：这是「人从一页走到另一页」的节奏，不是逐帧动画；
+     * 不包装 history.pushState 是为了不跟 `DouyinModalContext.watch` 抢着包同一个方法。
+     *
+     * @returns {boolean} true = 已在跑（或刚挂上）；非抖音域 / 已挂过 → 见下
+     */
+    _startDouyinRouteWatcher() {
+      if (this._douyinRouteTimer) return true;
+      if (!this._isDouyinModalHost()) return false;
+
+      var self = this;
+      this._douyinRoutePath = this._douyinPathname();
+      this._douyinRouteTimer = setInterval(function () {
+        try {
+          var path = self._douyinPathname();
+          if (path === self._douyinRoutePath) return;
+          self._douyinRoutePath = path;
+          Promise.resolve(self._onDouyinRouteChange()).catch(function (e) {
+            self._douyinLog('warn', '站内路由处理失败：' + (e && e.message));
+          });
+        } catch (e) { /* 地址读不到就等下一拍 */ }
+      }, 250);
+      this._douyinLog('info', '站内路由监听已启动（只认 pathname）');
+      return true;
+    },
+
+    _stopDouyinRouteWatcher() {
+      if (!this._douyinRouteTimer) return;
+      try { clearInterval(this._douyinRouteTimer); } catch (e) { /* 忽略 */ }
+      this._douyinRouteTimer = null;
+    },
+
+    /** 当前 pathname（读不到返回空串，调用方一律按「没变化」处理） */
+    _douyinPathname() {
+      try { return String(location.pathname || '/'); } catch (e) { return ''; }
+    },
+
+    /**
+     * 这一页是什么形态。三种：
+     *   person —— 作者主页 `/user/<sec_uid>`（整页人物档案）。**带 `?modal_id=` 时不算** ——
+     *             那是主页上盖了一条作品，提的是作品（与 media-detector 的 excludeQuery 同口径）。
+     *   detail —— 作品详情页 `/video|note|slides/<id>`：按钮本来就该在，本模块不改它。
+     *   feed   —— 关注 / 推荐 / 朋友 / 搜索 / 精选：整页没有可提取的内容。
+     */
+    _douyinRouteKind() {
+      var path = this._douyinPathname();
+      if (/^\/user\//.test(path)) {
+        try {
+          if (/[?&]modal_id=/.test(String(location.search || ''))) return 'detail';
+        } catch (e) { /* 读不到就按纯主页算 */ }
+        return 'person';
+      }
+      if (/\/(video|note|slides)\//.test(path)) return 'detail';
+      return 'feed';
+    },
+
+    /** 站内路由变了：按新形态决定「恢复档案」还是「撤按钮」 */
+    async _onDouyinRouteChange() {
+      if (!this._isDouyinModalHost()) return;
+      var kind = this._douyinRouteKind();
+
+      if (kind === 'person') {
+        if (this._douyinPersonPage === true) return;   // 主页之间互跳，模板和皮肤都一样
+        await this._restoreDouyinPersonPage();
+        this._douyinLog('info', '站内走进作者主页，按钮与人物档案模板已恢复');
+        return;
+      }
+
+      if (kind === 'detail') {
+        // 作品详情页：**一个字节都不动**（v2.12.3 刻意不改这条路的行为），
+        // 只把「档案页」标记清掉 —— 不清的话，从详情页退回主页会跳过恢复，
+        // 模板/皮肤停在上一次留下的状态。
+        this._douyinPersonPage = false;
+        return;
+      }
+
+      // 信息流：这一页没有整页可提的内容，按钮必须撤（否则又是一个「点了提空」的死按钮）
+      if (this._douyinPersonPage === true) this._leaveDouyinPersonPage();
+    },
+
+    /**
+     * 把「整页人物档案」这套状态装回来：6 列人物模板 + 档案装 + 按钮回到页面上。
+     *
+     * 三件必须做的事，缺一件就露馅：
+     *   ① `bm.show()` —— 按钮先前被 `_hideExtractButton()` 从 DOM 里摘掉了
+     *      （只留着引用，`setVisible(true)` 只改 display，插不回页面）。
+     *   ② 换 **person** 模板 —— 从弹层过来时 fieldMapper 是 7 列作品模板，
+     *      拿它映射人物数据会整列全空（快手 v2.7.17 踩过同一个坑）。
+     *   ③ 清掉贴弹层时写的内联 left/top —— 不清的话按钮停在上一条作品的右上角。
+     *
+     * 幂等：弹层关掉和路由变化可能前后脚各调一次，重复跑只是白跑两遍。
+     */
+    async _restoreDouyinPersonPage() {
+      if (this._douyinPersonRestoring) return;
+      this._douyinPersonRestoring = true;
+      this._douyinPersonPage = true;
+
+      try {
+        // 先清「某一条作品」那套状态：ID、模式、锚点、浮窗、缓存键。
+        // 注意**不许**调 `_deactivateDouyinModal()` —— 它会连按钮一起摘掉，
+        // 而按钮在这一页是唯一入口。
+        this._douyinModalId = '';
+        this._douyinMode = '';
+        this._douyinActivated = false;   // 让 `_douyinModalOverrideType()` 返回 null，类型落回 URL 规则 → person
+        this._douyinUserMoved = false;
+        this.activeShortcode = null;
+        try { this.cacheKey = this.generateCacheKey(window.location.href); } catch (e) { /* 忽略 */ }
+        this._unbindDouyinAnchor();
+        this._closeDouyinPanelOnly();
+
+        var bm = this.buttonManager;
+        try {
+          if (!this.fieldMapper || this._douyinMapperType !== 'person') {
+            this.fieldMapper = await this.initFieldMapper('person');
+            this._douyinMapperType = 'person';
+          }
+        } catch (e) {
+          this._douyinLog('warn', '重建人物字段模板失败：' + (e && e.message));
+        }
+
+        try {
+          if (bm && typeof bm.show === 'function') bm.show();   // ① 插回页面
+          this._resetDouyinButtonPosition();                   // ③ 回到站点默认 / 用户拖动过的位置
+          if (typeof this.initUI === 'function') this.initUI(); // 信息流分支过来时点击动作还没接上
+          this.isInitialized = true;
+        } catch (e) {
+          this._douyinLog('warn', '恢复按钮失败：' + (e && e.message));
+        }
+
+        try {
+          if (typeof this.refreshConfig === 'function') await this.refreshConfig();  // ② 按配置显隐 + 档案装
+        } catch (e) { /* 读配置失败也要继续换装 */ }
+
+        try {
+          if (bm && typeof bm.setSkin === 'function') bm.setSkin('arch');  // 兜底（幂等）
+        } catch (e) { /* 换肤失败不影响提取 */ }
+      } finally {
+        this._douyinPersonRestoring = false;
+      }
+    },
+
+    /**
+     * 从主页退回信息流：撤按钮、褪回普通蓝、清掉所有「作品 / 档案」状态。
+     * 与 `_deactivateDouyinModal()` 的区别：那个是「某一条作品没了」，
+     * 这个是「整页档案没了」，语义上要分开，但动作基本一致，所以这里单独写一份不硬套。
+     */
+    _leaveDouyinPersonPage() {
+      this._douyinPersonPage = false;
+      this._douyinModalId = '';
+      this._douyinMode = '';
+      this._douyinActivated = false;
+      this._douyinUserMoved = false;
+      this.activeShortcode = null;
+      try { this.cacheKey = this.generateCacheKey(window.location.href); } catch (e) { /* 忽略 */ }
+      this._unbindDouyinAnchor();
+      this._closeDouyinPanelOnly();
+      this._hideExtractButton();
+      try {
+        var bm = this.buttonManager;
+        if (bm && typeof bm.setSkin === 'function') bm.setSkin('default');
+      } catch (e) { /* 换肤失败不影响提取 */ }
+      this._douyinLog('info', '离开作者主页，按钮撤下（等作品出现再接管）');
+    },
+
+    /** 清掉贴弹层时写的内联坐标，回到「站点默认位置 / 用户自己拖过的地方」 */
+    _resetDouyinButtonPosition() {
+      var bm = this.buttonManager;
+      var btn = bm && bm.button;
+      if (!btn) return;
+      try {
+        btn.style.left = '';
+        btn.style.top = '';
+        btn.style.right = '';
+        btn.style.bottom = '';
+        btn.style.transform = '';
+        // 与构造时同一条路：有拖过的记录就用记录的，没有就让 CSS 默认值生效
+        if (typeof bm.loadSavedPosition === 'function') bm.loadSavedPosition();
+      } catch (e) { /* 定位失败不影响提取 */ }
     },
 
     /** 读「抖音弹窗提取（试验）」开关，缺省 = 开 */
@@ -172,7 +379,7 @@
       } catch (e) { /* 日志失败不许影响主流程 */ }
     },
 
-    // ===================== 二、弹窗状态变化 =====================
+    // ===================== 三、弹窗状态变化 =====================
 
     /**
      * @param {{id:string, opened:boolean, mode?:string}} evt 由 DouyinModalContext.watch 抛出
@@ -187,6 +394,13 @@
 
       if (!opened) {
         this._douyinMode = '';
+        // v2.12.3：关闭的这一刻如果人已经站在作者主页上，按钮**不能撤** ——
+        // 这一页它是整页档案的唯一入口。只清「某一条作品」那套状态，
+        // 把模板换回 6 列人物、皮肤换回档案装（真机：弹层里点头像进主页就是这个时序）。
+        if (this._douyinRouteKind() === 'person') {
+          await this._restoreDouyinPersonPage();
+          return;
+        }
         this._deactivateDouyinModal();
         return;
       }
@@ -202,6 +416,8 @@
       }
 
       this._douyinMode = mode;
+      // 这一页此刻代表「某一条作品」，不再是整页档案
+      this._douyinPersonPage = false;
 
       // 熔断过（连续 5 次取不到内容）→ 不接管，等于回到「页面上没有按钮」。
       // 熔断按模式分开算：沉浸流取不到不该把弹窗一起停掉。
@@ -286,11 +502,22 @@
     /** 第一次认出「正在播的那一条」时才把剩下的组件装好（列表页因此不会白初始化一堆东西） */
     async _activateDouyinComponents() {
       if (this._douyinActivated) return;
-      if (!this.fieldMapper) {
+      // v2.12.3：从作者主页（person）过来的这条路上 `fieldMapper` **已经有值**，
+      // 但那是 6 列人物模板 —— 拿它去映射作品数据会整列全空。
+      // 所以不能只看「有没有」，必须看「是不是 social 的」（快手 v2.7.17 踩过同一个坑）。
+      if (!this.fieldMapper || this._douyinMapperType !== 'social') {
         this.fieldMapper = await this.initFieldMapper('social');
+        this._douyinMapperType = 'social';
       }
       this.initUI(); // 接上「点按钮」的动作，同时把灰按钮放开
       await this.refreshConfig(); // 读 showButton / autoExtract
+      // v2.12.3：贴上作品那一刻提的是**单条**，按钮必须是普通蓝。
+      // 档案装只属于「整页人物档案」，否则又变回 v2.12.2 修掉的「混脸」。
+      try {
+        if (this.buttonManager && typeof this.buttonManager.setSkin === 'function') {
+          this.buttonManager.setSkin('default');
+        }
+      } catch (e) { /* 换肤失败不影响提取 */ }
       this._showExtractButton();
       this._bindDouyinAnchor();
       this._douyinActivated = true;
@@ -321,6 +548,7 @@
     _deactivateDouyinModal() {
       var wasActive = !!(this._douyinModalId || this._douyinActivated);
       this._douyinModalId = '';
+      this._douyinPersonPage = false;
       this._douyinUserMoved = false;
       this.activeShortcode = null;
       try {
@@ -347,7 +575,7 @@
       }
     },
 
-    // ===================== 三、按钮显隐 =====================
+    // ===================== 四、按钮显隐 =====================
 
     /** 把按钮插回页面（ButtonManager 构造时插过一次，弹窗没开时被摘掉了） */
     _showExtractButton() {
@@ -369,7 +597,7 @@
       } catch (e) { /* 忽略 */ }
     },
 
-    // ===================== 四、贴住弹窗右上角 =====================
+    // ===================== 五、贴住弹窗右上角 =====================
 
     /**
      * 按钮的锚点：
@@ -555,7 +783,7 @@
       if (this.buttonManager) this.buttonManager.onPositionSaved = null;
     },
 
-    // ===================== 五、切下一条：浮窗就地刷新 =====================
+    // ===================== 六、切下一条：浮窗就地刷新 =====================
 
     /**
      * 与 Instagram 的 _refreshOpenPanel 同构：重试最多 4 次（每次 400ms），
@@ -606,7 +834,7 @@
       return !!(get('本页文案') || get('作者昵称') || get('发布日期'));
     },
 
-    // ===================== 六、类型补认 =====================
+    // ===================== 七、类型补认 =====================
 
     /**
      * 播放态把媒体类型补认成 social（弹窗态与沉浸流态都走这里）。
@@ -638,8 +866,10 @@
         if (typeof this._douyinWatch === 'function') this._douyinWatch();
       } catch (e) { /* 忽略 */ }
       this._douyinWatch = null;
+      this._stopDouyinRouteWatcher();
       this._douyinEnabled = false;
       this._douyinMode = '';
+      this._douyinPersonPage = false;
       this._douyinObservedEl = null;
       this._hideExtractButton();
       this._unbindDouyinAnchor();

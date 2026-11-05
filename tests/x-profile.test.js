@@ -297,7 +297,7 @@ async function extract(w) {
       files.indexOf('src/content/extractors/x-profile.js') > -1);
     eq('x-profile.js 只注册一次',
       files.filter((f) => f === 'src/content/extractors/x-profile.js').length, 1);
-    truthy('manifest 版本已升到 2.12.0', mf.version === '2.12.2', mf.version);
+    truthy('manifest 版本已升到 2.12.0', mf.version === '2.12.3', mf.version);
   }
 
   /* ==================== 8. URL 归一化 ==================== */
