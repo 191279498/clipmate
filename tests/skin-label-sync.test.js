@@ -288,7 +288,10 @@ console.log('八、地址监听范围');
   });
   ok('抖音不盯（它按弹层判断，看地址会被 modal_id 被抹掉坑到）',
     !PageShape.watches('www.douyin.com'));
-  ok('IG 不盯（有自己的入口显隐）', !PageShape.watches('www.instagram.com'));
+  // v2.12.5 改口：原先这里断言「IG 不盯」，真机证明 IG 的入口显隐只管露不露、
+  // 不管皮肤，站内点开帖子后按钮会顶着「整理档案」去提这一条作品。
+  // 现在纳进监听；它算不出 feed，所以碰不到 IG 自己的显隐。
+  ok('IG 要盯（帖子页要褪回普通蓝）', PageShape.watches('www.instagram.com'));
   ok('无关站点不盯（一个定时器都不多）', !PageShape.watches('www.baidu.com'));
 }
 

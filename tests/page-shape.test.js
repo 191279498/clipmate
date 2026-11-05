@@ -95,7 +95,7 @@ const CASES = [
   ['B站首页没配', 'www.bilibili.com', '/', 'social', 'unknown'],
   ['YouTube 首页没配', 'www.youtube.com', '/', 'social', 'unknown'],
   ['小红书没配', 'www.xiaohongshu.com', '/explore', 'social', 'unknown'],
-  ['IG 没配（它有自己的入口显隐）', 'www.instagram.com', '/', 'social', 'unknown'],
+  ['IG 没配藏按钮的规则（显隐仍归它自己）', 'www.instagram.com', '/', 'social', 'unknown'],
   ['完全未知站点', 'example.com', '/anything', null, 'unknown'],
   // ---- 异常入参不许炸 ----
   ['空入参给 unknown 而不是抛错', null, null, null, 'unknown']
@@ -128,7 +128,42 @@ ok('手机版微博要盯', PageShape.watches('m.weibo.cn'));
 ok('微博搜索页要盯', PageShape.watches('s.weibo.com'));
 ok('X 要盯', PageShape.watches('x.com'));
 ok('抖音不盯（一个定时器都不多）', !PageShape.watches('www.douyin.com'));
-ok('IG 不盯（它有自己的弹层跟随）', !PageShape.watches('www.instagram.com'));
+// v2.12.5：原先这里是「IG 不盯」。真机抓到 IG 主页点开帖子后按钮仍顶着「整理档案」
+// 却提这一条作品 —— 它的入口显隐只管露不露、不管皮肤，站内换页没人重算皮肤。
+ok('IG 要盯（站内点开帖子要重算皮肤）', PageShape.watches('www.instagram.com'));
+ok('IG 带裸域也要盯', PageShape.watches('instagram.com'));
+
+/* ============================================================
+ * C2. IG 纳入监听的安全性（v2.12.5）
+ *
+ * 关键前提：IG 在这套规则里**永远算不出 feed**。
+ * 一旦哪天有人给 IG 加了 RULES，`_applyPageShape()` 就会开始 setVisible(false)，
+ * 把 IG 自己（`_syncInstagramEntryVisibility`）管着的按钮藏掉 —— 那套藏/露是按
+ * 「弹层开没开」算的，跟我们按路径算的不是一回事。这里逐条钉死。
+ * ==========================================================*/
+console.log('C2. IG 纳入监听的安全性');
+
+const IG_PATHS = [
+  ['/', 'social'],                                   // 首页信息流
+  ['/explore/', 'social'],                           // 探索页
+  ['/nayawashi/', 'person'],                         // 作者主页
+  ['/nayawashi/reels/', 'social'],                   // 某人 reels 列表
+  ['/p/DQRQZ6kE6a3/', 'social'],                     // 帖子详情 / 弹层
+  ['/reel/DfWutqaAg5F/', 'social'],                  // reel 详情
+  ['/stories/nayawashi/123456/', 'social'],          // story
+  ['/accounts/login/', 'social'],                    // 登录页
+  ['/direct/inbox/', 'social']                       // 私信
+];
+
+IG_PATHS.forEach(function (p) {
+  const shape = PageShape.shapeOf({ hostname: 'www.instagram.com', pathname: p[0], mediaType: p[1] });
+  ok('IG ' + p[0] + ' 不算「信息流」（不会触发藏按钮）', shape !== 'feed', '实际 ' + shape);
+  eq('IG ' + p[0] + ' 的形态', shape, p[1] === 'person' ? 'person' : 'unknown');
+  eq('IG ' + p[0] + ' 不藏大按钮', PageShape.shouldHideMainButton({
+    hostname: 'www.instagram.com', pathname: p[0], mediaType: p[1]
+  }), false);
+});
+
 
 /* ============================================================
  * D. 静态接线：光有判定不够，得接进流程

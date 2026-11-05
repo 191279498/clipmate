@@ -15,8 +15,16 @@
  * · 微博（weibo.com / m.weibo.cn）：首页 / 热门 / 搜索等列表页藏大按钮，
  *   单条博文详情页显示；搜索页 s.weibo.com 整页都是内容流，永远藏。
  * · X（x.com）：首页 / 探索 / 搜索 / 通知等藏，单条推文页显示。
- * · Instagram：**刻意不在这里管** —— v2.7.4 起它已有自己的入口显隐
- *   （`_syncInstagramEntryVisibility` + 弹层跟随），再管一遍会跟弹层打架。
+ * · Instagram：**只管皮肤、不管显隐**（v2.12.5）。
+ *   v2.7.4 起它已有自己的入口显隐（`_syncInstagramEntryVisibility` + 弹层跟随），
+ *   但那套只决定「按钮露不露」，**不管皮肤**。IG 点开帖子是站内换页、不换文档，
+ *   于是主页算好的「档案装」会一路顶着进到帖子弹层里 —— 用户看到「整理档案」，
+ *   点下去提的却是这一条作品（2026-11-05 真机抓到，截图 `_shots/v2124_ig_post_archskin.png`）。
+ *   现在把 instagram.com 纳入地址监听，让 `_applyPageShape()` 在站内跳转后重算皮肤。
+ *   为什么不会跟它抢显隐：IG 在这里**只可能**算出 person（作者主页 `/用户名/`）
+ *   或 unknown（其余全部），永远不会算出 feed —— `RULES` 里没有 IG、
+ *   `ALWAYS_FEED_HOSTS` 里也没有，而 `_applyPageShape()` 对 unknown 一个字节都不碰，
+ *   对 person 就 setVisible(true)（作者主页本来就该显示）。测试 D3 锁死这条。
  * · 抖音 / 快手 / 小红书 / B站 / YouTube：**没有逐条小按钮**，藏了就没有入口，
  *   所以一个都不碰 —— 没配规则 = 照旧显示，行为与 v2.9.9 完全一致。
  *
@@ -144,13 +152,23 @@
    *   · www.instagram.com —— 有自己的入口显隐（_syncInstagramEntryVisibility），
    *     再管一遍会跟弹层打架。
    */
+  /**
+   * 哪些站要盯地址变化（v2.12.2 起扩到 10 站，v2.12.5 补 Instagram）
+   *
+   * 加站的条件只有一个：**这个站的站内跳转不换文档**，皮肤/显隐会因此停在旧状态。
+   * 两个刻意的例外：
+   *   · 抖音：会抹掉 `?modal_id=`（v2.12.2 实测），盯 href 会误判成「回到主页」，
+   *     它另有一套只盯 pathname 的路由监听（`douyin-spa-handler.js`）；
+   *   · IG 例外已取消（v2.12.5）：它确实需要重算皮肤，而算不出 feed，不会抢显隐。
+   */
   var WATCHED_HOSTS = [
     'weibo.com', 'm.weibo.cn', 'x.com', 's.weibo.com',
     'kuaishou.com',
     'xiaohongshu.com',
     'youtube.com', 'm.youtube.com',
     'tiktok.com',
-    'space.bilibili.com'
+    'space.bilibili.com',
+    'instagram.com'
   ];
 
   function matchAny(list, path) {
