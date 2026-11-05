@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "采媒灵",
   "short_name": "采媒灵",
-  "version": "2.11.8",
+  "version": "2.12.0",
   "description": "从多个媒体网站提取结构化信息，支持书籍、影视、游戏的统一字段映射",
   "minimum_chrome_version": "116",
   "permissions": [
@@ -161,6 +161,7 @@
         "src/shared/platform-utils.js",
         "src/shared/config/media-types.js",
         "src/shared/site-config.js",
+        "src/shared/tag-normalizer.js",
         "src/shared/feature-flags.js",
         "src/content/shared/social-title-processor.js",
         "src/content/shared/url-normalizer.js",

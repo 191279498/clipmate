@@ -1,0 +1,2994 @@
+{
+  "version": "1.0",
+  "date": "2026-11-05",
+  "note": "影视类标签统一转化库，字段口径见 handlings；扩展侧消费 rules + inject + fallback。",
+  "standards": [
+    "剧情",
+    "爱情",
+    "奇幻",
+    "动作",
+    "生活",
+    "喜剧",
+    "情色",
+    "惊悚",
+    "恐怖",
+    "动画",
+    "冒险",
+    "历史",
+    "悬疑",
+    "科幻",
+    "武侠",
+    "古装",
+    "犯罪",
+    "西部",
+    "战争",
+    "纪录",
+    "短片",
+    "灾难",
+    "传记",
+    "音乐",
+    "猎奇",
+    "运动",
+    "同性",
+    "戏曲",
+    "成人",
+    "歌舞",
+    "儿童",
+    "政治",
+    "社会",
+    "黑暗",
+    "生存",
+    "末世",
+    "玄幻",
+    "修仙",
+    "综艺",
+    "短剧",
+    "推理",
+    "校园",
+    "职业",
+    "AI剧"
+  ],
+  "handlings": {
+    "L1": {
+      "name": "并入标签",
+      "desc": "原词映射为标准标签，写入「标签」列；原词同时留在「其他信息」可追溯"
+    },
+    "L2": {
+      "name": "拆双写",
+      "desc": "一个复合原词拆成 2 个标准标签同时写入；原词留在「其他信息」"
+    },
+    "L3": {
+      "name": "固定注入",
+      "desc": "不依赖页面是否出现该词，按站点规则每条都写入"
+    },
+    "L4": {
+      "name": "其他信息",
+      "desc": "只写「其他信息」，不进「标签」（爽点/情绪/设定/形态）"
+    },
+    "L5": {
+      "name": "未命中兜底",
+      "desc": "库里查不到 → 原词进「其他信息」，不进「标签」"
+    }
+  },
+  "decisions": [
+    {
+      "id": "D1",
+      "question": "「短篇」是不是「短片」？",
+      "answer": "「短篇」是「短片」",
+      "rule": "标准词改名：短篇 → 短片。豆瓣/IMDb 的短片、Short、Short-Film 变成字面直通；TMDB 的 TV-Movie（电视电影）是播出形态，改落「其他信息」；Bangumi「短篇」随后按 D15 也并入短片，同行的 OVA/泡面番/剧场版/季番 仍只进其他信息。"
+    },
+    {
+      "id": "D2",
+      "question": "「纪录」要不要收「纪录片」？",
+      "answer": "「纪录」要收「纪录片」",
+      "rule": "标准词保持「纪录」，纪录片 → 纪录，全站通用。"
+    },
+    {
+      "id": "D3",
+      "question": "「家庭 / Family / 都市日常」往哪并？",
+      "answer": "「家庭 / Family / 都市日常」并入「生活」",
+      "rule": "豆瓣、IMDb、TMDB、红果的 Family/家庭系列一律 → 生活；「儿童」只由 Kids/子供向/幼女向 触发。"
+    },
+    {
+      "id": "D4",
+      "question": "「黑色电影 / Film-Noir」要不要并进「黑暗」？",
+      "answer": "「黑色电影 / Film-Noir」要并进「黑暗」",
+      "rule": "豆瓣「黑色电影」、IMDb Film-Noir → 黑暗；Dark-Comedy / Dark-Fantasy 拆双写（喜剧+黑暗 / 奇幻+黑暗）。"
+    },
+    {
+      "id": "D5",
+      "question": "「悬疑」和「推理」要不要双写？",
+      "answer": "「悬疑」和「推理」要双写",
+      "rule": "红果「悬疑推理」→ 悬疑+推理；「刑侦破案」→ 犯罪+推理；Mystery 单写悬疑。"
+    },
+    {
+      "id": "D6",
+      "question": "「同性」收不收「百合 / 轻百合」？",
+      "answer": "「同性」收「百合 / 轻百合」",
+      "rule": "Bangumi 百合/轻百合/轻百 → 同性，与 BL/耽美 同组。"
+    },
+    {
+      "id": "D7",
+      "question": "「综艺」的边界到哪？",
+      "answer": "真人秀/脱口秀/益智/访谈/Reality/Talk/News 都能塞进去，News 也要，Gameshow 也要",
+      "rule": "综艺边界最大化：真人秀、脱口秀、访谈（Talk-Show/Talk）、益智竞赛（Game-Show/Quiz-Show）、才艺赛（Talent-Competition）、生存竞赛、Reality-TV/Reality、News 全部 → 综艺。"
+    },
+    {
+      "id": "D8",
+      "question": "「AI剧」是形态还是题材？",
+      "answer": "「AI剧」是题材",
+      "rule": "AI剧 进「标签」列（不再只留在「其他信息 → 子分类」）；红果判到 AI剧 子分类时，「标签」与「其他信息」都要有，且标签里按题材词处理。"
+    },
+    {
+      "id": "D9",
+      "question": "「短剧 / 真人剧」要不要作为标签？",
+      "answer": "「短剧」包含了「短剧 / 真人剧」，红果整站每部剧都固定带这个标签",
+      "rule": "红果全站固定注入「短剧」，不依赖页面是否出现该词；「真人剧」是它的同义词。漫剧按 D16 另加「AI剧」。"
+    },
+    {
+      "id": "D10",
+      "question": "D 类词（爽点套路、情绪氛围）怎么处理？",
+      "answer": "D 类词直接在「其他信息」里展示，不用并入「标签」",
+      "rule": "爽点套路（战神归来/打脸虐渣/马甲）、情绪氛围（热血/治愈/致郁/催泪）、设定轴（重生/穿越/系统/架空）、形态（OVA/剧场版/TV-Movie/真人剧）一律只在「其他信息」原样展示。"
+    },
+    {
+      "id": "D11",
+      "question": "未命中词兜底规则",
+      "answer": "UGC 标签（尤其 Bangumi、红果）会不断冒新词，查不到就在「其他信息」里展示，不用并入「标签」",
+      "rule": "查不到 → 原词写进「其他信息」，绝不丢弃、绝不静默替换；「标签」只放库内标准词。"
+    },
+    {
+      "id": "D12",
+      "question": "#41 IMDb Superhero 归哪？",
+      "answer": "并入「奇幻」——超级英雄本来就是现代的奇幻异能",
+      "rule": "Superhero → 奇幻，不并「动作」：动作只是表现形式，奇幻是题材本体。"
+    },
+    {
+      "id": "D13",
+      "question": "#54 #125 青春成长题材归哪？",
+      "answer": "Coming-of-Age / Teen-Drama / 青春 → 校园（青春成长多数是校园）",
+      "rule": "IMDb 两个子类型与 Bangumi「青春」统一归「校园」；少数非校园的成长片会被轻微误伤，按你的判断接受。"
+    },
+    {
+      "id": "D14",
+      "question": "#103 Bangumi 擦边福利词归哪？",
+      "answer": "肉番 / 卖肉 / 肉 / 肉片 / 露点 / 杀必死 / 福利 → 成人",
+      "rule": "归「成人」不归「情色」：擦边福利不等于情色片，但确实属成人向。"
+    },
+    {
+      "id": "D15",
+      "question": "#126 Bangumi「短篇」归哪？",
+      "answer": "短篇就是短片 → 短片",
+      "rule": "只把「短篇」并入「短片」；同一行的 OVA / 泡面番 / 剧场版 / 季番 是播出形态，仍只进其他信息。"
+    },
+    {
+      "id": "D16",
+      "question": "#153 红果「漫剧」归哪？",
+      "answer": "漫剧 → AI剧 + 短剧（载体是 AI 做的动画，形态是短剧）",
+      "rule": "不再并「动画」：按你的口径算 AI剧，形态固定带「短剧」。"
+    },
+    {
+      "id": "D17",
+      "question": "「社会」标签怎么办？",
+      "answer": "保留标签，接受它可能一直空着（指反映社会问题、讽刺现实的作品）",
+      "rule": "不删、不硬塞词源。目前 5 站没有任何词指向它，标记为「保留待用」。"
+    }
+  ],
+  "rules": [
+    {
+      "site": "豆瓣电影",
+      "raw": "纪录片",
+      "tags": [
+        "纪录"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "同一类型，「片」是后缀；你库里写「纪录」，站点写「纪录片」",
+      "source": "S6"
+    },
+    {
+      "site": "豆瓣电影",
+      "raw": "短片",
+      "tags": [
+        "短片"
+      ],
+      "handling": "L1",
+      "decision": "D1",
+      "note": "标准词已改为「短片」，本行变为字面直通",
+      "source": "S6"
+    },
+    {
+      "site": "豆瓣电影",
+      "raw": "家庭",
+      "tags": [
+        "生活"
+      ],
+      "handling": "L1",
+      "decision": "D3",
+      "note": "按 D3 拍板：「家庭 / Family / 都市日常」并入「生活」",
+      "source": "S6"
+    },
+    {
+      "site": "豆瓣电影",
+      "raw": "黑色电影",
+      "tags": [
+        "黑暗"
+      ],
+      "handling": "L1",
+      "decision": "D4",
+      "note": "按 D4 拍板：「黑色电影 / Film-Noir」要并进「黑暗」",
+      "source": "S7"
+    },
+    {
+      "site": "豆瓣电影",
+      "raw": "真人秀",
+      "tags": [
+        "综艺"
+      ],
+      "handling": "L1",
+      "decision": "D7",
+      "note": "按 D7 拍板：真人秀/脱口秀/益智/访谈/Reality/Talk/News 都能塞进去，News 也要，Gameshow 也要",
+      "source": "S8"
+    },
+    {
+      "site": "豆瓣电影",
+      "raw": "脱口秀",
+      "tags": [
+        "综艺"
+      ],
+      "handling": "L1",
+      "decision": "D7",
+      "note": "按 D7 拍板：真人秀/脱口秀/益智/访谈/Reality/Talk/News 都能塞进去，News 也要，Gameshow 也要",
+      "source": "S8"
+    },
+    {
+      "site": "豆瓣电影",
+      "raw": "日本动画",
+      "tags": [
+        "动画"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "带地域限定的动画，可并入「动画」但会丢失「日本」信息",
+      "source": "S8"
+    },
+    {
+      "site": "豆瓣电影",
+      "raw": "戏曲片",
+      "tags": [
+        "戏曲"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "戏曲片/舞台艺术片即戏曲类",
+      "source": "S7"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Action",
+      "tags": [
+        "动作"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义：大量动作/特技场面",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Adult",
+      "tags": [
+        "成人"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义专指硬核成人内容，比「情色」更重，归「成人」更准",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Adventure",
+      "tags": [
+        "冒险"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义：探险/追寻目标的连续冒险经历",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Animation",
+      "tags": [
+        "动画"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义：超过 75% 时长为动画",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Biography",
+      "tags": [
+        "传记"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义：以真人一生为主线",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Comedy",
+      "tags": [
+        "喜剧"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义：几乎全片喜剧情境",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Crime",
+      "tags": [
+        "犯罪"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义：以犯罪行为为主线",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Documentary",
+      "tags": [
+        "纪录"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义：真实人物/事件的非虚构影像",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Drama",
+      "tags": [
+        "剧情"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义：严肃叙事、冲突与情感",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Family",
+      "tags": [
+        "生活"
+      ],
+      "handling": "L1",
+      "decision": "D3",
+      "note": "按 D3 拍板：「家庭 / Family / 都市日常」并入「生活」",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Fantasy",
+      "tags": [
+        "奇幻"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义：魔法/神话/超自然叙事",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Film-Noir",
+      "tags": [
+        "黑暗"
+      ],
+      "handling": "L1",
+      "decision": "D4",
+      "note": "按 D4 拍板：「黑色电影 / Film-Noir」要并进「黑暗」",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Game-Show",
+      "tags": [
+        "综艺"
+      ],
+      "handling": "L1",
+      "decision": "D7",
+      "note": "益智竞赛 = Game Show",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "History",
+      "tags": [
+        "历史"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义：真实历史事件与人物",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Horror",
+      "tags": [
+        "恐怖"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义：令人恐惧/厌恶的叙事",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Musical",
+      "tags": [
+        "歌舞"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义：角色以歌舞推进叙事",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Music",
+      "tags": [
+        "音乐"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义：音乐相关内容但非歌舞片",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Mystery",
+      "tags": [
+        "悬疑"
+      ],
+      "handling": "L1",
+      "decision": "D5",
+      "note": "Mystery 官方定义偏「解谜」，落悬疑；只有红果「悬疑推理」这类一词两义才双写",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "News",
+      "tags": [
+        "综艺"
+      ],
+      "handling": "L1",
+      "decision": "D7",
+      "note": "新闻时事节目，按拍板归综艺（不再归社会）",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Reality-TV",
+      "tags": [
+        "综艺"
+      ],
+      "handling": "L1",
+      "decision": "D7",
+      "note": "按 D7 拍板：真人秀/脱口秀/益智/访谈/Reality/Talk/News 都能塞进去，News 也要，Gameshow 也要",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Romance",
+      "tags": [
+        "爱情"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义：以情感依恋为主线",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Sci-Fi",
+      "tags": [
+        "科幻"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义：基于推测性科学/太空/环境变化",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Short",
+      "tags": [
+        "短片"
+      ],
+      "handling": "L1",
+      "decision": "D1",
+      "note": "官方定义：片长 <45 分钟（剧集 <22 分钟）",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Sport",
+      "tags": [
+        "运动"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义：以体育项目/赛事为核心",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Talk-Show",
+      "tags": [
+        "综艺"
+      ],
+      "handling": "L1",
+      "decision": "D7",
+      "note": "按 D7 拍板：真人秀/脱口秀/益智/访谈/Reality/Talk/News 都能塞进去，News 也要，Gameshow 也要",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Thriller",
+      "tags": [
+        "惊悚"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义：紧张/悬念叙事",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "War",
+      "tags": [
+        "战争"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义：真实战争相关",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Western",
+      "tags": [
+        "西部"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方定义：美国西部拓荒题材",
+      "source": "S1"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Wuxia",
+      "tags": [
+        "武侠"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "IMDb 官方子类型就叫 Wuxia",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Martial-Arts / Kung-Fu",
+      "tags": [
+        "武侠"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "功夫/武术片常与武侠混用，但严格说不等于武侠",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Samurai",
+      "tags": [],
+      "handling": "L4",
+      "decision": "D10",
+      "note": "武士片，并入武侠会抹掉国别",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Disaster",
+      "tags": [
+        "灾难"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "灾难片",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Superhero",
+      "tags": [
+        "奇幻"
+      ],
+      "handling": "L1",
+      "decision": "D12",
+      "note": "超级英雄是现代奇幻异能，按追加拍板并入奇幻（不并动作）",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Erotic-Thriller",
+      "tags": [
+        "情色"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "情色惊悚，归「情色」",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Steamy-Romance",
+      "tags": [],
+      "handling": "L4",
+      "decision": "D10",
+      "note": "「热辣爱情」偏尺度，不等于情色片",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Dark-Comedy / Dark-Fantasy",
+      "tags": [
+        "喜剧",
+        "黑暗"
+      ],
+      "handling": "L2",
+      "decision": "D4+D5",
+      "note": "复合词拆双写",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Dystopian-Sci-Fi",
+      "tags": [
+        "末世"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "反乌托邦科幻与末世高度重合；也可只归「科幻」",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Post-Apocalyptic",
+      "tags": [
+        "末世"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "后末日题材",
+      "source": "S3"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Survival-Thriller",
+      "tags": [
+        "生存"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "生存惊悚",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Survival-Competition",
+      "tags": [
+        "综艺"
+      ],
+      "handling": "L1",
+      "decision": "D7",
+      "note": "生存竞赛是节目形态，归综艺不归生存",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Zombie-Horror / Slasher-Horror / Folk-Horror",
+      "tags": [
+        "恐怖"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "恐怖片子类",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Body-Horror",
+      "tags": [
+        "猎奇"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "肉体恐怖也可归「猎奇」，但官方归在 Horror 下",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Political-Drama / Political-Documentary",
+      "tags": [
+        "政治"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "政治剧情片/政治纪录片",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Workplace-Drama / Medical-Drama / Legal-Drama",
+      "tags": [
+        "职业"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "行业剧（职场/医疗/律政）",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Costume-Drama / Period-Drama",
+      "tags": [
+        "古装"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "时代剧/古装剧",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Coming-of-Age / Teen-Drama",
+      "tags": [
+        "校园"
+      ],
+      "handling": "L1",
+      "decision": "D13",
+      "note": "青春成长多数是校园（追加拍板）",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Biopic",
+      "tags": [
+        "传记"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "传记片",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Short-Film",
+      "tags": [
+        "短片"
+      ],
+      "handling": "L1",
+      "decision": "D1",
+      "note": "短片",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Adult-Animation",
+      "tags": [
+        "成人",
+        "动画"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "成人动画，两个维度都命中",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Anime / Mecha",
+      "tags": [],
+      "handling": "L1",
+      "decision": "",
+      "note": "Anime 归动画；机甲（Mecha）归科幻",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Isekai",
+      "tags": [
+        "奇幻"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "异世界转生",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Slice-of-Life",
+      "tags": [
+        "生活"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "日常/生活片段",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "True-Crime",
+      "tags": [
+        "犯罪"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "真实犯罪",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Mockumentary",
+      "tags": [],
+      "handling": "L4",
+      "decision": "D10",
+      "note": "伪纪录片 ≠ 纪录片",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Docudrama",
+      "tags": [
+        "纪录",
+        "剧情"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "文献剧情片",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Sitcom / Stand-Up-Comedy / Satire / Parody",
+      "tags": [
+        "喜剧"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "情景喜剧/单口/讽刺/恶搞",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Romantic-Comedy",
+      "tags": [
+        "爱情",
+        "喜剧"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "爱情喜剧，两个维度",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Psychological-Thriller / Spy / Conspiracy-Thriller",
+      "tags": [
+        "惊悚"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "心理/间谍/阴谋惊悚",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Quiz-Show / Talent-Competition / Reality-TV / Talk-Show",
+      "tags": [
+        "综艺"
+      ],
+      "handling": "L1",
+      "decision": "D7",
+      "note": "按 D7 拍板：真人秀/脱口秀/益智/访谈/Reality/Talk/News 都能塞进去，News 也要，Gameshow 也要",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Sword-and-Sorcery / Fairy-Tale / Fantasy-Epic",
+      "tags": [
+        "奇幻"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "剑与魔法/童话/奇幻史诗",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Artificial-Intelligence / Cyberpunk / Time-Travel",
+      "tags": [
+        "科幻"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "人工智能/赛博朋克/时空旅行；注意 AI 题材 ≠ 你的「AI剧」形态标签",
+      "source": "S2"
+    },
+    {
+      "site": "IMDb",
+      "raw": "Korean-Drama / Soap-Opera / Telenovela",
+      "tags": [],
+      "handling": "L4",
+      "decision": "",
+      "note": "剧种或地区形态，不是题材",
+      "source": "S2"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Action",
+      "tags": [
+        "动作"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "电影官方 genre #28",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Adventure",
+      "tags": [
+        "冒险"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "#12",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Animation",
+      "tags": [
+        "动画"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "#16",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Comedy",
+      "tags": [
+        "喜剧"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "#35",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Crime",
+      "tags": [
+        "犯罪"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "#80",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Documentary",
+      "tags": [
+        "纪录"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "#99",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Drama",
+      "tags": [
+        "剧情"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "#18",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Family",
+      "tags": [
+        "生活"
+      ],
+      "handling": "L1",
+      "decision": "D3",
+      "note": "按 D3 拍板：「家庭 / Family / 都市日常」并入「生活」",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Fantasy",
+      "tags": [
+        "奇幻"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "#14",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "History",
+      "tags": [
+        "历史"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "#36",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Horror",
+      "tags": [
+        "恐怖"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "#27",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Music",
+      "tags": [
+        "音乐"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "#10402",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Mystery",
+      "tags": [
+        "悬疑"
+      ],
+      "handling": "L1",
+      "decision": "D5",
+      "note": "同上，单写悬疑",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Romance",
+      "tags": [
+        "爱情"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "#10749",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Science-Fiction",
+      "tags": [
+        "科幻"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "#878",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "TV-Movie",
+      "tags": [],
+      "handling": "L4",
+      "decision": "D1+D10",
+      "note": "电视电影是播出形态，不是短片",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Thriller",
+      "tags": [
+        "惊悚"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "#53",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "War",
+      "tags": [
+        "战争"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "#10752",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Western",
+      "tags": [
+        "西部"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "#37",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Action & Adventure",
+      "tags": [
+        "动作",
+        "冒险"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方复合词，必须拆成两个标准标签（genre id #10759）",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Kids",
+      "tags": [
+        "儿童"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "#10762",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "News",
+      "tags": [
+        "综艺"
+      ],
+      "handling": "L1",
+      "decision": "D7",
+      "note": "按 D7 拍板：真人秀/脱口秀/益智/访谈/Reality/Talk/News 都能塞进去，News 也要，Gameshow 也要",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Reality",
+      "tags": [
+        "综艺"
+      ],
+      "handling": "L1",
+      "decision": "D7",
+      "note": "按 D7 拍板：真人秀/脱口秀/益智/访谈/Reality/Talk/News 都能塞进去，News 也要，Gameshow 也要",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Sci-Fi & Fantasy",
+      "tags": [
+        "科幻",
+        "奇幻"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方复合词，拆两个（genre id #10765）",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Soap",
+      "tags": [],
+      "handling": "L4",
+      "decision": "D10",
+      "note": "肥皂剧是剧种，不是题材",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Talk",
+      "tags": [
+        "综艺"
+      ],
+      "handling": "L1",
+      "decision": "D7",
+      "note": "按 D7 拍板：真人秀/脱口秀/益智/访谈/Reality/Talk/News 都能塞进去，News 也要，Gameshow 也要",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "War & Politics",
+      "tags": [
+        "战争",
+        "政治"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "官方复合词，拆两个（genre id #10768）",
+      "source": "S4"
+    },
+    {
+      "site": "TMDB",
+      "raw": "Animation / Comedy / Crime / Documentary / Drama / Family / Mystery / Western",
+      "tags": [
+        "动画",
+        "喜剧",
+        "犯罪",
+        "纪录",
+        "剧情",
+        "生活",
+        "悬疑",
+        "西部"
+      ],
+      "handling": "L1",
+      "decision": "D3",
+      "note": "剧集与电影共用的 8 个 genre，逐个直通（Family 按 D3 归生活）",
+      "source": "S4"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "搞笑 / 喜剧 / 欢乐 / 吐槽 / 玩梗 / 恶搞 / 无厘头 / 爆笑 / 讽刺 / 沙雕",
+      "tags": [
+        "喜剧"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "站内同义词合并规则已把这一组统一为「搞笑」；你的标准词是「喜剧」",
+      "source": "S12"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "恋爱 / 纯爱 / 狗粮 / 党争 / 甜 / 胃疼 / 恋爱喜剧",
+      "tags": [
+        "爱情"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "站内合并规则：爱情 = 爱情 + 恋爱 + 恋爱喜剧 + 纯爱 + 甜 + 狗粮 + 胃疼 + 党争",
+      "source": "S12"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "耽美 / 耽美系 / 男同 / BL / BL动画 / 腐 / 腐向 / 搅基 / 基 / 基情",
+      "tags": [
+        "同性"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "站内合并规则，BL/耽美即同性题材",
+      "source": "S12"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "百合 / 轻百合 / 轻百",
+      "tags": [
+        "同性"
+      ],
+      "handling": "L1",
+      "decision": "D6",
+      "note": "按 D6 拍板：「同性」收「百合 / 轻百合」",
+      "source": "S12"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "肉番 / 卖肉 / 肉 / 肉片 / 露点 / 杀必死 / 福利",
+      "tags": [
+        "成人"
+      ],
+      "handling": "L1",
+      "decision": "D14",
+      "note": "擦边福利归「成人」不归「情色」（追加拍板）",
+      "source": "S12"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "战斗 / 打斗 / 打鬥 / 格斗 / 动作 / 枪战",
+      "tags": [
+        "动作"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "站内合并规则：战斗 = 战斗 + 打斗 + 格斗 + 动作 + 枪战",
+      "source": "S12"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "超能力 / 超自然系 / 异能",
+      "tags": [
+        "奇幻"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "站内归「超能力」，更接近奇幻设定",
+      "source": "S12"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "幻想 / 魔幻 / 魔法 / 奇幻",
+      "tags": [
+        "奇幻"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "站内合并规则：奇幻 = 奇幻 + 幻想 + 魔幻 + 魔法",
+      "source": "S12"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "异世界 / 转生 / 穿越 / 平行世界",
+      "tags": [
+        "奇幻"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "站内合并规则归「异世界」，是设定不是题材，并入奇幻需点头",
+      "source": "S12"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "宇宙 / 太空 / 太空歌剧 / 赛博朋克",
+      "tags": [
+        "科幻"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "站内合并规则：科幻 = 科幻 + 宇宙 + 太空 + 太空歌剧 + 赛博朋克",
+      "source": "S12"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "机战 / 机甲 / 萝卜 / GUNDAM / 高达",
+      "tags": [
+        "科幻"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "站内合并规则归「机战」，通常属科幻",
+      "source": "S12"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "战争 / 反战",
+      "tags": [
+        "战争"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "站内合并规则",
+      "source": "S12"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "推理系",
+      "tags": [
+        "推理"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "站内合并规则：推理 = 推理 + 推理系",
+      "source": "S12"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "猎奇 / 血腥 / 重口味 / 重口",
+      "tags": [
+        "猎奇"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "站内合并规则",
+      "source": "S12"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "致郁",
+      "tags": [],
+      "handling": "L4",
+      "decision": "D10",
+      "note": "纯情绪词，按 D10 只进其他信息",
+      "source": "S11"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "废土",
+      "tags": [
+        "末世"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "三分类「世界背景」：处于毁灭边缘的世界背景",
+      "source": "S11"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "架空世界",
+      "tags": [
+        "奇幻"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "三分类「世界背景」：完全虚构世界",
+      "source": "S11"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "种田",
+      "tags": [
+        "生活"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "三分类「作品主题」：隐居田野/经营发展，偏生活流",
+      "source": "S11"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "日常 / 日常系 / 治愈 / 治愈系 / 温情 / 温馨 / 感动",
+      "tags": [
+        "生活"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "站内「日常」是独立大类，你库里最接近「生活」；「治愈」是日常子类",
+      "source": "S11"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "职场 / 社会见闻",
+      "tags": [
+        "职业"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "三分类「作品主题」：职场交际、社会见闻",
+      "source": "S11"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "竞技 / 卡牌",
+      "tags": [],
+      "handling": "L4",
+      "decision": "D10",
+      "note": "棋牌/综艺竞技 ≠ 体育运动",
+      "source": "S11"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "体育 / 体育番 / 棒球 / 运动番",
+      "tags": [
+        "运动"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "站内合并规则：运动 = 运动 + 体育 + 体育番 + 棒球 + 运动番",
+      "source": "S12"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "歌番 / 乐队",
+      "tags": [
+        "音乐"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "站内合并规则：音乐 = 音乐 + 歌番 + 乐队",
+      "source": "S12"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "偶像",
+      "tags": [],
+      "handling": "L4",
+      "decision": "D10",
+      "note": "偶像题材是独立主题，不并入音乐",
+      "source": "S12"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "魔法少女 / 变身",
+      "tags": [
+        "奇幻"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "三分类「内容」里的主题标签",
+      "source": "S10"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "子供向 / 子供 / 幼女向",
+      "tags": [
+        "儿童"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "站内合并规则，即低龄向",
+      "source": "S12"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "青春",
+      "tags": [
+        "校园"
+      ],
+      "handling": "L1",
+      "decision": "D13",
+      "note": "青春成长多数是校园（追加拍板）",
+      "source": "S11"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "短篇 / OVA / 泡面番 / 剧场版 / 季番",
+      "tags": [
+        "短片"
+      ],
+      "handling": "L1",
+      "decision": "D15",
+      "note": "「短篇」＝短片（追加拍板）；同行 OVA/泡面番/剧场版/季番 是播出形态，仍只进其他信息",
+      "source": "S10"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "原创 / 漫改 / 轻改 / GAL改 / 游戏改",
+      "tags": [],
+      "handling": "L4",
+      "decision": "",
+      "note": "作品来源分类，不是题材",
+      "source": "S10"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "热血 / 燃 / 励志 / 成长 / 催泪 / 复仇 / 文艺 / 中二 / 电波 / 扭曲 / 萌系 / 后宫 / 女性向 / 龙傲天",
+      "tags": [],
+      "handling": "L4",
+      "decision": "",
+      "note": "情绪氛围或受众标签，44 库里没有对应项，硬并会严重失真",
+      "source": "S11"
+    },
+    {
+      "site": "Bangumi",
+      "raw": "现世 / 架空 / 未来 / 近代 / 古代 / 都市 / 校园 / 废土",
+      "tags": [],
+      "handling": "L4",
+      "decision": "",
+      "note": "「世界背景」轴与题材轴不同，不建议压进 44 库",
+      "source": "S11"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "都市爱情 / 古风爱情 / 奇幻爱情 / 仙侠爱情 / 年代爱情 / 现言甜宠 / 都市情感 / 古风言情 / 古装爱情",
+      "tags": [
+        "爱情"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "「爱情」的复合题材词，页面 tags 里是细分题材",
+      "source": "S14"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "甜宠 / 先婚后爱 / 日久生情 / 暗恋成真 / 破镜重圆 / 闪婚 / 追妻 / 虐恋 / 契约婚姻",
+      "tags": [
+        "爱情"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "言情套路词，通常随爱情题材出现；并入会丢掉套路信息",
+      "source": "S15"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "轻喜剧",
+      "tags": [
+        "喜剧"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "喜剧子类",
+      "source": "S14"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "悬疑推理 / 悬疑情感 / 悬疑灵异 / 刑侦破案 / 反转",
+      "tags": [
+        "悬疑",
+        "推理"
+      ],
+      "handling": "L2",
+      "decision": "D5",
+      "note": "悬疑推理 → 悬疑+推理；刑侦破案 → 犯罪+推理；其余只取悬疑",
+      "source": "S14"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "玄幻仙侠 / 修真 / 仙尊 / 系统修仙 / 修仙",
+      "tags": [
+        "玄幻",
+        "修仙"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "修仙/修真是「修仙」，玄幻仙侠是「玄幻」",
+      "source": "S16"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "奇幻脑洞 / 奇幻异能 / 脑洞 / 系统 / 异能 / 玄学",
+      "tags": [
+        "奇幻"
+      ],
+      "handling": "L2",
+      "decision": "D10",
+      "note": "只有「奇幻」部分并入标签；脑洞/系统/异能/玄学 原词留在其他信息",
+      "source": "S14"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "古风权谋 / 宫斗宅斗 / 朝堂权谋 / 历史古代 / 古言甜宠",
+      "tags": [
+        "古装"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "古装/古代背景题材",
+      "source": "S15"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "战神归来 / 强者回归 / 隐藏大佬 / 马甲 / 扮猪吃虎 / 打脸虐渣 / 逆袭翻身 / 重生逆袭 / 虐渣",
+      "tags": [],
+      "handling": "L4",
+      "decision": "",
+      "note": "爽点套路，44 库无对应；这是红果最核心的一批词，硬并会让标签失去意义",
+      "source": "S15"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "重生 / 穿越 / 穿书 / 异界 / 架空 / 古代",
+      "tags": [],
+      "handling": "L4",
+      "decision": "D10",
+      "note": "情节设定与时空背景，按 D10 只进其他信息（不并奇幻）",
+      "source": "S14"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "求生 / 末世 / 丧尸 / 囤货 / 无限流 / 规则怪谈",
+      "tags": [
+        "生存",
+        "末世"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "求生→生存，末世/丧尸→末世；规则怪谈偏悬疑",
+      "source": "S16"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "动作打斗",
+      "tags": [
+        "动作"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "动作题材",
+      "source": "S15"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "家庭 / 家庭伦理 / 家族 / 家族振兴 / 婚姻生活 / 婆媳",
+      "tags": [
+        "生活"
+      ],
+      "handling": "L1",
+      "decision": "D3",
+      "note": "按 D3 拍板：「家庭 / Family / 都市日常」并入「生活」",
+      "source": "S14"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "都市 / 都市日常 / 都市脑洞 / 都市玄幻",
+      "tags": [
+        "生活",
+        "奇幻",
+        "玄幻"
+      ],
+      "handling": "L2",
+      "decision": "D3",
+      "note": "都市/都市日常 → 生活；都市脑洞 → 生活+奇幻；都市玄幻 → 生活+玄幻（逐词见 lookup）",
+      "source": "S14"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "年代 / 乡村 / 种田",
+      "tags": [
+        "生活"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "年代/乡村/种田流偏生活流",
+      "source": "S16"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "成长 / 女性成长 / 大女主 / 女强 / 职场励志",
+      "tags": [],
+      "handling": "L4",
+      "decision": "D10",
+      "note": "人物线/爽点，不是题材",
+      "source": "S15"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "校园 / 青春 / 学渣逆袭",
+      "tags": [
+        "校园"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "校园题材",
+      "source": "S16"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "职场",
+      "tags": [
+        "职业"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "职场题材",
+      "source": "S14"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "法律正义 / 刑侦破案",
+      "tags": [
+        "犯罪"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "律政/刑侦题材",
+      "source": "S15"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "民国 / 谍战 / 家国情怀",
+      "tags": [
+        "历史"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "民国/谍战属近现代历史背景",
+      "source": "S16"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "AI / 平行世界 / 外星 / 末世",
+      "tags": [
+        "科幻"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "科幻/末世题材；注意 AI 题材 ≠ 形态标签「AI剧」",
+      "source": "S16"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "萌宝 / 福宝",
+      "tags": [],
+      "handling": "L4",
+      "decision": "D10",
+      "note": "角色设定，不等于儿童向",
+      "source": "S16"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "脑洞 / 诡秘 / 灵异",
+      "tags": [],
+      "handling": "L4",
+      "decision": "D10",
+      "note": "设定/氛围词",
+      "source": "S15"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "AI剧",
+      "tags": [
+        "AI剧"
+      ],
+      "handling": "L1",
+      "decision": "D8",
+      "note": "题材词进「标签」；「其他信息 → 子分类」同时保留",
+      "source": "S17"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "漫剧",
+      "tags": [
+        "AI剧",
+        "短剧"
+      ],
+      "handling": "L2",
+      "decision": "D16",
+      "note": "动态漫画短剧：载体是 AI 生成的动画 → AI剧，形态是短剧",
+      "source": "S17"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "真人剧 / 短剧",
+      "tags": [
+        "短剧"
+      ],
+      "handling": "L3",
+      "decision": "D9",
+      "note": "真人剧是短剧的同义词；此外全站每条都固定注入",
+      "source": "S17"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "脑洞,穿越,古代,乡村（实测样本1）",
+      "tags": [],
+      "handling": "L4",
+      "decision": "",
+      "note": "本地 golden 实测：hongguo-7671966197985856536 的标签列原样就是这 4 个词",
+      "source": "S17"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "脑洞,重生,求生,升级流,异界（实测样本2）",
+      "tags": [
+        "生存"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "含「求生」；其余 4 词无对应，需保留原词",
+      "source": "S17"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "玄幻,异界（实测样本3）",
+      "tags": [
+        "玄幻"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "含「玄幻」字面一致；「异界」需保留",
+      "source": "S17"
+    },
+    {
+      "site": "红果短剧",
+      "raw": "家族,家族振兴,穿越,扮猪吃虎,女强,总裁,世家,现代（实测样本4）",
+      "tags": [
+        "生活"
+      ],
+      "handling": "L1",
+      "decision": "",
+      "note": "「家族/家族振兴」可归生活；其余 6 词是设定/爽点，需保留",
+      "source": "S17"
+    }
+  ],
+  "lookup": {
+    "豆瓣电影": {
+      "纪录片": [
+        "纪录"
+      ],
+      "短片": [
+        "短片"
+      ],
+      "家庭": [
+        "生活"
+      ],
+      "黑色电影": [
+        "黑暗"
+      ],
+      "真人秀": [
+        "综艺"
+      ],
+      "脱口秀": [
+        "综艺"
+      ],
+      "日本动画": [
+        "动画"
+      ],
+      "戏曲片": [
+        "戏曲"
+      ],
+      "剧情": [
+        "剧情"
+      ],
+      "喜剧": [
+        "喜剧"
+      ],
+      "动作": [
+        "动作"
+      ],
+      "爱情": [
+        "爱情"
+      ],
+      "科幻": [
+        "科幻"
+      ],
+      "动画": [
+        "动画"
+      ],
+      "悬疑": [
+        "悬疑"
+      ],
+      "惊悚": [
+        "惊悚"
+      ],
+      "恐怖": [
+        "恐怖"
+      ],
+      "情色": [
+        "情色"
+      ],
+      "音乐": [
+        "音乐"
+      ],
+      "歌舞": [
+        "歌舞"
+      ],
+      "儿童": [
+        "儿童"
+      ],
+      "传记": [
+        "传记"
+      ],
+      "历史": [
+        "历史"
+      ],
+      "战争": [
+        "战争"
+      ],
+      "犯罪": [
+        "犯罪"
+      ],
+      "西部": [
+        "西部"
+      ],
+      "奇幻": [
+        "奇幻"
+      ],
+      "冒险": [
+        "冒险"
+      ],
+      "灾难": [
+        "灾难"
+      ],
+      "武侠": [
+        "武侠"
+      ],
+      "古装": [
+        "古装"
+      ],
+      "运动": [
+        "运动"
+      ],
+      "综艺": [
+        "综艺"
+      ],
+      "同性": [
+        "同性"
+      ]
+    },
+    "IMDb": {
+      "Action": [
+        "动作"
+      ],
+      "Adult": [
+        "成人"
+      ],
+      "Adventure": [
+        "冒险"
+      ],
+      "Animation": [
+        "动画"
+      ],
+      "Biography": [
+        "传记"
+      ],
+      "Comedy": [
+        "喜剧"
+      ],
+      "Crime": [
+        "犯罪"
+      ],
+      "Documentary": [
+        "纪录"
+      ],
+      "Drama": [
+        "剧情"
+      ],
+      "Family": [
+        "生活"
+      ],
+      "Fantasy": [
+        "奇幻"
+      ],
+      "Film-Noir": [
+        "黑暗"
+      ],
+      "Game-Show": [
+        "综艺"
+      ],
+      "History": [
+        "历史"
+      ],
+      "Horror": [
+        "恐怖"
+      ],
+      "Musical": [
+        "歌舞"
+      ],
+      "Music": [
+        "音乐"
+      ],
+      "Mystery": [
+        "悬疑"
+      ],
+      "News": [
+        "综艺"
+      ],
+      "Reality-TV": [
+        "综艺"
+      ],
+      "Romance": [
+        "爱情"
+      ],
+      "Sci-Fi": [
+        "科幻"
+      ],
+      "Short": [
+        "短片"
+      ],
+      "Sport": [
+        "运动"
+      ],
+      "Talk-Show": [
+        "综艺"
+      ],
+      "Thriller": [
+        "惊悚"
+      ],
+      "War": [
+        "战争"
+      ],
+      "Western": [
+        "西部"
+      ],
+      "Wuxia": [
+        "武侠"
+      ],
+      "Martial-Arts": [
+        "武侠"
+      ],
+      "Kung-Fu": [
+        "武侠"
+      ],
+      "Samurai": [],
+      "Disaster": [
+        "灾难"
+      ],
+      "Superhero": [
+        "奇幻"
+      ],
+      "Erotic-Thriller": [
+        "情色"
+      ],
+      "Steamy-Romance": [],
+      "Dark-Comedy": [
+        "喜剧",
+        "黑暗"
+      ],
+      "Dark-Fantasy": [
+        "奇幻",
+        "黑暗"
+      ],
+      "Dystopian-Sci-Fi": [
+        "末世"
+      ],
+      "Post-Apocalyptic": [
+        "末世"
+      ],
+      "Survival-Thriller": [
+        "生存"
+      ],
+      "Survival-Competition": [
+        "综艺"
+      ],
+      "Zombie-Horror": [
+        "恐怖"
+      ],
+      "Slasher-Horror": [
+        "恐怖"
+      ],
+      "Folk-Horror": [
+        "恐怖"
+      ],
+      "Body-Horror": [
+        "猎奇"
+      ],
+      "Political-Drama": [
+        "政治"
+      ],
+      "Political-Documentary": [
+        "政治"
+      ],
+      "Workplace-Drama": [
+        "职业"
+      ],
+      "Medical-Drama": [
+        "职业"
+      ],
+      "Legal-Drama": [
+        "职业"
+      ],
+      "Costume-Drama": [
+        "古装"
+      ],
+      "Period-Drama": [
+        "古装"
+      ],
+      "Coming-of-Age": [
+        "校园"
+      ],
+      "Teen-Drama": [
+        "校园"
+      ],
+      "Biopic": [
+        "传记"
+      ],
+      "Short-Film": [
+        "短片"
+      ],
+      "Adult-Animation": [
+        "成人",
+        "动画"
+      ],
+      "Anime": [],
+      "Mecha": [],
+      "Isekai": [
+        "奇幻"
+      ],
+      "Slice-of-Life": [
+        "生活"
+      ],
+      "True-Crime": [
+        "犯罪"
+      ],
+      "Mockumentary": [],
+      "Docudrama": [
+        "纪录",
+        "剧情"
+      ],
+      "Sitcom": [
+        "喜剧"
+      ],
+      "Stand-Up-Comedy": [
+        "喜剧"
+      ],
+      "Satire": [
+        "喜剧"
+      ],
+      "Parody": [
+        "喜剧"
+      ],
+      "Romantic-Comedy": [
+        "爱情",
+        "喜剧"
+      ],
+      "Psychological-Thriller": [
+        "惊悚"
+      ],
+      "Spy": [
+        "惊悚"
+      ],
+      "Conspiracy-Thriller": [
+        "惊悚"
+      ],
+      "Quiz-Show": [
+        "综艺"
+      ],
+      "Talent-Competition": [
+        "综艺"
+      ],
+      "Sword-and-Sorcery": [
+        "奇幻"
+      ],
+      "Fairy-Tale": [
+        "奇幻"
+      ],
+      "Fantasy-Epic": [
+        "奇幻"
+      ],
+      "Artificial-Intelligence": [
+        "科幻"
+      ],
+      "Cyberpunk": [
+        "科幻"
+      ],
+      "Time-Travel": [
+        "科幻"
+      ],
+      "Korean-Drama": [],
+      "Soap-Opera": [],
+      "Telenovela": []
+    },
+    "TMDB": {
+      "Action": [
+        "动作"
+      ],
+      "Adventure": [
+        "冒险"
+      ],
+      "Animation": [
+        "动画"
+      ],
+      "Comedy": [
+        "喜剧"
+      ],
+      "Crime": [
+        "犯罪"
+      ],
+      "Documentary": [
+        "纪录"
+      ],
+      "Drama": [
+        "剧情"
+      ],
+      "Family": [
+        "生活"
+      ],
+      "Fantasy": [
+        "奇幻"
+      ],
+      "History": [
+        "历史"
+      ],
+      "Horror": [
+        "恐怖"
+      ],
+      "Music": [
+        "音乐"
+      ],
+      "Mystery": [
+        "悬疑"
+      ],
+      "Romance": [
+        "爱情"
+      ],
+      "Science-Fiction": [
+        "科幻"
+      ],
+      "TV-Movie": [],
+      "Thriller": [
+        "惊悚"
+      ],
+      "War": [
+        "战争"
+      ],
+      "Western": [
+        "西部"
+      ],
+      "Action & Adventure": [
+        "动作",
+        "冒险"
+      ],
+      "Kids": [
+        "儿童"
+      ],
+      "News": [
+        "综艺"
+      ],
+      "Reality": [
+        "综艺"
+      ],
+      "Sci-Fi & Fantasy": [
+        "科幻",
+        "奇幻"
+      ],
+      "Soap": [],
+      "Talk": [
+        "综艺"
+      ],
+      "War & Politics": [
+        "战争",
+        "政治"
+      ],
+      "剧情": [
+        "剧情"
+      ],
+      "犯罪": [
+        "犯罪"
+      ]
+    },
+    "Bangumi": {
+      "搞笑": [
+        "喜剧"
+      ],
+      "喜剧": [
+        "喜剧"
+      ],
+      "欢乐": [
+        "喜剧"
+      ],
+      "吐槽": [
+        "喜剧"
+      ],
+      "玩梗": [
+        "喜剧"
+      ],
+      "恶搞": [
+        "喜剧"
+      ],
+      "无厘头": [
+        "喜剧"
+      ],
+      "爆笑": [
+        "喜剧"
+      ],
+      "讽刺": [
+        "喜剧"
+      ],
+      "沙雕": [
+        "喜剧"
+      ],
+      "恋爱": [
+        "爱情"
+      ],
+      "纯爱": [
+        "爱情"
+      ],
+      "狗粮": [
+        "爱情"
+      ],
+      "党争": [
+        "爱情"
+      ],
+      "甜": [
+        "爱情"
+      ],
+      "胃疼": [
+        "爱情"
+      ],
+      "恋爱喜剧": [
+        "爱情"
+      ],
+      "耽美": [
+        "同性"
+      ],
+      "耽美系": [
+        "同性"
+      ],
+      "男同": [
+        "同性"
+      ],
+      "BL": [
+        "同性"
+      ],
+      "BL动画": [
+        "同性"
+      ],
+      "腐": [
+        "同性"
+      ],
+      "腐向": [
+        "同性"
+      ],
+      "搅基": [
+        "同性"
+      ],
+      "基": [
+        "同性"
+      ],
+      "基情": [
+        "同性"
+      ],
+      "百合": [
+        "同性"
+      ],
+      "轻百合": [
+        "同性"
+      ],
+      "轻百": [
+        "同性"
+      ],
+      "肉番": [
+        "成人"
+      ],
+      "卖肉": [
+        "成人"
+      ],
+      "肉": [
+        "成人"
+      ],
+      "肉片": [
+        "成人"
+      ],
+      "露点": [
+        "成人"
+      ],
+      "杀必死": [
+        "成人"
+      ],
+      "福利": [
+        "成人"
+      ],
+      "战斗": [
+        "动作"
+      ],
+      "打斗": [
+        "动作"
+      ],
+      "打鬥": [
+        "动作"
+      ],
+      "格斗": [
+        "动作"
+      ],
+      "动作": [
+        "动作"
+      ],
+      "枪战": [
+        "动作"
+      ],
+      "超能力": [
+        "奇幻"
+      ],
+      "超自然系": [
+        "奇幻"
+      ],
+      "异能": [
+        "奇幻"
+      ],
+      "幻想": [
+        "奇幻"
+      ],
+      "魔幻": [
+        "奇幻"
+      ],
+      "魔法": [
+        "奇幻"
+      ],
+      "奇幻": [
+        "奇幻"
+      ],
+      "异世界": [
+        "奇幻"
+      ],
+      "转生": [
+        "奇幻"
+      ],
+      "穿越": [
+        "奇幻"
+      ],
+      "平行世界": [
+        "奇幻"
+      ],
+      "宇宙": [
+        "科幻"
+      ],
+      "太空": [
+        "科幻"
+      ],
+      "太空歌剧": [
+        "科幻"
+      ],
+      "赛博朋克": [
+        "科幻"
+      ],
+      "机战": [
+        "科幻"
+      ],
+      "机甲": [
+        "科幻"
+      ],
+      "萝卜": [
+        "科幻"
+      ],
+      "GUNDAM": [
+        "科幻"
+      ],
+      "高达": [
+        "科幻"
+      ],
+      "战争": [
+        "战争"
+      ],
+      "反战": [
+        "战争"
+      ],
+      "推理系": [
+        "推理"
+      ],
+      "猎奇": [
+        "猎奇"
+      ],
+      "血腥": [
+        "猎奇"
+      ],
+      "重口味": [
+        "猎奇"
+      ],
+      "重口": [
+        "猎奇"
+      ],
+      "致郁": [],
+      "废土": [],
+      "架空世界": [
+        "奇幻"
+      ],
+      "种田": [
+        "生活"
+      ],
+      "日常": [
+        "生活"
+      ],
+      "日常系": [
+        "生活"
+      ],
+      "治愈": [
+        "生活"
+      ],
+      "治愈系": [
+        "生活"
+      ],
+      "温情": [
+        "生活"
+      ],
+      "温馨": [
+        "生活"
+      ],
+      "感动": [
+        "生活"
+      ],
+      "职场": [
+        "职业"
+      ],
+      "社会见闻": [
+        "职业"
+      ],
+      "竞技": [],
+      "卡牌": [],
+      "体育": [
+        "运动"
+      ],
+      "体育番": [
+        "运动"
+      ],
+      "棒球": [
+        "运动"
+      ],
+      "运动番": [
+        "运动"
+      ],
+      "歌番": [
+        "音乐"
+      ],
+      "乐队": [
+        "音乐"
+      ],
+      "偶像": [],
+      "魔法少女": [
+        "奇幻"
+      ],
+      "变身": [
+        "奇幻"
+      ],
+      "子供向": [
+        "儿童"
+      ],
+      "子供": [
+        "儿童"
+      ],
+      "幼女向": [
+        "儿童"
+      ],
+      "青春": [
+        "校园"
+      ],
+      "短篇": [
+        "短片"
+      ],
+      "OVA": [],
+      "泡面番": [],
+      "剧场版": [],
+      "季番": [],
+      "原创": [],
+      "漫改": [],
+      "轻改": [],
+      "GAL改": [],
+      "游戏改": [],
+      "热血": [],
+      "燃": [],
+      "励志": [],
+      "成长": [],
+      "催泪": [],
+      "复仇": [],
+      "文艺": [],
+      "中二": [],
+      "电波": [],
+      "扭曲": [],
+      "萌系": [],
+      "后宫": [],
+      "女性向": [],
+      "龙傲天": [],
+      "现世": [],
+      "架空": [],
+      "未来": [],
+      "近代": [],
+      "古代": [],
+      "都市": [],
+      "校园": [
+        "校园"
+      ],
+      "剧情": [
+        "剧情"
+      ],
+      "悬疑": [
+        "悬疑"
+      ],
+      "推理": [
+        "推理"
+      ],
+      "音乐": [
+        "音乐"
+      ],
+      "运动": [
+        "运动"
+      ],
+      "历史": [
+        "历史"
+      ],
+      "冒险": [
+        "冒险"
+      ],
+      "科幻": [
+        "科幻"
+      ],
+      "爱情": [
+        "爱情"
+      ],
+      "黑暗": [
+        "黑暗"
+      ],
+      "恐怖": [
+        "恐怖"
+      ]
+    },
+    "红果短剧": {
+      "都市爱情": [
+        "爱情"
+      ],
+      "古风爱情": [
+        "爱情"
+      ],
+      "奇幻爱情": [
+        "爱情"
+      ],
+      "仙侠爱情": [
+        "爱情"
+      ],
+      "年代爱情": [
+        "爱情"
+      ],
+      "现言甜宠": [
+        "爱情"
+      ],
+      "都市情感": [
+        "爱情"
+      ],
+      "古风言情": [
+        "爱情"
+      ],
+      "古装爱情": [
+        "爱情"
+      ],
+      "甜宠": [
+        "爱情"
+      ],
+      "先婚后爱": [
+        "爱情"
+      ],
+      "日久生情": [
+        "爱情"
+      ],
+      "暗恋成真": [
+        "爱情"
+      ],
+      "破镜重圆": [
+        "爱情"
+      ],
+      "闪婚": [
+        "爱情"
+      ],
+      "追妻": [
+        "爱情"
+      ],
+      "虐恋": [
+        "爱情"
+      ],
+      "契约婚姻": [
+        "爱情"
+      ],
+      "轻喜剧": [
+        "喜剧"
+      ],
+      "悬疑推理": [
+        "悬疑",
+        "推理"
+      ],
+      "悬疑情感": [
+        "悬疑"
+      ],
+      "悬疑灵异": [
+        "悬疑"
+      ],
+      "刑侦破案": [
+        "犯罪",
+        "推理"
+      ],
+      "反转": [
+        "悬疑"
+      ],
+      "玄幻仙侠": [
+        "玄幻",
+        "修仙"
+      ],
+      "修真": [
+        "修仙"
+      ],
+      "仙尊": [
+        "修仙"
+      ],
+      "系统修仙": [
+        "修仙"
+      ],
+      "修仙": [
+        "修仙"
+      ],
+      "奇幻脑洞": [
+        "奇幻"
+      ],
+      "奇幻异能": [
+        "奇幻"
+      ],
+      "脑洞": [],
+      "系统": [],
+      "异能": [],
+      "玄学": [],
+      "古风权谋": [
+        "古装"
+      ],
+      "宫斗宅斗": [
+        "古装"
+      ],
+      "朝堂权谋": [
+        "古装"
+      ],
+      "历史古代": [
+        "古装"
+      ],
+      "古言甜宠": [
+        "古装"
+      ],
+      "战神归来": [],
+      "强者回归": [],
+      "隐藏大佬": [],
+      "马甲": [],
+      "扮猪吃虎": [],
+      "打脸虐渣": [],
+      "逆袭翻身": [],
+      "重生逆袭": [],
+      "虐渣": [],
+      "重生": [],
+      "穿越": [],
+      "穿书": [],
+      "异界": [],
+      "架空": [],
+      "古代": [],
+      "求生": [
+        "生存"
+      ],
+      "末世": [
+        "末世"
+      ],
+      "丧尸": [
+        "末世"
+      ],
+      "囤货": [],
+      "无限流": [],
+      "规则怪谈": [
+        "悬疑"
+      ],
+      "动作打斗": [
+        "动作"
+      ],
+      "家庭": [
+        "生活"
+      ],
+      "家庭伦理": [
+        "生活"
+      ],
+      "家族": [
+        "生活"
+      ],
+      "家族振兴": [
+        "生活"
+      ],
+      "婚姻生活": [
+        "生活"
+      ],
+      "婆媳": [
+        "生活"
+      ],
+      "都市": [
+        "生活"
+      ],
+      "都市日常": [
+        "生活"
+      ],
+      "都市脑洞": [
+        "生活",
+        "奇幻"
+      ],
+      "都市玄幻": [
+        "生活",
+        "玄幻"
+      ],
+      "年代": [
+        "生活"
+      ],
+      "乡村": [
+        "生活"
+      ],
+      "种田": [
+        "生活"
+      ],
+      "成长": [],
+      "女性成长": [],
+      "大女主": [],
+      "女强": [],
+      "职场励志": [],
+      "校园": [
+        "校园"
+      ],
+      "青春": [
+        "校园"
+      ],
+      "学渣逆袭": [
+        "校园"
+      ],
+      "职场": [
+        "职业"
+      ],
+      "法律正义": [
+        "犯罪"
+      ],
+      "民国": [
+        "历史"
+      ],
+      "谍战": [
+        "历史"
+      ],
+      "家国情怀": [
+        "历史"
+      ],
+      "AI": [
+        "科幻"
+      ],
+      "平行世界": [
+        "科幻"
+      ],
+      "外星": [
+        "科幻"
+      ],
+      "萌宝": [],
+      "福宝": [],
+      "诡秘": [],
+      "灵异": [],
+      "AI剧": [
+        "AI剧"
+      ],
+      "漫剧": [
+        "AI剧",
+        "短剧"
+      ],
+      "真人剧": [
+        "短剧"
+      ],
+      "短剧": [
+        "短剧"
+      ],
+      "爱情": [
+        "爱情"
+      ],
+      "古装": [
+        "古装"
+      ],
+      "剧情": [
+        "剧情"
+      ],
+      "喜剧": [
+        "喜剧"
+      ],
+      "悬疑": [
+        "悬疑"
+      ],
+      "玄幻": [
+        "玄幻"
+      ],
+      "奇幻": [
+        "奇幻"
+      ]
+    }
+  },
+  "lookup_note": "代码侧查这张表：map[站点][原始词] = 标准标签数组。空数组＝该词已知、但只进「其他信息」；键不存在＝未命中，走 fallback 原样写其他信息。",
+  "inject": [
+    {
+      "site": "红果短剧",
+      "tag": "短剧",
+      "scope": "全站每条",
+      "decision": "D9",
+      "note": "「短剧」是红果的固定形态标签，不依赖页面是否出现该词"
+    }
+  ],
+  "sites": {
+    "豆瓣电影": {
+      "target_field": "标签（独立列）",
+      "sep": ",",
+      "source": "v:genre / #info 类型"
+    },
+    "IMDb": {
+      "target_field": "标签（当前为空，类型在「其他信息 → 类型：」）",
+      "sep": ",",
+      "source": "JSON-LD genre（英文，需映射）"
+    },
+    "TMDB": {
+      "target_field": "标签（当前为空，类型在「其他信息 → 类型：」）",
+      "sep": ",",
+      "source": "JSON-LD genre（zh-CN 下已是中文）"
+    },
+    "Bangumi": {
+      "target_field": "标签（当前为空）",
+      "sep": ",",
+      "source": ".subject_tag_section 的 a.l.meta"
+    },
+    "红果短剧": {
+      "target_field": "标签（独立列）",
+      "sep": ",",
+      "source": "series.tags"
+    }
+  },
+  "fallback": "查不到映射的原始词：原样写入「其他信息」，不进「标签」，不丢弃"
+}

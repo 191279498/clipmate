@@ -206,10 +206,13 @@ class BgmMovieExtractor extends window.BaseExtractor {
       // 15. Bangumi链接 - 设置为当前页面链接
       fields['Bangumi'] = window.location.href;
       
-      // 16. 其他信息（合并剩余字段，包含官方网站）
+      // 16. 标签（v2.12.0：站内标签区的 UGC 词 → 44 个标准标签；没并进去的原词进其他信息）
+      fields['标签'] = await this.extractStandardTags();
+
+      // 17. 其他信息（合并剩余字段，包含官方网站）
       fields['其他信息'] = await this.extractOtherInfo();
       
-      // 17. 媒体类型标识 - 保留以便参考
+      // 18. 媒体类型标识 - 保留以便参考
       fields['影视类型'] = mediaType === 'movie' ? '电影' : '剧集';
       
     } catch (error) {
@@ -538,13 +541,23 @@ class BgmMovieExtractor extends window.BaseExtractor {
   async extractGenres() {
     try {
       // 从标签区域提取类型信息
-      const tagSection = document.querySelector('.subject_tag_section');
+      // v2.12.0：改用 this._root() 而不是全局 document —— 与豆瓣收藏列表页
+      // 那种「换一份文档当提取源」的用法保持同一套约定，也方便离线单测喂存档。
+      const tagSection = this._root().querySelector('.subject_tag_section');
       if (tagSection) {
         const genres = [];
         const tagLinks = tagSection.querySelectorAll('a.l.meta');
         tagLinks.forEach(link => {
-          if (link.textContent.trim()) {
-            genres.push(link.textContent.trim());
+          // v2.12.0：**不能直接读 textContent**。Bangumi 的标签链接长这样：
+          //   <a class="l meta"><span>犯罪</span> <small class="grey">107</small></a>
+          //   textContent 拿到的是「犯罪 107」，后面那个是用户投票计数。
+          //   旧代码（从未被调用过）一直有此问题：带数字的词一个都查不到表，
+          //   全被当成未命中丢进「其他信息」，标签列恒空。
+          const nameEl = link.querySelector('span');
+          const text = (nameEl ? nameEl.textContent : link.textContent) || '';
+          const t = text.trim();
+          if (t) {
+            genres.push(t);
           }
         });
         
@@ -561,6 +574,31 @@ class BgmMovieExtractor extends window.BaseExtractor {
       this.logger.error('提取类型失败:', error);
       return '';
     }
+  }
+
+  /**
+   * v2.12.0：「标签」列 —— 站内标签区的词过统一转化库。
+   *
+   * 【为什么这个方法以前一直是死的】
+   * `extractGenres()` 从 v2.5.x 就写好了，但**全项目零调用、也没有按字段名反射调度**
+   * 的机制，所以 Bangumi 的「标签」列永远是空的。这是 v2.12.0 补上的最大一个洞。
+   *
+   * 【为什么是「标签区」而不是「类型」】
+   * Bangumi 条目页没有豆瓣那种官方类型字段，`.subject_tag_section` 里是**用户投票
+   * 打的标签**（校园 / 治愈 / OVA / 原创 / TV…）。它天然是 UGC 词，正是 D11
+   * 「查不到就进其他信息」要兜的那一类。
+   */
+  async extractStandardTags() {
+    const raw = await this.extractGenres();
+    if (!raw) return '';
+    return this._standardTags('Bangumi', raw, raw);
+  }
+
+  /** D10 / D11：没并进「标签」的原词，留给「其他信息」展示，一个都不丢 */
+  async _leftoverTagWords() {
+    const raw = await this.extractGenres();
+    if (!raw) return '';
+    return this._leftoverTags('Bangumi', raw);
   }
 
   // 提取国家信息 - 直接使用BaseExtractor中的共享方法
@@ -927,6 +965,13 @@ class BgmMovieExtractor extends window.BaseExtractor {
         }
       });
       
+      // v2.12.0：站内标签里没能并进「标签」列的词（D10 已知不并 + D11 未命中），
+      // 原样留在其他信息里。Bangumi 的标签是用户投票产生的，每天都有新词。
+      const leftoverTags = await this._leftoverTagWords();
+      if (leftoverTags) {
+        otherInfo.push(`站内标签：${leftoverTags}`);
+      }
+
       // 使用中文逗号连接各字段，与书籍和游戏模块保持一致
       const result = otherInfo.join('，').trim();
       

@@ -583,7 +583,8 @@ class DoubanMovieExtractor extends BaseExtractor {
       fields['别名'] = this.extractAliases();
       
       // v2.5.67：标签（原「其他信息」里的「类型」，拆成独立字段，半角逗号连接）
-      fields['标签'] = this.extractTags();
+      // v2.12.0：再过一遍影视类标签统一转化库（纪录片→纪录、家庭→生活、黑色电影→黑暗…）
+      fields['标签'] = this.extractStandardTags();
       
       // 国家/地区信息
       fields['国家'] = this.extractCountry();
@@ -737,6 +738,28 @@ class DoubanMovieExtractor extends BaseExtractor {
     }
   }
 
+  /**
+   * v2.12.0：写进「标签」列的**标准词**（半角逗号）。
+   *
+   * 原 extractTags() 保持原样不动 —— 它返回站点原词，是转换的输入，也是排查问题时
+   * 「站点到底写了什么」的唯一依据，不能被归一化掉。
+   */
+  extractStandardTags() {
+    const raw = this.extractTags();
+    if (!raw) return '';
+    return this._standardTags('豆瓣电影', raw, raw);
+  }
+
+  /**
+   * D10 / D11：已被映射走的词不再重复展示（页面上本来就有），
+   * 但「查到了却故意不并」和「真没见过」的原词要留在「其他信息」里，一个都不丢。
+   */
+  _leftoverTagWords() {
+    const raw = this.extractTags();
+    if (!raw) return '';
+    return this._leftoverTags('豆瓣电影', raw);
+  }
+
   // 提取其他信息字段
   extractOtherInfo() {
     try {
@@ -811,6 +834,10 @@ class DoubanMovieExtractor extends BaseExtractor {
         }
       }
       
+      // v2.12.0：归一后剩下的原词（已知不并 + 真未命中）追加到其他信息，绝不静默丢词
+      const leftoverTags = this._leftoverTagWords();
+      if (leftoverTags) otherInfoParts.push(`其他标签：${leftoverTags}`);
+
       // 格式化拼接后的其他信息
       const formattedOtherInfo = otherInfoParts.join('，');
       

@@ -111,6 +111,51 @@ class BaseExtractor {
     return this.doc || document;
   }
 
+  // ==================== 影视类标签统一转化库（v2.12.0） ====================
+  //
+  // 5 个影视站的「类型 / 题材」写法互不相同：豆瓣「纪录片」、IMDb `Documentary`、
+  // TMDB「剧情 / 犯罪」、Bangumi 一堆用户散标签、红果「都市脑洞、战神归来」。
+  // 统一到用户自定的 44 个标准标签，未命中的原词退回「其他信息」，一个都不丢。
+  //
+  // 数据源：`src/shared/tag-normalizer.js`（由 `影视类标签转化库_ruleset_v1.0.json` 生成）。
+  // 放在基类里是因为五个站都要用，各站只负责「把原始词捞出来」。
+
+  /**
+   * 拿归一器。取不到返回 null —— 调用方必须原样输出原词，
+   * **绝不能因为库没加载就把标签清空**（那等于静默丢数据）。
+   */
+  _tagLib() {
+    if (typeof window !== 'undefined' && window.ClipMateTags) return window.ClipMateTags;
+    if (typeof ClipMateTags !== 'undefined') return ClipMateTags;
+    return null;
+  }
+
+  /**
+   * 原始词 → 「标签」列要的字符串（标准词、半角逗号）。
+   * @param {string} site 站点名，必须是归一器认的五个之一（豆瓣电影/IMDb/TMDB/Bangumi/红果短剧）
+   * @param {string|string[]} words 站点原词
+   * @param {string} [fallback] 归一器不可用时的返回值（默认原样拼回）
+   */
+  _standardTags(site, words, fallback) {
+    const Tags = this._tagLib();
+    if (!Tags) {
+      if (typeof fallback === 'string') return fallback;
+      if (Array.isArray(words)) return words.filter(Boolean).join(',');
+      return words == null ? '' : String(words);
+    }
+    return Tags.normalize(site, words).tags.join(',');
+  }
+
+  /**
+   * 归一后剩下的原词（D10「已知但只进其他信息」+ D11「真未命中」），
+   * 用顿号连接，供各站拼进「其他信息」。
+   */
+  _leftoverTags(site, words) {
+    const Tags = this._tagLib();
+    if (!Tags) return '';
+    return Tags.normalize(site, words).others.join('、');
+  }
+
   extractTitle() {
     const selectors = [
       'h1',

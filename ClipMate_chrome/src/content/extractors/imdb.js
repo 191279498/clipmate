@@ -651,14 +651,38 @@ class ImdbExtractor extends BaseExtractor {
     const parts = [];
     const ld = this._readJsonLd();
 
-    if (ld && Array.isArray(ld.genre) && ld.genre.length > 0) {
-      parts.push(`类型：${ld.genre.join('、')}`);
+    // v2.12.0：genre 偶尔是裸字符串（单类型条目），一并当数组处理 ——
+    // 否则「类型：」这段原词会整段消失，标签列也就没有输入了。
+    if (ld && ld.genre) {
+      const genres = Array.isArray(ld.genre) ? ld.genre : [ld.genre];
+      if (genres.filter(Boolean).length > 0) {
+        parts.push(`类型：${genres.filter(Boolean).join('、')}`);
+      }
     }
     if (ld && ld.contentRating) {
       parts.push(`分级：${ld.contentRating}`);
     }
 
     return parts.join('，');
+  }
+
+  /**
+   * v2.12.0：「标签」列 —— JSON-LD 的 genre 过统一转化库。
+   *
+   * 为什么单独成列而不是把「类型：」搬过来：
+   *   IMDb 的 genre 是**英文**（Action / Drama / History），直接写进标签列与
+   *   豆瓣、红果的中文标签不可比。归一器负责中英映射（Action→动作、Film-Noir→黑暗）。
+   *
+   * 为什么「其他信息 → 类型：」保留原词不删：
+   *   英文原文是可追溯的依据。归一器只改「标签」列，不改写原文 —— 映射有争议时，
+   *   总要能回到站点原本写了什么。
+   */
+  extractTags() {
+    const ld = this._readJsonLd();
+    const genre = ld && ld.genre;
+    if (!genre) return '';
+    const words = Array.isArray(genre) ? genre : [genre];
+    return this._standardTags('IMDb', words, Array.isArray(genre) ? genre.join(',') : String(genre));
   }
 
   // ========== v2.5.55 新增字段 ==========
@@ -878,7 +902,9 @@ class ImdbExtractor extends BaseExtractor {
         '原作名': this.extractOriginalTitle(),
         '集数': this.extractEpisodes(),
         '单集片长': this.extractEpisodeRuntime(),
-        '别名': await this.extractAliases()
+        '别名': await this.extractAliases(),
+        // v2.12.0：类型 → 标准标签（英文 genre 经统一转化库转中文标准词）
+        '标签': this.extractTags()
       };
       return fields;
     } catch (error) {

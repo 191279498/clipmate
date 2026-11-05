@@ -678,8 +678,12 @@ class TmdbExtractor extends BaseExtractor {
     const parts = [];
     const ld = this._readJsonLd();
 
-    if (ld && Array.isArray(ld.genre) && ld.genre.length > 0) {
-      parts.push(`类型：${ld.genre.filter(Boolean).join('、')}`);
+    // v2.12.0：genre 偶尔是裸字符串，一并当数组处理（理由同 IMDb）
+    if (ld && ld.genre) {
+      const genres = Array.isArray(ld.genre) ? ld.genre : [ld.genre];
+      if (genres.filter(Boolean).length > 0) {
+        parts.push(`类型：${genres.filter(Boolean).join('、')}`);
+      }
     }
 
     const facts = this._readFacts();
@@ -697,6 +701,23 @@ class TmdbExtractor extends BaseExtractor {
     }
 
     return parts.join('，');
+  }
+
+  /**
+   * v2.12.0：「标签」列 —— JSON-LD 的 genre 过统一转化库。
+   *
+   * TMDB 中文界面下 genre 已经是中文（剧情 / 犯罪），过一遍库是为了对齐口径：
+   * 「纪录片」→「纪录」、复合词「Action & Adventure」拆成 动作+冒险、
+   * 以及中文界面下仍然可能出现的英文词。
+   *
+   * 「其他信息 → 类型：」保留原词 —— 归一器只改「标签」列，不改写原文。
+   */
+  extractTags() {
+    const ld = this._readJsonLd();
+    const genre = ld && ld.genre;
+    if (!genre) return '';
+    const words = Array.isArray(genre) ? genre : [genre];
+    return this._standardTags('TMDB', words, Array.isArray(genre) ? genre.join(',') : String(genre));
   }
 
   // ========== 聚合 ==========
@@ -723,7 +744,9 @@ class TmdbExtractor extends BaseExtractor {
         '主演': cast,
         '片长': this.extractRuntime(),
         '集数': this.extractEpisodes(),
-        '其他信息': this.extractOtherInfo()
+        '其他信息': this.extractOtherInfo(),
+        // v2.12.0：类型 → 标准标签
+        '标签': this.extractTags()
       };
     } catch (error) {
       console.error('[TmdbExtractor] 提取所有字段失败:', error);

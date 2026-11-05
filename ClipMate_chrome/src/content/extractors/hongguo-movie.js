@@ -208,6 +208,32 @@ class HongguoMovieExtractor extends BaseExtractor {
     return out.join(',');
   }
 
+  /**
+   * v2.12.0：归一器的输入词 = 站内题材标签全量 + 子分类。
+   *
+   * 为什么要把子分类并进来（D8）：红果把「AI剧 / 漫剧 / 真人剧」放在
+   * 「其他信息 → 子分类」，用户拍板**AI剧 也是题材**，所以它同时要进「标签」。
+   * `_detectSubCategory()` 的返回值只有这三个，全都已在转化库里：
+   *   AI剧 → AI剧 ｜ 漫剧 → AI剧+短剧 ｜ 真人剧 → 短剧
+   */
+  _tagWords() {
+    const series = this._series() || {};
+    const words = Array.isArray(series.tags) ? series.tags.filter(Boolean).slice() : [];
+    const sub = this._detectSubCategory();
+    if (sub && words.indexOf(sub) < 0) words.push(sub);
+    return words;
+  }
+
+  /**
+   * v2.12.0：写进「标签」列的标准词。
+   * 「短剧」不靠页面出现 —— 归一器按 D9 给红果全站每条固定注入。
+   */
+  _standardTagString() {
+    const words = this._tagWords();
+    const series = this._series() || {};
+    return this._standardTags('红果短剧', words, this._joinTags(series.tags));
+  }
+
   /** 秒级时间戳 → YYYY/MM/DD（与其余影视站同一格式；源就是日粒度，不补时分） */
   _formatDate(seconds) {
     const n = Number(seconds);
@@ -263,6 +289,11 @@ class HongguoMovieExtractor extends BaseExtractor {
 
     const sub = this._detectSubCategory();
     if (sub) parts.push(`子分类：${sub}`);
+
+    // v2.12.0：归一后剩下的原词（D10 爽点套路/氛围词 + D11 未命中新词）
+    // 一律留在「其他信息」，不进「标签」也不丢弃。
+    const leftoverTags = this._leftoverTags('红果短剧', this._tagWords());
+    if (leftoverTags) parts.push(`其他标签：${leftoverTags}`);
 
     const hot = this._hotText();
     if (hot) parts.push(`热度：${hot}`);
@@ -326,7 +357,7 @@ class HongguoMovieExtractor extends BaseExtractor {
       fields['主演'] = this._joinCelebrities();
       fields['网络评分'] = this._formatRating(social.rating);
       fields['简介'] = this.cleanText(series.series_intro || '');
-      fields['标签'] = this._joinTags(series.tags);
+      fields['标签'] = this._standardTagString();
       fields['其他信息'] = this.extractOtherInfo();
     } catch (error) {
       console.error('[HongguoMovieExtractor] 提取字段失败:', error);
