@@ -213,7 +213,7 @@ truthy('在 content-main.js 之前加载（否则第一屏提取会读不到）'
   iCleanerJs > -1 && iMainJs > -1 && iCleanerJs < iMainJs);
 truthy('cleaner 文件本身在磁盘上', fs.existsSync(CLEANER_PATH));
 
-eq('版本号已升到 2.12.0', MANIFEST.version, '2.12.0');
+eq('版本号已升到 2.12.0', MANIFEST.version, '2.12.1');
 
 /* ==================== G. 标题也要干净 ==================== */
 section('G. 标题生成：先洗文案再截「前 20 字」');

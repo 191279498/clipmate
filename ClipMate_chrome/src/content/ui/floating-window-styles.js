@@ -441,11 +441,19 @@
   font-weight: 400;
 }
 
-/* 纵向表格：字段名一列固定宽度、右对齐。
+/* 纵向表格：字段名一列宽度跟着内容走、右对齐。
    v2.5.45：整列吸左（sticky），长表格往下滚时字段名不会滚走；
-   吸顶/吸左都必须给不透明底色，否则下面的内容会透出来。 */
+   吸顶/吸左都必须给不透明底色，否则下面的内容会透出来。
+
+   v2.12.1：宽度从写死的 120px 改成 1%（table-layout:auto 下 = 收到内容宽度）。
+   120px 是照最长字段名留的，但字段名普遍 2～4 字，右对齐后多出的 70～80px
+   全变成表头左边的空白，还要从值列身上抢宽度（用户 2026-11-05 反馈）。
+   改成自适应后：同一列仍由全表最长字段名决定宽度，行与行依旧对齐，
+   只是不再留空 —— 省下的 50～60px 全给右侧的值列。
+   nowrap 必须一起加，否则 1% 会被折行顶回去、白改。 */
 .data-table.vertical-table th {
-  width: 120px;
+  width: 1%;
+  white-space: nowrap;
   text-align: right;
   position: sticky;
   left: 0;
@@ -534,6 +542,34 @@
 
 .sortable-header {
   cursor: move;
+}
+
+/* v2.12.1：编辑模式下单元格也能双击改值 —— 给光标和悬停底色一个提示，
+   否则用户只知道表头能改（表头有 title 提示，格子没有）。 */
+.data-table.is-editing td[data-field] {
+  cursor: text;
+}
+
+.data-table.is-editing td[data-field]:hover {
+  background: var(--cm-warn-soft, #FDF3D6);
+}
+
+/* 编辑模式下链接不响应鼠标：双击 URL 格是为了改它，
+   不能让浏览器顺手把新标签页开出来。 */
+.data-table.is-editing td[data-field] a {
+  pointer-events: none;
+}
+
+/* 单元格值编辑器：多行文本框。行数由 JS 按内容行数算（1～8 行），
+   所以这里定的是「不撑破浮窗」的上限，不是初始高度。 */
+.field-editor {
+  display: block;
+  resize: none;
+  overflow: auto;
+  min-height: 22px;
+  max-height: 180px;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .sortable-header-disabled {

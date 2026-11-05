@@ -103,6 +103,12 @@
       const mediaType = this.getMediaType();
       if (mediaType !== 'movie' && mediaType !== 'tv' && mediaType !== 'media') return;
 
+      // v2.12.1：用户在编辑模式里手工改过「URL」格，就以手工值为准。
+      // 不挡这一下的话，重渲染会立刻按本页 + IMDB/TMDB/Bangumi 重新拼一遍，
+      // 刚删掉的段又回来，等于白改。标记由 modal-edit-mode 置位，
+      // cancelEdit 与新数据到来（_prepareData）时清掉。
+      if (this._urlManuallyEdited) return;
+
       const LINK_KEYS = ['IMDB', 'TMDB', 'Bangumi'];
       const data = this.data || {};
       const current = String(data['URL'] == null ? '' : data['URL']).trim();
@@ -197,6 +203,9 @@
     // 设置数据
     this.data = data;
     this.fieldOrder = Object.keys(data);
+    // v2.12.1：新数据进来 = 上一轮的手改作废，影视 URL 恢复自动合并。
+    // （updateInPlace 也走这里，所以站点换条/刷新后不会留着旧的手工值。）
+    this._urlManuallyEdited = false;
 
     // 获取媒体类型
     const mediaType = this.getMediaType();

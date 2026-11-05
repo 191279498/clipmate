@@ -194,8 +194,10 @@
     // 根据展示模式生成不同的表格结构
     if (this.displayMode === 'vertical') {
       // 纵向模式：每行一个字段，左侧是字段名，右侧是字段值
+      // v2.12.1：编辑模式给表格挂 is-editing —— 单元格的「可双击改值」光标/底色
+      // 全靠这个类，挂在 table 上而不是逐格写，重渲染后自然跟着走。
       let tableHTML = `
-        <table class="data-table vertical-table" id="dataTable">
+        <table class="data-table vertical-table${this.isEditMode ? ' is-editing' : ''}" id="dataTable">
           <tbody>
       `;
 
@@ -237,7 +239,9 @@
         // 改名已删除，URL 就叫 URL。
         const mediaType = this.getMediaType();
         const headerClass = this.isEditMode ? 'sortable-header' : 'sortable-header-disabled';
-        const headerTitle = this.isEditMode ? '双击编辑' : '请先进入编辑模式';
+        // v2.12.1：单元格也能改了，两个提示必须分开写，否则都写「双击编辑」会让人以为点哪儿都一样
+        const headerTitle = this.isEditMode ? '双击改字段名' : '请先进入编辑模式';
+        const cellTitle = this.isEditMode ? '双击改内容' : '';
 
         // v2.5.45：抽成 buildFieldContent，纵向/横向共用同一套规则（顺带支持长文本折叠）
         const fieldContent = this.buildFieldContent(fieldName, displayValue, mediaType);
@@ -245,7 +249,7 @@
         tableHTML += `
           <tr>
             <th data-field="${fieldName}" class="${headerClass}" title="${headerTitle}">${displayName}</th>
-            <td data-field="${fieldName}">
+            <td data-field="${fieldName}" title="${cellTitle}">
               ${fieldContent}
             </td>
           </tr>
@@ -267,7 +271,7 @@
       const mediaType = this.getMediaType();
 
       let tableHTML = `
-        <table class="data-table horizontal-table" id="dataTable">
+        <table class="data-table horizontal-table${this.isEditMode ? ' is-editing' : ''}" id="dataTable">
           <thead>
             <tr>
       `;
@@ -277,7 +281,7 @@
       for (const fieldName of fieldsToRender) {
         headerCount++;
         const headerClass = this.isEditMode ? 'sortable-header' : 'sortable-header-disabled';
-        const headerTitle = this.isEditMode ? '双击编辑' : '请先进入编辑模式';
+        const headerTitle = this.isEditMode ? '双击改字段名' : '请先进入编辑模式';
         // 使用fieldMappings处理字段显示名称
         let displayName = this.fieldMappings && this.fieldMappings[fieldName] ? this.fieldMappings[fieldName] : fieldName;
 
@@ -321,9 +325,10 @@
 
         // v2.5.45：同上，横向模式也用统一规则
         const fieldContent = this.buildFieldContent(fieldName, displayValue, mediaType);
+        const cellTitle = this.isEditMode ? '双击改内容' : '';
 
         tableHTML += `
-          <td data-field="${fieldName}">
+          <td data-field="${fieldName}" title="${cellTitle}">
             ${fieldContent}
           </td>
         `;
@@ -542,7 +547,17 @@
 
       const cell = target.closest('td[data-field]');
       if (!cell) return;
-      if (this.isEditMode) return;            // 编辑模式下点击用于拖拽排序
+
+      // v2.12.1：编辑模式下双击单元格 = 改这一格的**内容**（值编辑，不是复制）。
+      // 表头双击改字段名走 modal-manager 的 _bindHeaderRename，两条路互不干扰。
+      if (this.isEditMode) {
+        e.preventDefault();
+        if (typeof this.startFieldValueEditing === 'function') {
+          this.startFieldValueEditing(cell);
+        }
+        return;
+      }
+
       if (cell.querySelector('a')) return;     // 链接交给浏览器默认行为
 
       // 注意：这里不能再做「已有选区就跳过」的判断。

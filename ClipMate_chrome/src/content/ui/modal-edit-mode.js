@@ -176,6 +176,107 @@
     });
     },
 
+    /**
+     * v2.12.1：编辑模式下双击单元格改**内容**（用户 2026-11-05 要求）。
+     *
+     * 复用 .field-editor 类：表头改名用的就是这套输入框外观，两种编辑长得一样，
+     * 用户不用重新学一遍。用 textarea 而非 input —— 简介/其他信息带换行，
+     * input 会把换行吃掉，一保存就压成一整行。
+     *
+     * 保存规则：值真的变了才写回 this.data（复制 / 导出读的就是它）；
+     * 没变只把 DOM 还原，不触发重渲染，避免无谓闪一下。
+     */
+    startFieldValueEditing(cell) {
+      if (!this.isEditMode || !cell) return;
+      if (cell.getAttribute('data-editing') === '1') return;
+
+      const fieldName = cell.dataset.field;
+      if (!fieldName) return;
+
+      const originalHTML = cell.innerHTML;
+      const rawValue = (this.data && this.data[fieldName] != null) ? String(this.data[fieldName]) : '';
+
+      cell.setAttribute('data-editing', '1');
+
+      const editor = document.createElement('textarea');
+      editor.className = 'field-editor';
+      editor.value = rawValue;
+      editor.rows = this._estimateEditorRows(rawValue);
+
+      cell.innerHTML = '';
+      cell.appendChild(editor);
+      editor.focus();
+      // 光标落在末尾，方便接着改；个别环境不支持 setSelectionRange，忽略即可
+      try { editor.setSelectionRange(rawValue.length, rawValue.length); } catch (e) { /* 忽略 */ }
+
+      let finished = false;
+
+      const restore = () => {
+        cell.removeAttribute('data-editing');
+        cell.innerHTML = originalHTML;
+      };
+
+      const commit = () => {
+        if (finished) return;
+        finished = true;
+        cell.removeAttribute('data-editing');
+
+        const nextValue = editor.value.replace(/^\s+|\s+$/g, '');
+        if (nextValue === rawValue) {
+          restore();
+          return;
+        }
+
+        this.data[fieldName] = nextValue;
+
+        // 影视类「URL」是自动拼出来的合并串（modal-data-processor._mergeLinksIntoUrl）。
+        // 用户手工改过就以手工值为准，否则下一次重渲染会立刻把 IMDB/TMDB 段拼回去、
+        // 把手改的内容盖掉。标记在 cancelEdit / 新数据到来时清掉。
+        const mt = (typeof this.getMediaType === 'function') ? this.getMediaType() : '';
+        if ((mt === 'movie' || mt === 'tv' || mt === 'media') && fieldName === 'URL') {
+          this._urlManuallyEdited = true;
+        }
+
+        this.updateTable(true);
+
+        const displayName = (this.fieldMappings && this.fieldMappings[fieldName]) || fieldName;
+        if (typeof this.showMessage === 'function') {
+          this.showMessage('已修改「' + displayName + '」', 'success');
+        }
+      };
+
+      editor.addEventListener('blur', commit);
+      editor.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          // 必须拦住冒泡：document 上的 ESC 监听会顺手把整个浮窗关掉
+          e.preventDefault();
+          e.stopPropagation();
+          finished = true;
+          restore();
+          return;
+        }
+        if (e.key === 'Enter' && !e.shiftKey) {
+          // Enter 保存、Shift+Enter 换行 —— 与表头改名同一套手感
+          e.preventDefault();
+          e.stopPropagation();
+          commit();
+        }
+      });
+    },
+
+    /**
+     * 估算值编辑器行数（1～8 行）：显式换行 + 粗估折行。
+     * 值列宽约 200px、12px 字号一行约 20 个汉字，所以用 20 做除数。
+     */
+    _estimateEditorRows(text) {
+      const s = String(text == null ? '' : text);
+      let rows = 0;
+      s.split('\n').forEach((line) => {
+        rows += 1 + Math.floor(line.length / 20);
+      });
+      return Math.max(1, Math.min(8, rows));
+    },
+
     // 重置字段顺序为默认顺序 {
   resetOrder() {
     // 只在编辑模式下允许重置顺序
@@ -280,7 +381,7 @@
     this.isEditMode = true;
     this.updateTable(true);
     this._syncHeaderEditVisual();   // v2.5.93：标题栏变橙
-    this.showMessage('已进入编辑模式，您可以重命名字段和调整顺序', 'info');
+    this.showMessage('已进入编辑模式：双击表头改字段名，双击格子改内容，拖动表头调顺序', 'info');
     },
 
     // 取消编辑 {
@@ -288,6 +389,9 @@
     // 恢复原始数据和字段顺序
     this.data = JSON.parse(JSON.stringify(this.originalData));
     this.fieldOrder = [...this.originalFieldOrder];
+    // v2.12.1：手工改过 URL 的保护标记也要一起撤，否则取消编辑后
+    // 影视页的跨站补链会被这个残留标记一直挡住。
+    this._urlManuallyEdited = false;
     this.isEditMode = false;
     this.updateTable(true);
     this._syncHeaderEditVisual();   // v2.5.93：标题栏恢复浅灰

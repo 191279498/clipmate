@@ -224,9 +224,11 @@
   color: var(--cm-ink, #111820);
 }
 
-/* 纵向表格样式 */
+/* 纵向表格样式
+   v2.12.1：字段名列改自适应宽度（与 floating-window-styles.js 保持同一口径） */
 .data-table.vertical-table th {
-  width: 120px;
+  width: 1%;
+  white-space: nowrap;
   text-align: right;
 }
 

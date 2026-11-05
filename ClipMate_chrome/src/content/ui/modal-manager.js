@@ -146,10 +146,12 @@ class ModalManager {
         this.closeSearch();
         return;
       }
-      // 正在编辑表头时不关窗，先让用户处理输入框
+      // 正在编辑表头/单元格时不关窗，先让用户处理输入框
+      // （v2.12.1：编辑模式增加了单元格改值，.field-editor 必须一起挡 —— 否则
+      //   在格子里按 Esc 想撤销，整个浮窗先被关掉了。）
       try {
         const content = this.floatingWindow ? this.floatingWindow.getContentElement() : null;
-        if (content && content.querySelector('.header-editor')) return;
+        if (content && content.querySelector('.header-editor, .field-editor')) return;
       } catch (err) { /* 忽略：拿不到内容区就按正常关闭处理 */ }
       this.close();
     };
