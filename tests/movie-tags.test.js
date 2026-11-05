@@ -66,6 +66,26 @@ function hasNot(label, haystack, needle) {
   ok(label, s.indexOf(needle) < 0, s.slice(0, 200));
 }
 
+/** 从「其他信息」里抽出「其他标签：」这一段（到下一个全角逗号分段为止） */
+function leftoverSegment(other) {
+  const m = /其他标签：([^，]*)/.exec(String(other == null ? '' : other));
+  return m ? m[1] : '';
+}
+
+/** 一段「A、B、C…（共 N 个）」里实际显示的词数（省略号之后不计） */
+function countWordsIn(seg) {
+  const s = String(seg == null ? '' : seg);
+  if (!s) return 0;
+  const cut = s.indexOf('…');
+  const body = cut >= 0 ? s.slice(0, cut) : s;
+  return body.split('、').filter(Boolean).length;
+}
+
+/** 「其他信息」里「其他标签：」那一段实际显示了多少个词 */
+function countLeftover(other) {
+  return countWordsIn(leftoverSegment(other));
+}
+
 const N = (site, words) => TAGS.normalize(site, words);
 
 /* ============================================================
@@ -212,7 +232,10 @@ const CASES = [
     id: 'bgm-265', name: 'Bangumi《EVA》（TV 动画）',
     check(d) {
       eq('Bangumi 标签 = 科幻（机战也并进科幻且去重）', d['标签'], '科幻');
-      has('Bangumi 其他信息有「站内标签」段', d['其他信息'], '站内标签：');
+      // v2.12.1：前缀与豆瓣/红果统一成「其他标签」（原来这里叫「站内标签」）
+      has('Bangumi 其他信息有「其他标签」段', d['其他信息'], '其他标签：');
+      hasNot('Bangumi 不再用「站内标签」这个旧前缀', d['其他信息'], '站内标签');
+      ok('Bangumi 其他标签不超过 8 个', countLeftover(d['其他信息']) <= 8, countLeftover(d['其他信息']));
       has('Bangumi 未并的词留在其他信息（TV）', d['其他信息'], 'TV');
       hasNot('Bangumi 其他信息里不该出现「犯罪 107」这种带计数的词', d['其他信息'], ' 107');
     }
@@ -269,6 +292,21 @@ async function testEndToEnd() {
       const r = await H.runRealPath(page, inst);
       ok(`${c.name} 走的是真实链路（非兜底）`, r.mode === 'real', r.mode);
       c.check(r.data);
+
+      // v2.12.1：其他标签最多 8 个。样本本身到不了 8 个，所以借当前页面
+      // 的 BaseExtractor 实例补一刀真截断（10 个未命中词 → 只显示 8 个 + 总数）。
+      if (c.id === 'bgm-265') {
+        const B = page.window.BaseExtractor;
+        ok('BaseExtractor 挂在 window 上（截断测试的前提）', typeof B === 'function');
+        if (typeof B === 'function') {
+          const ex = new B();
+          const words = ['词一', '词二', '词三', '词四', '词五', '词六', '词七', '词八', '词九', '词十'];
+          const seg = ex._leftoverTags('Bangumi', words);
+          ok('10 个未命中词只显示 8 个', countWordsIn(seg) === 8, seg);
+          has('截断时必须带总数，不许静默丢词', seg, '共 10 个');
+          eq('不超过 8 个时原样全给', ex._leftoverTags('Bangumi', ['词一', '词二']), '词一、词二');
+        }
+      }
     } catch (err) {
       fails.push(`${c.name} 跑挂了`);
       console.log(`  ✗ ${c.name} 跑挂了: ${err && err.message}`);

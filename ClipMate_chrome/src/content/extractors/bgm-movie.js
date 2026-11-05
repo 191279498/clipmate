@@ -967,9 +967,10 @@ class BgmMovieExtractor extends window.BaseExtractor {
       
       // v2.12.0：站内标签里没能并进「标签」列的词（D10 已知不并 + D11 未命中），
       // 原样留在其他信息里。Bangumi 的标签是用户投票产生的，每天都有新词。
+      // 前缀与豆瓣/红果统一成「其他标签」，最多 8 个（超出带总数，不静默丢）。
       const leftoverTags = await this._leftoverTagWords();
       if (leftoverTags) {
-        otherInfo.push(`站内标签：${leftoverTags}`);
+        otherInfo.push(`其他标签：${leftoverTags}`);
       }
 
       // 使用中文逗号连接各字段，与书籍和游戏模块保持一致

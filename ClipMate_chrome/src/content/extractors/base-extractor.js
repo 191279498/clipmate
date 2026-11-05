@@ -149,11 +149,18 @@ class BaseExtractor {
   /**
    * 归一后剩下的原词（D10「已知但只进其他信息」+ D11「真未命中」），
    * 用顿号连接，供各站拼进「其他信息」。
+   *
+   * 超过 limit（默认 8）时截断，但**必须带上总数**——
+   * 光截断就是静默丢词，跟 D11「绝不丢弃」冲突；括号里的「共 N 个」
+   * 让人一眼看出还有多少没显示。
    */
-  _leftoverTags(site, words) {
+  _leftoverTags(site, words, limit) {
     const Tags = this._tagLib();
     if (!Tags) return '';
-    return Tags.normalize(site, words).others.join('、');
+    const all = Tags.normalize(site, words).others;
+    const max = typeof limit === 'number' && limit > 0 ? limit : 8;
+    if (all.length <= max) return all.join('、');
+    return `${all.slice(0, max).join('、')}…（共 ${all.length} 个）`;
   }
 
   extractTitle() {
