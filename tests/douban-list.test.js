@@ -704,7 +704,7 @@ section('六、端到端（点按钮 → 抓详情页 → 出字段）');
 /* ============================================================
  * 七、接线检查：源码层面确认「该挂的都挂上了」
  * ==========================================================*/
-section('七、接线（源码断言）· v2.11.5 重点');
+section('七、接线（源码断言）· v2.11.6 重点');
 {
   const CM = fs.readFileSync(P('src/content/content-main.js'), 'utf8');
   const MF = fs.readFileSync(P('manifest.json'), 'utf8');
@@ -949,6 +949,80 @@ section('十、按站点选提取器（forcedTypeOf）');
     eq('影视（剧集）→ tv', M._doubanForcedType('movie', tvDoc), 'tv');
     eq('读书不受 #info 影响', M._doubanForcedType('book', tvDoc), 'book');
   }
+}
+
+/* ============================================================
+ * 十一、列表页独立通道的字段映射器（v2.11.6 真机验收补的）
+ *
+ * 血案：v2.11.5 在 init() 里提前 return，跳过了
+ *   `this.fieldMapper = await this.initFieldMapper(mediaType)`。
+ * 结果按钮挂得上、点击也进 busy，但 extractFromCurrentPage() 一调
+ * `this.fieldMapper.mapToUniversalFields(...)` 就抛
+ * "Cannot read properties of null"，浮窗一个都不出。
+ * 上一版的 209 项测试全绿却没抓到，因为没有任何一条**真的跑这条链路**。
+ *
+ * 这里造一个最小 host，把 `_onDoubanListItemExtract` 从头到尾跑一遍。
+ * 不只验「不为空」，还要验「类型跟随条目」—— 否则点读书条目会弹电影表。
+ * ==========================================================*/
+section('十一、点击 → 建 mapper → 提取（端到端）');
+{
+  const w = makePage({
+    url: 'https://book.douban.com/people/x/wish',
+    scripts: ['src/content/ui/douban-list-handler.js']
+  });
+  const M = w.DoubanListMixin;
+  const doc = new w.DOMParser().parseFromString(
+    '<html><body><h1>测试书</h1><div id="info">出版社: 测试</div></body></html>', 'text/html');
+
+  let builds = 0, captured = null;
+  const host = Object.assign({
+    fieldMapper: null,
+    doubanListButtons: { setFailReason: function () {} },
+    activeShortcode: null,
+    initFieldMapper: async function (t) {
+      builds++;
+      return { mediaType: t, mapToUniversalFields: function (d) { return d; } };
+    },
+    handleExtract: async function (opts) { captured = opts; return true; }
+  }, M);
+
+  w.DoubanListFetch = {
+    isBlocked: function () { return false; },
+    blockedReason: function () { return ''; },
+    load: async function () {
+      return { ok: true, doc: doc, url: 'https://book.douban.com/subject/123/', id: '123', key: 'book.douban.com/p/123' };
+    }
+  };
+
+  const click = (kind) => host._onDoubanListItemExtract({
+    subjectUrl: 'https://book.douban.com/subject/123/',
+    subjectId: '123', kind: kind, anchor: null
+  });
+
+  eq('读书条目返回成功', await click('book'), true);
+  ok('fieldMapper 不再是 null（漏了就是真机上那条报错）', !!host.fieldMapper,
+    host.fieldMapper);
+  eq('mapper 按本条类型建 = book', host.fieldMapper && host.fieldMapper.mediaType, 'book');
+  eq('handleExtract 收到 forceMediaType = book', captured && captured.forceMediaType, 'book');
+  ok('doc / pageUrl / anchorEl 都透传了',
+    !!(captured && captured.doc === doc && captured.pageUrl && 'anchorEl' in captured), captured);
+  eq('activeShortcode 用完还原', host.activeShortcode, null);
+  eq('第一次建了 1 次', builds, 1);
+
+  eq('同一类型再点一次仍成功', await click('book'), true);
+  eq('类型没变不重复建', builds, 1);
+
+  eq('切到游戏条目', await click('game'), true);
+  eq('mapper 重建为 game', host.fieldMapper && host.fieldMapper.mediaType, 'game');
+  eq('handleExtract 收到 forceMediaType = game', captured && captured.forceMediaType, 'game');
+  eq('类型变了才多建 1 次', builds, 2);
+
+  // 熔断时连 mapper 都不该建（别在风控之后还继续发请求 / 改状态）
+  w.DoubanListFetch.isBlocked = function () { return true; };
+  w.DoubanListFetch.blockedReason = function () { return '豆瓣要验证了'; };
+  const buildsBefore = builds;
+  eq('熔断时返回失败', await click('book'), false);
+  eq('熔断时不建 mapper', builds, buildsBefore);
 }
 
 /* ============================================================

@@ -136,8 +136,8 @@ MUTATIONS = [
         'M15',
         '不判「这份文档像不像剧集」（电视剧会被当成电影处理）',
         LH,
-        "          forceMediaType: forcedTypeOf(kind, res.doc),",
-        "          forceMediaType: 'movie',",
+        "    return docLooksTv(doc) ? 'tv' : 'movie';",
+        "    return 'movie';",
     ),
     # ---------------- v2.11.5 新增 ----------------
     (
@@ -202,6 +202,27 @@ MUTATIONS = [
         MF,
         '        "https://book.douban.com/people/*",\n',
         '',
+    ),
+    (
+        'M25',
+        '不建字段映射器（v2.11.5 真机那条血案：点按钮报 null，浮窗一个都不出）',
+        LH,
+        '        this.fieldMapper = await this.initFieldMapper(forcedType);',
+        '        /* 故意删掉：列表页 mapper 永远是 null */',
+    ),
+    (
+        'M26',
+        'mapper 建固定类型（点读书条目会弹出电影表）',
+        LH,
+        '        this.fieldMapper = await this.initFieldMapper(forcedType);',
+        "        this.fieldMapper = await this.initFieldMapper('movie');",
+    ),
+    (
+        'M27',
+        'forceMediaType 没跟着本条类型走（提取器选错）',
+        LH,
+        '          forceMediaType: forcedType,',
+        "          forceMediaType: 'movie',",
     ),
 ]
 

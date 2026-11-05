@@ -483,7 +483,7 @@ function section6() {
   });
 
   // manifest 版本
-  eq('[版本] manifest 版本已升到 2.11.5', MANIFEST.version, '2.11.5');
+  eq('[版本] manifest 版本已升到 2.11.6', MANIFEST.version, '2.11.6');
 }
 
 /* ======================== 主流程 ======================== */

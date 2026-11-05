@@ -115,13 +115,27 @@
       //    activeShortcode 用带站点的缓存键：读书 / 影视的 subject 编号都是纯数字，
       //    不带上域名就是「在读书页点到影视那条缓存」；列表页几十条地址还完全相同，
       //    不改就是「点谁都弹第一条」。
+      // ③.5 字段映射器必须按「这一条」的类型建，不能省。
+      //   列表页在 init() 里走独立通道、提前 return，没经过正常的
+      //   `this.fieldMapper = await this.initFieldMapper(mediaType)`，所以它是 null。
+      //   更要命的是同一张列表里可能混着电影 / 剧集 / 书 / 游戏：
+      //   建一个固定类型的 mapper，点读书条目就会弹出电影表。
+      //   类型没变就复用，变了才重建（每次 new 一下很快，但没必要）。
+      //   v2.11.5 真机验收漏了这步，点按钮直接报
+      //   "Cannot read properties of null (reading 'mapToUniversalFields')"。
+      const forcedType = forcedTypeOf(kind, res.doc);
+      if (typeof this.initFieldMapper === 'function' &&
+          (!this.fieldMapper || this.fieldMapper.mediaType !== forcedType)) {
+        this.fieldMapper = await this.initFieldMapper(forcedType);
+      }
+
       const prevShortcode = this.activeShortcode;
       this.activeShortcode = res.key || id;
       try {
         return await this.handleExtract({
           doc: res.doc,
           pageUrl: res.url,
-          forceMediaType: forcedTypeOf(kind, res.doc),
+          forceMediaType: forcedType,
           // 浮窗贴在刚点的那颗小按钮下方（列表页没有大按钮可贴）
           anchorEl: anchor
         });
