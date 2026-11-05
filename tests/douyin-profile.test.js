@@ -283,6 +283,61 @@ const SEC = 'MS4wLjABAAAATeeWHaXZ7dWwyDuDEOZAXpKT2EWH2pdixzq9cU3cBkZstCaNaPwYy72
       new w.DouyinProfileExtractor()._signatureFromDom(), '');
   }
 
+  // 真机结构（2026-11-05 标签，`/user/MS4wLjABAAAApEe_nB_iDVMk6AMwSATeu1QlU-67D0blmD93YDSEVYc`）：
+  // 新版资料区在「IP属地」与「UID」之间多了一个「加入TA的群聊」按钮，且**独立成行**。
+  // 它不以「群聊」开头（STOP 那条是锚行首的），又不在 META 里 → 被当成签名，
+  // 真机上简介就多出一行「加入TA的群聊」。v2.12.4 修的就是这条。
+  const NO_BIO_WITH_GROUP_BTN = ['东东来了', '认证徽章', '山东东东来了网络科技有限公司',
+    '关注', '7715', '粉丝', '15.1万', '获赞', '36.6万',
+    '抖音号：sddongdong123IP属地：山东', '加入TA的群聊', 'UID：96306183201',
+    '分享主页', '私信关注', '关注私信', '下载电脑客户端，桌面快捷访问', '下载', '作品148', '推荐'];
+
+  {
+    const w = makePage({ url: 'https://www.douyin.com/user/MS4wLjABAAAApEe_nB_iDVMk6AMwSATeu1QlU-67D0blmD93YDSEVYc', html: domHtml(NO_BIO_WITH_GROUP_BTN) });
+    eq('「加入TA的群聊」按钮不当签名（真机 v2.12.4 形态）',
+      new w.DouyinProfileExtractor()._signatureFromDom(), '');
+  }
+
+  // 按钮词的变体：都必须是操作区的一部分
+  for (const btn of ['加入群聊', '加入他的群聊', '加入我的群聊', '已加入群聊']) {
+    const w = makePage({
+      url: 'https://www.douyin.com/user/MS4wLjABAAAAbtnX',
+      html: domHtml(['某人', '抖音号：123', 'IP属地：广东', btn, 'UID：999'])
+    });
+    eq(`「${btn}」也不当签名`, new w.DouyinProfileExtractor()._signatureFromDom(), '');
+  }
+
+  // 反例守卫：正文里**顺带**出现「加入…群聊」的句子不能被误杀（行首不是「加入」）
+  {
+    const w = makePage({
+      url: 'https://www.douyin.com/user/MS4wLjABAAAAsigX',
+      html: domHtml(['某人', '抖音号：abc', 'IP属地：北京', '欢迎大家加入我的粉丝群聊', 'UID：123'])
+    });
+    eq('签名里顺带提到群聊的句子照常保留',
+      new w.DouyinProfileExtractor()._signatureFromDom(), '欢迎大家加入我的粉丝群聊');
+  }
+
+  // 硬停 vs 跳过：按钮是「操作区开始」的分界线，它后面就算还有自由文本也不属于签名。
+  // （变异实测：把 `break` 改成 `continue` 时，这条是唯一能抓住的断言）
+  {
+    const w = makePage({
+      url: 'https://www.douyin.com/user/MS4wLjABAAAAhardx',
+      html: domHtml(['某人', '抖音号：123', 'IP属地：广东', '加入TA的群聊', '这里其实已经不是签名区了'])
+    });
+    eq('群聊按钮之后的内容不再当签名（碰到按钮就收摊）',
+      new w.DouyinProfileExtractor()._signatureFromDom(), '');
+  }
+
+  // 有签名 + 也有群聊按钮：签名照取，按钮不许混进来
+  {
+    const w = makePage({
+      url: 'https://www.douyin.com/user/MS4wLjABAAAAsigY',
+      html: domHtml(['某人', '抖音号：abc', 'IP属地：北京', '摄影·旅行 记录生活', '加入TA的群聊', 'UID：123'])
+    });
+    eq('有签名时按钮同样不进简介',
+      new w.DouyinProfileExtractor()._signatureFromDom(), '摄影·旅行 记录生活');
+  }
+
   // 真机结构（2026-11-01 标签 2）：签名排在「抖音号 / IP属地 / 年龄 / 地区」之后
   const BIO_AFTER_META = ['独卧孤城醉望一轮月', '关注', '28', '粉丝', '2823', '获赞', '2.4万',
     '抖音号：21232777921', 'IP属地：天津', '18岁', '天津·滨海新区',

@@ -658,7 +658,7 @@ function doc(body) {
     ok('上下文必须排在按钮之前（按钮启动就要用）', iCtx > -1 && iBtn > -1 && iCtx < iBtn);
     ok('按钮必须排在 mixin 之前', iBtn > -1 && iMixin > -1 && iBtn < iMixin);
 
-    eq('版本号升到 2.12.0', mf.version, '2.12.3');
+    eq('版本号升到 2.12.0', mf.version, '2.12.4');
 
     // content-main 门禁与 mixin 注册
     const mainSrc = fs.readFileSync(P.main, 'utf8');

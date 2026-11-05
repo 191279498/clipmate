@@ -271,7 +271,7 @@ const NORANK = { file: 'hongguo-7700477891418524696.html', id: '7700477891418524
     const hostPerms = manifest.host_permissions || [];
     const jsList = main.js || [];
 
-    eq('manifest 版本是 2.12.0', manifest.version, '2.12.3');
+    eq('manifest 版本是 2.12.0', manifest.version, '2.12.4');
     for (const domain of ['https://hongguoduanju.com/*', 'https://www.hongguoduanju.com/*', 'https://www.novelquickapp.com/*']) {
       ok(`host_permissions 含 ${domain}`, hostPerms.indexOf(domain) >= 0);
     }
