@@ -601,7 +601,7 @@ const CONTENT_KEYS = ['平台', '昵称', '账号ID', '账号名', '网址', '�
     const mf = JSON.parse(fs.readFileSync(P('manifest.json'), 'utf8'));
     truthy('manifest 注册了 youtube-profile.js',
       JSON.stringify(mf.content_scripts).indexOf('src/content/extractors/youtube-profile.js') > -1);
-    truthy('manifest 版本已升到 2.12.0', mf.version === '2.12.6', mf.version);
+    truthy('manifest 版本已升到 2.12.0', mf.version === '2.12.7', mf.version);
 
     const src = stripComments(fs.readFileSync(P('src/content/extractors/youtube-profile.js'), 'utf8'));
     eq('源码里不许读 microformat 那份截断简介', /microformatDataRenderer/.test(src), false);

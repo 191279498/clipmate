@@ -71,9 +71,17 @@
   var MASCOT_W = 31;
   var MASCOT_H = 27.5;                   // face-idle 宽高比 1.129
 
-  /** 取某形态的绝对地址；没有扩展运行时（单测/资源缺失）返回空串，走透明降级 */
+  /** 取某形态的绝对地址；没有扩展运行时（单测/资源缺失）返回空串，走透明降级
+      v2.12.7：优先走 ClipMateMascot（内联 data URL），别让页面去请求 chrome-extension://。 */
   function mascotUrl(name) {
     var rel = 'icons/mascot/' + (name || 'face-idle') + '.svg';
+    try {
+      if (typeof ClipMateMascot !== 'undefined' && ClipMateMascot &&
+          typeof ClipMateMascot.url === 'function') {
+        var inline = ClipMateMascot.url(rel);
+        if (inline) return inline;
+      }
+    } catch (e) { /* 解析器不可用就走下面的老路 */ }
     try {
       if (typeof chrome !== 'undefined' && chrome.runtime &&
           typeof chrome.runtime.getURL === 'function') {

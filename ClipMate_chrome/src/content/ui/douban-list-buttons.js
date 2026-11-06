@@ -124,6 +124,15 @@
 
   function mascotUrl(name) {
     var rel = 'icons/mascot/' + (name || 'face-idle') + '.svg';
+    // v2.12.7：优先走 ClipMateMascot（内联 data URL）。这些图标是塞进**页面 DOM** 的，
+    // 用 chrome-extension:// 会被浏览器当跨源请求告警（图照样显示，错误页却挂红字）。
+    try {
+      if (typeof ClipMateMascot !== 'undefined' && ClipMateMascot &&
+          typeof ClipMateMascot.url === 'function') {
+        var inline = ClipMateMascot.url(rel);
+        if (inline) return inline;
+      }
+    } catch (e) { /* 解析器不可用就走下面的老路 */ }
     try {
       if (typeof chrome !== 'undefined' && chrome.runtime &&
           typeof chrome.runtime.getURL === 'function') {

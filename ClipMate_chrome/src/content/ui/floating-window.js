@@ -668,11 +668,24 @@ class MediaFloatingWindow {
    * 标题栏那只头像的地址（v2.9.2）。
    * 拿不到扩展运行时（单测 / 资源缺失）返回空串，头像位就留空 —— 不留破图标方块。
    */
+  /**
+   * 标题栏那只头像的地址（v2.9.2）。
+   * 拿不到扩展运行时（单测 / 资源缺失）返回空串，头像位就留空 —— 不留破图标方块。
+   * v2.12.7：优先走 ClipMateMascot 的内联 data URL，别在页面里留 chrome-extension://。
+   */
   _mascotFaceUrl() {
+    var rel = 'icons/mascot/face-idle.svg';
+    try {
+      if (typeof ClipMateMascot !== 'undefined' && ClipMateMascot &&
+          typeof ClipMateMascot.url === 'function') {
+        var inline = ClipMateMascot.url(rel);
+        if (inline) return inline;
+      }
+    } catch (e) { /* 解析器不可用就走下面的老路 */ }
     try {
       if (typeof chrome !== 'undefined' && chrome.runtime &&
           typeof chrome.runtime.getURL === 'function') {
-        return chrome.runtime.getURL('icons/mascot/face-idle.svg');
+        return chrome.runtime.getURL(rel);
       }
     } catch (e) { /* 测试环境没有 runtime */ }
     return '';

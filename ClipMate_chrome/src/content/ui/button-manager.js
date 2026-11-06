@@ -100,7 +100,13 @@ class ButtonManager {
     return ['success', 'error', 'ask'];
   }
 
-  /** 取扩展内资源的绝对地址；没有扩展运行时（单测 / 资源缺失）返回空串走线稿降级 */
+  /**
+   * 取吉祥物地址；没有扩展运行时（单测 / 资源缺失）返回空串走线稿降级。
+   *
+   * v2.12.7：优先走 ClipMateMascot（内联 data URL）。这是**注入到别人页面**的背景图，
+   * 用 chrome-extension:// 会被浏览器当成跨源请求打一条 "Unsafe attempt to load URL"
+   * 到扩展错误页（图照样能显示，但红字一直在）。取不到才回落老路。
+   */
   _mascotUrl(state) {
     // v2.10.0：档案皮肤下常态换图；其余态（提取中/成功/失败）与普通皮肤一致
     let rel;
@@ -110,6 +116,13 @@ class ButtonManager {
       const map = this._MASCOT_BY_STATE;
       rel = (map && map[state]) || this._MASCOT_FALLBACK;
     }
+    try {
+      if (typeof ClipMateMascot !== 'undefined' && ClipMateMascot &&
+          typeof ClipMateMascot.url === 'function') {
+        const inline = ClipMateMascot.url(rel);
+        if (inline) return inline;
+      }
+    } catch (e) { /* 解析器不可用就走下面的老路 */ }
     try {
       if (typeof chrome !== 'undefined' && chrome.runtime &&
           typeof chrome.runtime.getURL === 'function') {
