@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "采媒灵",
   "short_name": "采媒灵",
-  "version": "2.12.5",
+  "version": "2.12.6",
   "description": "从多个媒体网站提取结构化信息，支持书籍、影视、游戏的统一字段映射",
   "minimum_chrome_version": "116",
   "permissions": [
@@ -184,6 +184,7 @@
         "src/content/shared/instagram-inline-data.js",
         "src/content/shared/kuaishou-state-client.js",
         "src/content/shared/tiktok-page-data.js",
+        "src/content/shared/youtube-shorts-page-data.js",
         "src/content/utils/media-detector.js",
         "src/content/utils/page-shape.js",
         "src/content/utils/field-mapper.js",
@@ -348,6 +349,19 @@
       ],
       "js": [
         "src/content/weibo-mobile-bridge.js"
+      ],
+      "run_at": "document_idle",
+      "world": "MAIN",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://youtube.com/*",
+        "https://m.youtube.com/*"
+      ],
+      "js": [
+        "src/content/youtube-shorts-hook.js"
       ],
       "run_at": "document_idle",
       "world": "MAIN",

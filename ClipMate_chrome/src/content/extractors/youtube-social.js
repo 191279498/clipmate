@@ -25,6 +25,16 @@ class YouTubeSocialExtractor extends BaseExtractor {
   async extractAllFields() {
     // 字段外壳（字段名、数量、顺序）统一由 SocialFieldsBuilder 套用统一模板生成，
     // 取值仍走本类自己的取值方法，提取策略不变。
+    //
+    // v2.12.6：Shorts 页先预热「一手数据」。站内换条时 head 里的 meta / og:title /
+    // #snippet 仍是上一条（2026-11-06 真机实证），必须先问主世界钩子要「当前这一条」
+    // 的快照；拿不到就返回 null，各字段回落 DOM 取法并靠 _ytShortsHeadFresh() 挡住旧数据。
+    if (this._isShortsPage() && typeof YoutubeShortsPageData !== 'undefined' &&
+        YoutubeShortsPageData && typeof YoutubeShortsPageData.ensureFresh === 'function') {
+      try {
+        await YoutubeShortsPageData.ensureFresh();
+      } catch (e) { /* 预热失败不打断提取，回落原取法 */ }
+    }
     return await SocialFieldsBuilder.build(this);
   }
 
@@ -34,6 +44,124 @@ class YouTubeSocialExtractor extends BaseExtractor {
    */
   _isShortsPage() {
     return window.location.href.includes('/shorts/');
+  }
+
+  /* ==========================================================================
+   * v2.12.6：Shorts「一手数据优先 + 文档级数据过期护栏」
+   *
+   * 真机（2026-11-06，接管已登录 Edge）：点「下一个视频」后地址变成新 ID，
+   * 但 meta[itemprop=identifier]、datePublished、og:title、#snippet 全部还是旧视频；
+   * 新条目只存在于 `ytd-reel-video-renderer.data` 的 playerResponse 里。
+   * 主世界钩子（youtube-shorts-hook.js）把它抄进桥节点，这里按 videoId 精确读。
+   *
+   * 三条纪律：
+   *   ① 一手数据 ID 对不上 → 一律不用（读取器内部已挡，这里再挡一层）；
+   *   ② 没有一手数据时，文档级 head 数据必须过 _ytShortsHeadFresh() 才准用；
+   *   ③ 取不到就留空，绝不拿上一条的数据顶替。
+   * ========================================================================== */
+
+  /** 地址里的 Shorts 视频 ID */
+  _ytShortsVideoId() {
+    try {
+      const m = window.location.href.match(/\/shorts\/([A-Za-z0-9_-]{6,20})(?:[/?#]|$)/);
+      return m ? m[1] : '';
+    } catch (e) { return ''; }
+  }
+
+  /** 当前这一条的一手数据；没有 / ID 对不上 → null */
+  _ytShortsData() {
+    try {
+      if (typeof YoutubeShortsPageData === 'undefined' || !YoutubeShortsPageData ||
+          typeof YoutubeShortsPageData.getCurrent !== 'function') return null;
+      const item = YoutubeShortsPageData.getCurrent();
+      if (!item || !this._ytShortsVideoId()) return null;
+      if (String(item.videoId || '') !== this._ytShortsVideoId()) return null;
+      return item;
+    } catch (e) { return null; }
+  }
+
+  /**
+   * 照妖镜：文档级 head 数据是不是当前这条的？
+   * 换条后 `meta[itemprop=identifier]` 仍停在旧视频，正好拿来判过期。
+   */
+  _ytShortsHeadFresh() {
+    const id = this._ytShortsVideoId();
+    if (!id) return false;
+    try {
+      const identifier = SocialDomUtils.readMeta('meta[itemprop="identifier"]');
+      return !!identifier && String(identifier).trim() === id;
+    } catch (e) { return false; }
+  }
+
+  /** ISO 日期串 → YYYY/MM/DD HH:MM:SS（本地时区，与改动前逐字符一致） */
+  _ytFormatDateString(dateString) {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '';
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+    } catch (error) {
+      console.error('[YouTubeSocialExtractor] 日期格式化失败:', error);
+      return '';
+    }
+  }
+
+  /** 清掉 Shorts 文案尾部混进来的界面字（…更多 / 展开 / 收起 等） */
+  _ytShortsCleanText(text) {
+    if (!text) return '';
+    return String(text)
+      .replace(/[\s…\.]{0,4}(?:显示更多|显示全部|显示更少|更多|展开|收起)\s*$/g, '')
+      .replace(/(?:…|\.{2,})[\s.]*$/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  /** 「标题 + 简介」拼文案：逐行清洗界面字、换行不压平、标题重复只留一次 */
+  _ytShortsBuildText(title, description) {
+    const t = this._ytShortsCleanText(title);
+    // 必须按行清洗：先把整段 \s+ 压成空格会把「标题\n正文」粘成一行，
+    // 去重时就会连正文一起误删（v2.12.6 首轮单测抓到）。
+    const lines = String(description || '').split(/\r?\n/)
+      .map(line => this._ytShortsCleanText(line))
+      .filter(Boolean);
+    if (!t) return lines.join('\n');
+    if (!lines.length) return t;
+    const kept = lines.filter(p =>
+      p !== t && !(p.length > t.length && p.indexOf(t) === 0 && p.slice(t.length).trim().length <= 2)
+    );
+    const rest = kept.join('\n');
+    return rest ? t + '\n' + rest : t;
+  }
+
+  /** 作者主页归一：Shorts 头部链接常带 /shorts 子页，存进表里应是频道主页根 */
+  _ytShortsNormalizeHomepage(url) {
+    if (!url) return url;
+    try {
+      const u = new URL(url);
+      const seg = u.pathname.split('/').filter(Boolean);
+      // `/@handle/shorts` 是第 2 段带子页，`/channel/UC…/shorts` 是第 3 段带子页，
+      // 两种形态的截断点不同，别写死 seg[1]。
+      let cutAt = -1;
+      if (seg[0] === 'channel' && seg.length >= 3 && /^(shorts|reels|videos)$/i.test(seg[2])) {
+        cutAt = 2;
+      } else if (seg[0] && seg[0].charAt(0) === '@' && seg.length >= 2 &&
+                 /^(shorts|reels|videos)$/i.test(seg[1])) {
+        cutAt = 1;
+      }
+      if (cutAt > 0) {
+        u.pathname = '/' + seg.slice(0, cutAt).join('/');
+        u.search = '';
+        u.hash = '';
+        return u.toString().replace(/\/$/, '');
+      }
+    } catch (e) { /* 不是合法 URL 就原样返回 */ }
+    return url;
   }
 
   /**
@@ -84,12 +212,13 @@ class YouTubeSocialExtractor extends BaseExtractor {
         const href = el.getAttribute('href');
         if (!href) continue;
 
-        // 提取@符号后的部分，支持URL编码的中文字符
-        const authorIdMatch = href.match(/\/(@.+)/);
+        // v2.12.6：只取 `/@` 后面那一段路径。旧写法 `/\/(@.+)/` 会把子页一起吞进去
+        // （真机：`TouLanBro/shorts`），因为 Shorts 频道栏链接是 `/@xxx/shorts`。
+        const authorIdMatch = href.match(/\/([^/?#]*@[^/?#]+)/);
         if (!authorIdMatch || !authorIdMatch[1]) continue;
 
-        // 移除@符号
-        let authorId = authorIdMatch[1].replace('@', '');
+        // 移除@符号，支持URL编码的中文字符
+        let authorId = authorIdMatch[1].split('@').pop();
 
         // URL解码（处理%XX格式的中文字符）
         try {
@@ -152,6 +281,10 @@ class YouTubeSocialExtractor extends BaseExtractor {
         return name;
       }
 
+      // v2.12.6：DOM 全落空时，用一手数据里的频道名兜底（换条瞬间 DOM 还没水合）
+      const item = this._ytShortsData();
+      if (item && item.author) return String(item.author).trim();
+
       ClipMateLog.debug('[YouTubeSocialExtractor] 作者昵称提取失败，返回空值');
       return '';
     } catch (error) {
@@ -178,8 +311,15 @@ class YouTubeSocialExtractor extends BaseExtractor {
           const href = headerLink.getAttribute('href');
           if (href) {
             const fullUrl = SocialDomUtils.absoluteUrl(href, YOUTUBE_ORIGIN);
-            return fullUrl;
+            // v2.12.6：Shorts 头部链接常是 `/@xxx/shorts`，表里要存频道主页根
+            return this._ytShortsNormalizeHomepage(fullUrl);
           }
+        }
+        // 一手数据里的频道主页，DOM 还没水合时兜底
+        const item = this._ytShortsData();
+        if (item && item.ownerProfileUrl) {
+          const owner = String(item.ownerProfileUrl).replace(/^http:\/\//i, 'https://');
+          return this._ytShortsNormalizeHomepage(owner);
         }
       }
 
@@ -200,7 +340,7 @@ class YouTubeSocialExtractor extends BaseExtractor {
         const href = channelLink.getAttribute('href');
         if (href) {
           const fullUrl = SocialDomUtils.absoluteUrl(href, YOUTUBE_ORIGIN);
-          return fullUrl;
+          return this._ytShortsNormalizeHomepage(fullUrl);
         }
       }
 
@@ -226,7 +366,7 @@ class YouTubeSocialExtractor extends BaseExtractor {
         const href = link.getAttribute('href');
         if (href && !href.includes('/watch') && !href.includes('/results')) {
           const fullUrl = SocialDomUtils.absoluteUrl(href, YOUTUBE_ORIGIN);
-          return fullUrl;
+          return this._ytShortsNormalizeHomepage(fullUrl);
         }
       }
 
@@ -282,34 +422,23 @@ class YouTubeSocialExtractor extends BaseExtractor {
    */
   extractPublishDate() {
     try {
+      const isShorts = this._isShortsPage();
 
-      // Shorts 与常规页面的三个日期来源完全相同，统一调用同一个读取流程；
-      // 分支判断保留在 tag 上，只为日志可读，不改变任何取值顺序。
-      const tag = this._isShortsPage() ? 'Shorts' : '';
-      const dateString = this._readPublishDateRaw(tag);
-
-      // 如果提取到日期字符串，格式化为YYYY/MM/DD HH:mm:ss格式
-      if (dateString) {
-        try {
-          // 解析ISO 8601格式日期（如：2025-06-22T05:57:10-07:00）
-          const date = new Date(dateString);
-          if (!isNaN(date.getTime())) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            const seconds = String(date.getSeconds()).padStart(2, '0');
-
-            const formattedDate = `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
-            return formattedDate;
-          }
-        } catch (formatError) {
-          console.error('[YouTubeSocialExtractor] 日期格式化失败:', formatError);
+      // v2.12.6：Shorts 优先用「当前这一条」的一手日期（精确到秒，带时区）。
+      // 真机：站内换条后 head 里的 datePublished 仍是上一条的格式与内容，
+      // 拿过期数据比留空更糟 —— 没有一手数据时必须过照妖镜才准读文档级数据。
+      if (isShorts) {
+        const item = this._ytShortsData();
+        if (item && item.publishDate) {
+          const fresh = this._ytFormatDateString(item.publishDate);
+          if (fresh) return fresh;
         }
+        if (!this._ytShortsHeadFresh()) return '';
       }
 
-      return '';
+      const tag = isShorts ? 'Shorts' : '';
+      const dateString = this._readPublishDateRaw(tag);
+      return this._ytFormatDateString(dateString);
     } catch (error) {
       console.error('[YouTubeSocialExtractor] 提取发布日期失败:', error);
       return '';
@@ -325,37 +454,35 @@ class YouTubeSocialExtractor extends BaseExtractor {
 
       // YouTube Shorts页面专用策略
       if (this._isShortsPage()) {
+        // v2.12.6 第一优先：当前这一条的一手数据（标题 + 完整简介），
+        // 不读 head 里那批换条后不更新的 meta / #snippet。
+        const item = this._ytShortsData();
+        if (item) {
+          const first = this._ytShortsBuildText(item.title, item.description);
+          if (first) return first;
+        }
 
-        const contentParts = [];
-
-        // Shorts策略1~3: 视频标题（专用标题元素 → og:title → meta title，按序取第一个可用的）
+        // 回落：可见标题元素（换条后跟着更新，可信）
         let headText = '';
         const shortsTitleElement = document.querySelector('.ytShortsVideoTitleViewModelShortsVideoTitle span[role="text"]');
         if (shortsTitleElement && shortsTitleElement.textContent) {
           headText = shortsTitleElement.textContent.trim();
-        } else {
+        } else if (this._ytShortsHeadFresh()) {
+          // og:title / meta title 是文档级的，只有 identifier 对得上才准用
           headText = SocialDomUtils.readMeta('og:title').trim()
             || SocialDomUtils.readMeta('meta[name="title"]').trim();
         }
-        if (headText) {
-          contentParts.push(headText);
-        }
 
-        // 从#snippet元素中提取内容
-        const snippetElement = document.querySelector('#snippet');
-        if (snippetElement && snippetElement.textContent) {
-          const snippetContent = snippetElement.textContent.trim();
-          // 确保不与现有内容重复
-          if (!contentParts.includes(snippetContent)) {
-            contentParts.push(snippetContent);
+        // #snippet 同样是文档级：换条后残留上一条的简介（真机串数据现场）
+        let snippetContent = '';
+        if (this._ytShortsHeadFresh()) {
+          const snippetElement = document.querySelector('#snippet');
+          if (snippetElement && snippetElement.textContent) {
+            snippetContent = snippetElement.textContent.trim();
           }
         }
 
-        // 合并所有内容部分
-        if (contentParts.length > 0) {
-          const mergedContent = contentParts.join('\n');
-          return mergedContent;
-        }
+        return this._ytShortsBuildText(headText, snippetContent);
       }
 
       // 方法1: 从视频描述中提取
