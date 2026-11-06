@@ -286,7 +286,7 @@ const HTML_WORK = `<!DOCTYPE html><html><body>
 
   /* ==================== 9. 版本号 ==================== */
   section('9. 版本号');
-  eq('manifest 版本已升到 2.12.0', MANIFEST.version, '2.12.7');
+  eq('manifest 版本已升到 2.12.0', MANIFEST.version, '2.12.8');
 
   /* ==================== 真机形态预览（--dump） ==================== */
   if (process.argv.includes('--dump')) {

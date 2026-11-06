@@ -302,8 +302,21 @@
     _deactivateKuaishouImmersive() {
       // 接管结束 → 清标记（extractor-factory 要据此把 person 提取器放回来）
       try { window.__clipmateKsImmersiveActive = false; } catch (e) { /* 忽略 */ }
-      var wasActive = !!(this._ksWorkId || this._ksActivated);
+      // v2.12.8：这个「已激活」标记必须在撤离时归零。
+      //   `_ksActivated` 以前只被 `_activateKuaishouComponents()` 置 true，从没人清过。
+      //   于是「关弹层 → 再点开」时 opened 分支的 `if (!this._ksActivated)` 恒假，走 else
+      //   只补挂锚点 + 显示按钮，**整段一键激活被跳过**；而关弹层的
+      //   `_restoreKuaishouProfilePerson()` 已经把模板换回 person 6 列、皮肤换回 arch
+      //   「整理档案」、全局标记换回 false —— 第二次打开就变成「拿主页那套状态提弹层作品」：
+      //   按钮停在整理档案，浮窗 7 列除 URL 外全空（2026-11-07 真机复现）。
+      //   这里归零后，每次关→开都会完整重跑一键激活，三处状态只有一个入口。
+      //   重跑是安全的：initUI 只覆盖 onClick、refreshConfig 只改配置字段、
+      //   _bindKuaishouAnchor 有 _ksAnchorBound 闸口、setSkin/show 自带重复保护。
       var wasMode = this._ksMode;
+      var wasActive = !!(this._ksWorkId || this._ksActivated);
+      // 必须放在 wasActive 之后：下面「确实接管过弹层」的判断还要用旧值，提前清会让
+      // 主页按钮的 person 模板 / arch 皮肤不还原，等于按下葫芦浮起瓢。
+      this._ksActivated = false;
       var wasUserMoved = !!this._ksUserMoved;
       this._ksWorkId = '';
       this._ksMode = '';
