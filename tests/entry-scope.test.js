@@ -30,6 +30,10 @@ const MODALWIN = read('src/content/ui/modal-window.js');
 const MODALTBL = read('src/content/ui/modal-table-renderer.js');
 const MAIN = read('src/content/content-main.js');
 const MANIFEST = JSON.parse(read('manifest.json'));
+// v2.12.10：站点状态机自己的锚点标记也要能归位（真机 K5/K6 抓到的残留）
+const KSSPA = read('src/content/ui/kuaishou-spa-handler.js');
+const DYSPA = read('src/content/ui/douyin-spa-handler.js');
+const TTSPA = read('src/content/ui/tiktok-spa-handler.js');
 
 let pass = 0;
 const failures = [];
@@ -386,7 +390,7 @@ const SITE_HOSTS = {
     truthy('★ entry-scope 在 button-manager 之前加载', iScope >= 0 && iScope < iBtn);
     truthy('★ entry-scope 在 modal-window 之前加载', iScope >= 0 && iScope < iWin);
     truthy('entry-scope 在 modal-table-renderer 之前加载', iScope >= 0 && iScope < iTbl);
-    eq('manifest 版本', MANIFEST.version, '2.12.9');
+    eq('manifest 版本', MANIFEST.version, '2.12.10');
 
     truthy('★ button-manager.setSkin 接了 onSkin', /ClipMateEntryScope\.onSkin\(next\)/.test(BTN));
     truthy('★ 幂等 return 仍排在 onSkin 之前',
@@ -413,6 +417,25 @@ const SITE_HOSTS = {
     truthy('★ 当前入口不落盘（没有写 current 的落盘语句）',
       !/lsSet\([^)]*current|_scope\s*=\s*JSON\.parse/.test(SCOPE));
     truthy('★ 判定不靠网址', !/location\.pathname|location\.href/.test(SCOPE));
+  }
+
+  section('七、站点状态机的锚点标记必须能归位（v2.12.10）');
+  {
+    // 9 站通用层故意不碰 `data-clipmate-anchor`（TikTok 靠它判「离开推荐流」），
+    // 所以每个会写这个标记的站点，都必须自己负责清 —— 不许只清快手一家。
+    const writers = [['快手', KSSPA], ['抖音', DYSPA], ['TikTok', TTSPA]];
+    writers.forEach(([name, src]) => {
+      truthy(`★ ${name} 会写锚点标记`, /setAttribute\('data-clipmate-anchor'/.test(src));
+      truthy(`★ ${name} 有清理锚点标记的代码`, /removeAttribute\('data-clipmate-anchor'\)/.test(src));
+    });
+    const iRestore = KSSPA.indexOf('async _restoreKuaishouProfilePerson()');
+    const iNext = KSSPA.indexOf('_isKuaishouBreakerTripped()', iRestore);
+    const restoreBody = iRestore > 0 && iNext > iRestore ? KSSPA.slice(iRestore, iNext) : '';
+    truthy('★ 快手「回主页」出口里会清锚点标记（不是只挂在别的分支）',
+      restoreBody.length > 0 && /removeAttribute\('data-clipmate-anchor'\)/.test(restoreBody));
+    truthy('★ 通用层不碰站点标记（TikTok 要读它）', !/data-clipmate-anchor/.test(SCOPE));
+    truthy('★ ButtonManager 位置恢复不碰站点标记',
+      !/removeAttribute\('data-clipmate-anchor'\)/.test(BTN));
   }
 
   console.log(`\n${pass} 通过，${failures.length} 失败`);

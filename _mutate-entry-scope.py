@@ -20,7 +20,12 @@ MODALWIN = os.path.join(SRC, 'ui', 'modal-window.js')
 MODALTBL = os.path.join(SRC, 'ui', 'modal-table-renderer.js')
 MAIN = os.path.join(SRC, 'content-main.js')
 MANIFEST = os.path.join(ROOT, 'ClipMate_chrome', 'manifest.json')
+KSSPA = os.path.join(SRC, 'ui', 'kuaishou-spa-handler.js')
+DYSPA = os.path.join(SRC, 'ui', 'douyin-spa-handler.js')
+TTSPA = os.path.join(SRC, 'ui', 'tiktok-spa-handler.js')
 TEST = os.path.join(ROOT, 'tests', 'entry-scope.test.js')
+TEST_KS = os.path.join(ROOT, 'tests', 'kuaishou-popup-reopen.test.js')
+TESTS = [TEST, TEST_KS]
 
 # (编号, 说明, 文件, 原文, 改成)
 MUTATIONS = [
@@ -101,18 +106,34 @@ MUTATIONS = [
     ('M22', '★ manifest 没注入 entry-scope.js', MANIFEST,
      '        "src/content/shared/entry-scope.js",\n', ''),
     ('M23', '★ 版本没升（回退 2.12.8）', MANIFEST,
-     '  "version": "2.12.9",', '  "version": "2.12.8",'),
+     '  "version": "2.12.10",', '  "version": "2.12.8",'),
+    ('M24', '★ 快手回主页不清锚点标记（真机 K5/K6 残留）', KSSPA,
+     "            this.buttonManager.button.removeAttribute('data-clipmate-anchor');",
+     "            // 变异：不清锚点标记"),
+    ('M25', '★ 抖音漏掉锚点清理（9 站通用性静态断言必须红）', DYSPA,
+     "        bm.button.removeAttribute('data-clipmate-anchor');",
+     "        // 变异：不清锚点标记"),
+    ('M26', '★ TikTok 漏掉锚点清理（9 站通用性静态断言必须红）', TTSPA,
+     "          btn.removeAttribute('data-clipmate-anchor');",
+     "          // 变异：不清锚点标记"),
 ]
 
 
 def run_tests():
+    """两套专项都必须是绿的；任一变红即判定该变异被抓住。"""
     env = dict(os.environ)
     env['NODE_PATH'] = 'C:/Users/19127/.workbuddy/binaries/node/workspace/node_modules'
-    p = subprocess.run(
-        ['node', TEST], cwd=ROOT, env=env,
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-    )
-    return p.returncode, p.stdout.decode('utf-8', 'replace')
+    chunks = []
+    for t in TESTS:
+        p = subprocess.run(
+            ['node', t], cwd=ROOT, env=env,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        )
+        out = p.stdout.decode('utf-8', 'replace')
+        chunks.append(out)
+        if p.returncode != 0:
+            return p.returncode, '\n'.join(chunks)
+    return 0, '\n'.join(chunks)
 
 
 def eol_variants(text):
@@ -120,7 +141,7 @@ def eol_variants(text):
 
 
 def main():
-    files = {SCOPE, BTN, MODALWIN, MODALTBL, MAIN, MANIFEST}
+    files = {SCOPE, BTN, MODALWIN, MODALTBL, MAIN, MANIFEST, KSSPA, DYSPA, TTSPA}
     originals = {}
     texts = {}
     for f in files:

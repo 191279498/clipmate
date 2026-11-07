@@ -390,7 +390,19 @@
         }
         await this.refreshConfig();
         this._showKuaishouButton();
-        // v2.12.2：回到整页人物档案，按钮必须换回档案例皮
+        // v2.12.10：关弹层回主页，按钮不许还挂着播放态的锚点标记。
+        //   `_unbindKuaishouAnchor()` 只解绑监听，不碰 DOM 属性；
+        //   `_hideKuaishouButton()` 里那句 removeAttribute 只有非主页分支才走到
+        //   （主页分支本函数从不摘按钮，怕一闪就没）。
+        //   2026-11-07 真机 K5/K6 实证：不清的话主页按钮会一直带 `kuaishou-popup`，
+        //   刷新页面才消失。位置坐标由 ButtonManager 按入口抽屉恢复（v2.12.9），
+        //   这里只清站点状态机自己的诊断标记，不动坐标。
+        try {
+          if (this.buttonManager && this.buttonManager.button) {
+            this.buttonManager.button.removeAttribute('data-clipmate-anchor');
+          }
+        } catch (e) { /* 清标记失败不许影响换肤与提取 */ }
+        // v2.12.2：回到整页人物档案，按钮必须换回档案皮
         this._ksApplySkin('arch');
         this._ksLog('info', '回到个人主页（mediaType=person）');
       } catch (e) {
