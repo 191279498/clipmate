@@ -447,8 +447,16 @@
     // 立即切换显示模式
     this.displayMode = this.displayMode === 'horizontal' ? 'vertical' : 'horizontal';
 
-    // v2.5.45：记住这类媒体的显示方向，下次打开直接沿用
-    if (typeof this._saveUiPref === 'function') {
+    // v2.12.9：社交 9 站按「站点 + 入口」写入口自己的方向（长期记住、两个入口互不串）。
+    // 非社交站仍走原 `_saveUiPref(mt, ...)`，老键 `clipmate_ui_prefs` 一个字节不改。
+    let entryEnabled = false;
+    try {
+      entryEnabled = !!(typeof ClipMateEntryScope !== 'undefined' && ClipMateEntryScope.enabled &&
+                        ClipMateEntryScope.enabled());
+    } catch (e) { entryEnabled = false; }
+    if (entryEnabled) {
+      ClipMateEntryScope.writeLayout(ClipMateEntryScope.effectiveScope(), this.displayMode);
+    } else if (typeof this._saveUiPref === 'function') {
       const mt = (typeof this.getMediaType === 'function') ? this.getMediaType() : 'default';
       this._saveUiPref(mt, { layout: this.displayMode });
     }

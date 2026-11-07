@@ -324,7 +324,7 @@ const EVENT_CLOSE = { id: '3xe456wj9c4ei86', opened: false, mode: 'popup' };
    * 五、版本与注册
    * ==========================================================*/
   section('五、版本');
-  eq('manifest 版本是 2.12.8', MANIFEST.version, '2.12.8');
+  eq('manifest 版本是 2.12.9', MANIFEST.version, '2.12.9');
   truthy('快手 spa-handler 已在 content_scripts 注册',
     JSON.stringify(MANIFEST.content_scripts).indexOf('kuaishou-spa-handler.js') >= 0);
 

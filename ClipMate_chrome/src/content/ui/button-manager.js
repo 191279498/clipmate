@@ -149,6 +149,12 @@ class ButtonManager {
   setSkin(skin) {
     const next = skin === 'arch' ? 'arch' : 'default';
     if (this._skin === next) return;
+    // v2.12.9：换肤 = 入口切换的最可靠信号（全站换肤都收口到这一个方法）。
+    // 必须排在幂等 return **之后**：同皮肤一个字节都不碰，按钮位置也不许动。
+    // 非社交站 onSkin 返回 null，下面原逻辑一字不改。
+    const tr = (typeof ClipMateEntryScope !== 'undefined' && ClipMateEntryScope.onSkin)
+      ? ClipMateEntryScope.onSkin(next) : null;
+    if (tr && tr.changed) this._restoreEntryScopePosition();
     this._skin = next;
     if (!this.button) return;
     try {
@@ -168,6 +174,38 @@ class ButtonManager {
       }
       this.button.title = this.isReady ? this._idleTitle : '扩展正在初始化，稍等一下再点';
     } catch (e) { /* 换肤失败不影响提取本身 */ }
+  }
+
+  /**
+   * v2.12.9：切入口时把按钮位置显式换到目标抽屉。
+   *
+   * 只清内联坐标 —— 站点自己的贴位逻辑随后会重贴（快手 `_anchorKuaishouButton`、
+   * TikTok `_anchorTikTokButton`）。**不动 `data-clipmate-anchor`**：那是各站状态机的标记，
+   * 抢着清会让 TikTok「离开推荐流」那条分支不再触发。
+   * 清完再走 `loadSavedPosition()`：目标抽屉有用户拖过的位置就恢复，没有就让 CSS 默认位生效。
+   */
+  _restoreEntryScopePosition() {
+    if (!this.button) return;
+    try {
+      const btn = this.button;
+      btn.style.left = '';
+      btn.style.top = '';
+      btn.style.right = '';
+      btn.style.bottom = '';
+      btn.style.transform = '';
+      this._basePos = { left: 0, top: 0 };
+      this._pendingPos = null;
+      this.loadSavedPosition();
+    } catch (e) { /* 位置恢复失败不许影响换肤 */ }
+  }
+
+  /** v2.12.9：「用户亲手拖过」也按入口分开记，长期落盘。 */
+  _persistUserMoved(value) {
+    try {
+      if (typeof ClipMateEntryScope !== 'undefined' && ClipMateEntryScope.writeUserMoved) {
+        ClipMateEntryScope.writeUserMoved(ClipMateEntryScope.effectiveScope(), value);
+      }
+    } catch (e) { /* 存储不可用只影响记忆，不影响本次拖动 */ }
   }
 
   constructor() {
@@ -415,6 +453,7 @@ class ButtonManager {
         // v2.5.97：用户**亲手拖过**按钮。贴位逻辑（TikTok 推荐流等）看到这个标志就不再抢位置，
         // 他要放哪儿就放哪儿，直到下一次整页刷新。轻点不算（只有真拖动才会走到这里）。
         this.userMoved = true;
+        this._persistUserMoved(true);   // v2.12.9：按当前入口长期记住
       }
     }
 
@@ -455,8 +494,12 @@ class ButtonManager {
       top: this.button.offsetTop
     };
     
-    // 使用localStorage保存位置（按域名保存）
-    const key = `clipmate-button-position-${window.location.hostname}`;
+    // 使用localStorage保存位置。
+    // v2.12.9：社交站按「站点 + 入口」分桶存，档案页与作品弹层各记各的；
+    // 其它分组仍用原来的按域名单键，一个字节都不改。
+    const key = (typeof ClipMateEntryScope !== 'undefined' && ClipMateEntryScope.positionKey)
+      ? ClipMateEntryScope.positionKey()
+      : `clipmate-button-position-${window.location.hostname}`;
     localStorage.setItem(key, JSON.stringify(pos));
 
     // v2.5.77 批 3：抖音弹窗把按钮自动贴在弹窗右上角。用户一旦手动拖过，
@@ -492,11 +535,14 @@ class ButtonManager {
     const t = Math.round(top);
     this._basePos = { left: l, top: t };
     this.userMoved = true;
+    this._persistUserMoved(true);   // v2.12.9：联动拖动收尾也按入口长期记住
     this.savePosition({ left: l, top: t });
   }
 
   loadSavedPosition() {
-    const key = `clipmate-button-position-${window.location.hostname}`;
+    const key = (typeof ClipMateEntryScope !== 'undefined' && ClipMateEntryScope.positionKey)
+      ? ClipMateEntryScope.positionKey()
+      : `clipmate-button-position-${window.location.hostname}`;
     const saved = localStorage.getItem(key);
     
     if (saved) {
@@ -518,6 +564,18 @@ class ButtonManager {
         console.error('加载按钮位置失败:', e);
       }
     }
+
+    // v2.12.9：社交站按入口恢复「用户亲手拖过」标记。
+    // 有没有保存位置都要恢复 —— 没位置只说明按钮在 CSS 默认位，不代表用户没拖过。
+    try {
+      if (typeof ClipMateEntryScope !== 'undefined' && ClipMateEntryScope.enabled &&
+          ClipMateEntryScope.enabled()) {
+        const moved = ClipMateEntryScope.readUserMoved(ClipMateEntryScope.effectiveScope());
+        // 新抽屉里没有记录 = 这个入口从没被拖过 → 必须归零。
+        // 若沿用上一个入口的 true，站点贴位会以为用户选过位置，弹层按钮就不贴了。
+        this.userMoved = (moved === null) ? false : moved;
+      }
+    } catch (e) { /* 读不到标记就沿用旧行为 */ }
   }
 
   /**

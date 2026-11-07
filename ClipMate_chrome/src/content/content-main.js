@@ -1032,6 +1032,21 @@ class MediaExtractor {
         return false;
       }
 
+      // v2.12.9：用「本次提取实际用的字段模板」校准入口（person 6 列 / social 7 列）。
+      // 换肤是主信号，这里兜底：快手弹层地址不变、抖音会抹 modal_id，网址判不准；
+      // 而 fieldMapper.mediaType 是这次真正拿去建表的那份模板。
+      // 万一校准结果与换肤不一致，以字段模板为准，并把按钮位置一起换到目标抽屉。
+      try {
+        if (typeof ClipMateEntryScope !== 'undefined' && ClipMateEntryScope.confirm) {
+          const mapperType = this.fieldMapper && this.fieldMapper.mediaType;
+          const tr = ClipMateEntryScope.confirm(mapperType);
+          if (tr && tr.changed && this.buttonManager &&
+              typeof this.buttonManager._restoreEntryScopePosition === 'function') {
+            this.buttonManager._restoreEntryScopePosition();
+          }
+        }
+      } catch (e) { /* 校准失败不许吞掉本次提取 */ }
+
       // 显示结果
       await this.modalManager.open(combinedData);
 

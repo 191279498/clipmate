@@ -54,15 +54,31 @@
 
       // v2.5.45：读取界面偏好（按媒体类型记住的尺寸/布局）
       await this.loadUiPrefs();
-      // 恢复上次的显示方向（横向/纵向）
-      const savedLayout = this._getUiPref(this.getMediaType()).layout;
-      if (savedLayout === 'horizontal' || savedLayout === 'vertical') {
-        this.displayMode = savedLayout;
-      } else if (this.getMediaType() === 'person') {
-        // v2.7.11：人物档案默认横向。
-        // 人物档案列少且字段短（影人 12 列 / 账号 6 列），横向一屏能看全；
-        // 一旦用户手动切过，上面的 savedLayout 优先，不再被这条覆盖。
-        this.displayMode = 'horizontal';
+      // v2.12.9：社交 9 站按「站点 + 入口」读横竖，且每次开窗都**显式**给默认值。
+      // 串台根因：快手弹层地址不变 → getMediaType() 判成 person → 两个场景共用同一个 pref 键；
+      // 加上 displayMode 是同一个实例变量、open() 只在某些分支赋值，其余直接沿用上一次的值。
+      // 非社交站完全走下面原逻辑，零回归。
+      let entryEnabled = false;
+      try {
+        entryEnabled = !!(typeof ClipMateEntryScope !== 'undefined' && ClipMateEntryScope.enabled &&
+                          ClipMateEntryScope.enabled());
+      } catch (e) { entryEnabled = false; }
+      if (entryEnabled) {
+        const scope = ClipMateEntryScope.effectiveScope();
+        const saved = ClipMateEntryScope.readLayout(scope);
+        this.displayMode = (saved === 'horizontal' || saved === 'vertical')
+          ? saved : ClipMateEntryScope.defaultLayout(scope);
+      } else {
+        // 恢复上次的显示方向（横向/纵向）
+        const savedLayout = this._getUiPref(this.getMediaType()).layout;
+        if (savedLayout === 'horizontal' || savedLayout === 'vertical') {
+          this.displayMode = savedLayout;
+        } else if (this.getMediaType() === 'person') {
+          // v2.7.11：人物档案默认横向。
+          // 人物档案列少且字段短（影人 12 列 / 账号 6 列），横向一屏能看全；
+          // 一旦用户手动切过，上面的 savedLayout 优先，不再被这条覆盖。
+          this.displayMode = 'horizontal';
+        }
       }
 
       // 创建悬浮窗
