@@ -332,14 +332,18 @@ ok('popup 有「换作品时收起浮窗」开关',
 ok('popup 的 SITE_KEYS 含 autoDismiss（底部「已单独设置 N 项」才数得对）',
   /SITE_KEYS = \[[^\]]*'autoDismiss'[^\]]*\]/.test(POPUP_JS));
 
+// v2.12.11：写盘快照统一抽到 site-config.siteSnapshot()，两处都调用它。
+// 断言改成「调用点 + 快照里真的带 autoDismiss」，行为另有 popup-slim / settings-page 的写盘形状断言钉住。
 ok('popup 写规则时快照带上 autoDismiss（否则改别的开关会把它弄丢）',
-  /autoDismiss: eff\.autoDismiss/.test(POPUP_JS));
+  /Sites\.siteSnapshot\(this\.config, this\.hostname, eff\)/.test(POPUP_JS) &&
+  /autoDismiss: e\.autoDismiss/.test(SITES_SRC));
 
 ok('设置页站点卡片渲染 autoDismiss（siteItems 会带上）',
   /writeSite\(site, item\.key, next\)/.test(OPTIONS_JS));
 
-ok('设置页 writeSite 快照带上 autoDismiss',
-  (OPTIONS_JS.match(/autoDismiss: eff\.autoDismiss/g) || []).length >= 2);
+ok('设置页 writeSite / 批量快照都走统一函数且带 autoDismiss',
+  (OPTIONS_JS.match(/SITES\.siteSnapshot\(/g) || []).length >= 3 &&
+  /autoDismiss: e\.autoDismiss/.test(SITES_SRC));
 
 ok('设置页批量入口有 dismiss-on / dismiss-off',
   OPTIONS_HTML.indexOf('dismiss-on') !== -1 && OPTIONS_HTML.indexOf('dismiss-off') !== -1 &&

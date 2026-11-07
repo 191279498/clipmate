@@ -39,7 +39,9 @@ function normalizeListLayout(mode) {
 }
 
 // 本站规则里允许出现的六个键（判断「改过几项」用）
-var SITE_KEYS = ['autoExtract', 'autoExtractDelay', 'autoCopy', 'autoCopyFormat', 'showButton', 'autoDismiss'];
+// v2.12.11：加三个空白字段键，否则「本站已单独设置」会漏算（不影响读写，只影响计数）
+var SITE_KEYS = ['autoExtract', 'autoExtractDelay', 'autoCopy', 'autoCopyFormat', 'showButton', 'autoDismiss',
+  'hideEmptyMode', 'hideEmptyDisplay', 'hideEmptyCopy'];
 
 class PopupManager {
   constructor() {
@@ -361,20 +363,11 @@ class PopupManager {
     if (!Sites || !this.hostname) return;
 
     const eff = Sites.resolve(this.config, this.hostname);
-    const snapshot = {
-      autoExtract: eff.autoExtract,
-      autoExtractDelay: eff.autoExtractDelay,
-      autoCopy: eff.autoCopy,
-      showButton: eff.showButton,
-      // v2.9.6：一起快照，否则「先设了收起浮窗、再改自动提取」会把本站的设置弄丢
-      autoDismiss: eff.autoDismiss
-    };
-
-    // 格式键特殊：本站原本没这条 → 不写，继续保持「跟全局一起变」
+    // v2.12.11：与设置页共用同一份快照函数。基础五项照旧无条件带上；
+    // 「可跟随键」（复制格式 + 空白字段三键）只在**本站自己那条规则里已经有**时才带，
+    // 否则在 popup 改任一开关，就会把全局档位悄悄固化到本站。
+    const snapshot = Sites.siteSnapshot(this.config, this.hostname, eff);
     const own = this.ownRule();
-    if (own && Object.prototype.hasOwnProperty.call(own, 'autoCopyFormat')) {
-      snapshot.autoCopyFormat = own.autoCopyFormat;
-    }
 
     if (patchKey === 'autoCopyFormat') {
       // 关键：拿「本站没有这条规则时会继承到的格式」作比较。

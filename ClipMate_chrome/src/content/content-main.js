@@ -618,6 +618,33 @@ class MediaExtractor {
           ? resolver.normalizeCopyFormat(eff.autoCopyFormat)
           : 'markdown';
 
+        // v2.12.11：空白字段四档。解析走 site-config（全局打底 + 站点覆盖），
+        // 结果挂进共享模块，渲染 / 复制只读这一份，不各自再解析配置。
+        // 页面根元素上另写两个属性：既是真机探针（旧代码根本没有这两个属性，
+        // 自动重载后出现即证明新代码真的被页面读到），也是排查时的可见状态。
+        const he = (resolver && typeof resolver.resolveHideEmpty === 'function')
+          ? resolver.resolveHideEmpty(config, location.hostname)
+          : { mode: 'off', display: false, copy: false };
+        this.hideEmptyPolicy = he;
+        if (resolver && typeof resolver.setHideEmptyPolicy === 'function') {
+          resolver.setHideEmptyPolicy(he);
+        }
+        try {
+          const rootEl = document.documentElement;
+          if (rootEl) {
+            rootEl.setAttribute('data-clipmate-hide-empty', he.mode);
+            rootEl.setAttribute('data-clipmate-hide-empty-combo',
+              (he.display ? '1' : '0') + (he.copy ? '1' : '0'));
+          }
+        } catch (e) { /* 页面根元素不可写时不许影响提取 */ }
+
+        // 浮窗正开着且不在编辑模式 → 就地重绘，设置页改完立刻看到效果。
+        // 编辑模式跳过：重建 DOM 会把正在输入的那格冲掉。
+        if (this.modalManager && this.modalManager.isOpen && !this.modalManager.isEditMode &&
+            typeof this.modalManager.updateTable === 'function') {
+          try { this.modalManager.updateTable(true); } catch (e) { /* 重绘失败不影响提取 */ }
+        }
+
         // v2.8.0：本站点专属功能的开关（默认全开；没设过时按开处理，行为与升级前一致）
         this.features = (flags && typeof flags.resolveAll === 'function')
           ? flags.resolveAll(location.hostname, result || {})

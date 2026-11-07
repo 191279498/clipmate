@@ -171,7 +171,7 @@ const EVENT_CLOSE = { id: '3xe456wj9c4ei86', opened: false, mode: 'popup' };
     eq('第 1 次打开：全局标记 true', s1.global, true);
     eq('第 1 次打开：_ksActivated true', s1.activated, true);
     truthy('第 1 次打开：按钮在 DOM 里', s1.inDom);
-    // v2.12.10：先证明确实贴上了弹层锚点标记，否则下面「必须清掉」会是假绿
+    // v2.12.11：先证明确实贴上了弹层锚点标记，否则下面「必须清掉」会是假绿
     eq('第 1 次打开：按钮带弹层锚点标记 kuaishou-popup',
       H.bm.button.getAttribute('data-clipmate-anchor'), 'kuaishou-popup');
 
@@ -188,7 +188,7 @@ const EVENT_CLOSE = { id: '3xe456wj9c4ei86', opened: false, mode: 'popup' };
     truthy('关弹层：主页按钮不撤（不许摘）', s2.inDom);
     // ★ 2026-11-07 真机 K5/K6 抓到：主页按钮一直挂着 kuaishou-popup，刷新才消失。
     // 位置数值虽已按入口分桶恢复，站点状态机的诊断标记也必须一起归位。
-    eq('★ 关弹层：锚点标记必须清掉（v2.12.10）',
+    eq('★ 关弹层：锚点标记必须清掉（v2.12.11）',
       H.bm.button.getAttribute('data-clipmate-anchor'), null);
 
     await H.inst._onKuaishouImmersiveState(EVENT_OPEN);
@@ -335,7 +335,7 @@ const EVENT_CLOSE = { id: '3xe456wj9c4ei86', opened: false, mode: 'popup' };
    * 五、版本与注册
    * ==========================================================*/
   section('五、版本');
-  eq('manifest 版本是 2.12.10', MANIFEST.version, '2.12.10');
+  eq('manifest 版本是 2.12.11', MANIFEST.version, '2.12.11');
   truthy('快手 spa-handler 已在 content_scripts 注册',
     JSON.stringify(MANIFEST.content_scripts).indexOf('kuaishou-spa-handler.js') >= 0);
 

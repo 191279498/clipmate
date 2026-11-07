@@ -68,9 +68,20 @@ const flags = require(path.join(ROOT, 'shared', 'feature-flags.js'));
 
 console.log('\n【一】设置项定义 settings-schema');
 
-eq('共 14 个设置项', schema.ITEMS.length, 14);
-eq('站点可单独设的 6 项', schema.siteItems().map((i) => i.key),
-  ['autoExtract', 'autoExtractDelay', 'autoCopy', 'autoCopyFormat', 'showButton', 'autoDismiss']);
+eq('共 17 个设置项（v2.12.11 加空白字段 3 项）', schema.ITEMS.length, 17);
+eq('站点可单独设的 9 项', schema.siteItems().map((i) => i.key),
+  ['autoExtract', 'autoExtractDelay', 'autoCopy', 'autoCopyFormat', 'showButton', 'autoDismiss',
+   'hideEmptyMode', 'hideEmptyDisplay', 'hideEmptyCopy']);
+eq('空白字段默认不隐藏', schema.read({}, schema.byKey('hideEmptyMode')), 'off');
+eq('脏档位回退 off', schema.read({ settings: { hideEmptyMode: 'zzz' } }, schema.byKey('hideEmptyMode')), 'off');
+eq('四档齐全', schema.byKey('hideEmptyMode').options.map((o) => o.value),
+  ['off', 'display', 'all', 'custom']);
+ok('自定义两开关依赖 equals custom',
+  schema.byKey('hideEmptyDisplay').dependsOn.equals === 'custom' &&
+  schema.byKey('hideEmptyCopy').dependsOn.equals === 'custom');
+ok('空白字段三项都能被站点覆盖',
+  ['hideEmptyMode', 'hideEmptyDisplay', 'hideEmptyCopy'].every((k) =>
+    schema.byKey(k).siteOverridable === true));
 ok('autoDismiss 是 siteOnly（只在站点卡片，通用页不显示）',
   schema.byKey('autoDismiss').siteOnly === true);
 ok('enableCache 不允许站点覆盖', schema.byKey('enableCache').siteOverridable === false);
@@ -273,8 +284,19 @@ async function main() {
   console.log('\n【三】设置页渲染');
 
   ok('页面实例已创建', !!page);
-  // v2.9.6：autoDismiss 转为站点级（siteOnly），通用页少一行
-  eq('通用页渲染 13 项', doc.querySelectorAll('#generalGroups .row').length, 13);
+  // v2.9.6：autoDismiss 转为站点级（siteOnly），通用页少一行；
+  // v2.12.11：空白字段 1 个下拉 + 2 个自定义小开关 → 13 + 3 = 16
+  eq('通用页渲染 16 项', doc.querySelectorAll('#generalGroups .row').length, 16);
+
+  const heRow = doc.querySelector('#generalGroups .row[data-key="hideEmptyMode"]');
+  ok('空白字段这一行渲染出来了', !!heRow && !!heRow.querySelector('select'));
+  eq('四个档位都列出来了', heRow ? heRow.querySelector('select').options.length : 0, 4);
+  eq('默认选中「不隐藏」', heRow ? heRow.querySelector('select').value : null, 'off');
+  ['hideEmptyDisplay', 'hideEmptyCopy'].forEach((k) => {
+    const r = doc.querySelector('#generalGroups .row[data-key="' + k + '"]');
+    ok(k + ' 非 custom 时被置灰', !!r && r.classList.contains('is-off'));
+    ok(k + ' 非 custom 时开关被禁用', !!r && r.querySelector('.sw').disabled === true);
+  });
 
   // v2.11.7：豆瓣收藏列表小按钮落点（A / B / C）
   const layoutRow = doc.querySelector('#generalGroups .row[data-key="doubanListBtnLayout"]');
@@ -298,7 +320,7 @@ async function main() {
   eq('抖音卡里 2 个专属开关', douyin.querySelectorAll('.feature-block .sw').length, 2);
   eq('快手卡里 3 个专属开关', kuaishou.querySelectorAll('.feature-block .sw').length, 3);
   eq('TikTok 没有专属开关块', tiktok.querySelectorAll('.feature-block').length, 0);
-  eq('抖音卡里 6 个通用设置项', douyin.querySelectorAll('.site-body .row').length, 2 + 6);
+  eq('抖音卡里 9 个通用设置项（v2.12.11）', douyin.querySelectorAll('.site-body .row').length, 2 + 9);
 
   // ============ 四、写盘形状 ============
 
@@ -598,6 +620,45 @@ async function main() {
   eq('改落点写进 settings.doubanListBtnLayout', layoutPatch.settings.doubanListBtnLayout, 'B');
   ok('同层兄弟键没被吃掉（enableCache 还在）', layoutPatch.settings.enableCache === true, layoutPatch.settings);
   ok('没有顺手把顶层键塞进来', !('autoCopyFormat' in layoutPatch), Object.keys(layoutPatch));
+
+  // ============ 十、v2.12.11 空白字段四档：写盘形状 ============
+  // 放在最后，免得动到【五】撤销依赖的「上一次 save」快照。
+  console.log('\n【十】空白字段四档写盘');
+
+  const modeSel = doc.querySelector('#generalGroups .row[data-key="hideEmptyMode"] select');
+  ok('找到通用空白字段下拉', !!modeSel);
+  modeSel.value = 'custom';
+  modeSel.dispatchEvent(new win.Event('change'));
+  await tick(30);
+  const he1 = sent[sent.length - 1];
+  eq('通用档位真的写进 settings.hideEmptyMode',
+    he1.config.settings.hideEmptyMode, 'custom');
+  ok('同层兄弟键没被吃掉（descLimits 还在）', !!he1.config.settings.descLimits);
+  ok('切到 custom 后「显示隐藏」小开关解除置灰',
+    !doc.querySelector('#generalGroups .row[data-key="hideEmptyDisplay"]').classList.contains('is-off'));
+  ok('切到 custom 后「复制隐藏」小开关可点',
+    doc.querySelector('#generalGroups .row[data-key="hideEmptyCopy"] .sw').disabled === false);
+
+  const siteSelPath = '.site[data-domain="www.kuaishou.com"] .site-body .row[data-key="hideEmptyMode"] select';
+  const siteModeSel = doc.querySelector(siteSelPath);
+  ok('找到快手站的空白字段下拉', !!siteModeSel);
+  siteModeSel.value = 'all';
+  siteModeSel.dispatchEvent(new win.Event('change'));
+  await tick(30);
+  const he2 = sent[sent.length - 1];
+  eq('站点档位真的写进 siteOverrides',
+    he2.config.siteOverrides['www.kuaishou.com'].hideEmptyMode, 'all');
+
+  const siteModeSel2 = doc.querySelector(siteSelPath);
+  eq('本站设过之后下拉显示 all（不是「跟随通用」）', siteModeSel2.value, 'all');
+  siteModeSel2.value = '';
+  siteModeSel2.dispatchEvent(new win.Event('change'));
+  await tick(30);
+  const he3 = sent[sent.length - 1];
+  ok('选「跟随通用」把本站这个键删掉',
+    !Object.prototype.hasOwnProperty.call(
+      he3.config.siteOverrides['www.kuaishou.com'] || {}, 'hideEmptyMode'),
+    JSON.stringify(he3.config.siteOverrides['www.kuaishou.com']));
 
   console.log('\n' + '─'.repeat(56));
   if (fails.length) {

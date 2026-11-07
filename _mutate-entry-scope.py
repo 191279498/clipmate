@@ -106,7 +106,7 @@ MUTATIONS = [
     ('M22', '★ manifest 没注入 entry-scope.js', MANIFEST,
      '        "src/content/shared/entry-scope.js",\n', ''),
     ('M23', '★ 版本没升（回退 2.12.8）', MANIFEST,
-     '  "version": "2.12.10",', '  "version": "2.12.8",'),
+     '  "version": "2.12.11",', '  "version": "2.12.8",'),
     ('M24', '★ 快手回主页不清锚点标记（真机 K5/K6 残留）', KSSPA,
      "            this.buttonManager.button.removeAttribute('data-clipmate-anchor');",
      "            // 变异：不清锚点标记"),

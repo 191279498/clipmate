@@ -14,8 +14,10 @@
 //   1. 只在 ITEMS 里加一条，不要在页面里手写控件；
 //   2. `path` 是这个值在 config 里的位置，嵌套就写数组（如 ['settings','enableCache']）；
 //   3. 只有**真的生效**的项才允许写进来 —— 放了开关却没人读，等于骗用户；
-//   4. siteOverridable: true 的项才会出现在站点卡片里（站点覆盖目前只支持 6 项）；
+//   4. siteOverridable: true 的项才会出现在站点卡片里（v2.12.11 起共 9 项）；
 //      siteOnly: true 表示「只在站点卡片里出现，通用页不显示」（v2.9.6 的自动收起就是）。
+//   5. dependsOn 可以写 equals: '某档位'，表示依赖值等于它时才生效（v2.12.11）；
+//      不写 equals 时按老规矩「依赖为真才生效」。
 (function (global) {
   'use strict';
 
@@ -237,6 +239,56 @@
         { value: 'B', label: 'B · 封面正下方' },
         { value: 'C', label: 'C · 条目最右侧' }
       ]
+    },
+    // v2.12.11：空白字段四档（用户 2026-11-07 拍板 A / B / 自定义都要）。
+    // 默认 off = 升级后行为零变化；复制与显示是**两条独立的路**，
+    // 所以 custom 档要两个小开关分别管，不合并成一个布尔。
+    // dependsOn.equals：依赖值等于某个档位才算「生效」，见 options.applyDependency。
+    {
+      key: 'hideEmptyMode',
+      group: 'ui',
+      label: '空白字段',
+      hint: '没有内容的字段要不要隐藏。默认「不隐藏」，升级后跟以前一模一样；站点卡片里可以单独设，也可以选「跟随通用」',
+      type: 'select',
+      path: ['settings', 'hideEmptyMode'],
+      default: 'off',
+      options: [
+        { value: 'off', label: '不隐藏（默认）' },
+        { value: 'display', label: 'A · 只隐藏浮窗显示' },
+        { value: 'all', label: 'B · 显示与复制都隐藏' },
+        { value: 'custom', label: '自定义 · 两项自由组合' }
+      ],
+      siteOverridable: true
+    },
+    {
+      key: 'hideEmptyDisplay',
+      group: 'ui',
+      label: '自定义 · 浮窗显示隐藏',
+      hint: '只影响浮窗里看到的行 / 列；编辑模式与搜索时会自动显示全部字段，空字段才能补填、才搜得到',
+      type: 'switch',
+      path: ['settings', 'hideEmptyDisplay'],
+      default: false,
+      siteOverridable: true,
+      dependsOn: {
+        key: 'hideEmptyMode',
+        equals: 'custom',
+        offHint: '上面选「自定义」后，这一项才会生效'
+      }
+    },
+    {
+      key: 'hideEmptyCopy',
+      group: 'ui',
+      label: '自定义 · 复制导出隐藏',
+      hint: '只影响「复制 Notion」「复制 Markdown」；纯文本复制本来就跳过空字段，不受影响',
+      type: 'switch',
+      path: ['settings', 'hideEmptyCopy'],
+      default: false,
+      siteOverridable: true,
+      dependsOn: {
+        key: 'hideEmptyMode',
+        equals: 'custom',
+        offHint: '上面选「自定义」后，这一项才会生效'
+      }
     },
     {
       key: 'enableCache',

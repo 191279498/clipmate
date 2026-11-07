@@ -192,6 +192,125 @@
   }
 
   /**
+   * 找出命中本站的覆盖规则（后缀匹配 + 最长优先 + 别名域名回退）。
+   *
+   * v2.12.11：把原先写在 resolve() 里的 5 行抽出来，让「空白字段」用**同一套**
+   * 继承规则，避免两处各写一遍将来漂移。返回 { rule, obj }；obj 为 null 表示
+   * 没命中，或命中了但那条规则是 null / 非对象（「显式跟随通用」）。
+   */
+  function findSiteOverride(config, hostname) {
+    var rule = matchRule(config, hostname);
+    if (!rule) {
+      var site = findSite(hostname);
+      if (site && site.domain.toLowerCase() !== String(hostname || '').toLowerCase()) {
+        rule = matchRule(config, site.domain);
+      }
+    }
+    if (!rule) return { rule: null, obj: null };
+    var o = ((config && config.siteOverrides) || {})[rule];
+    return { rule: rule, obj: (o && typeof o === 'object') ? o : null };
+  }
+
+  // ---------- 空白字段策略（v2.12.11） ----------
+  //
+  // 四档语义（用户 2026-11-07 拍板，全局 + 单站点都要，默认不隐藏）：
+  //   off     不隐藏：浮窗显示全量、复制导出全量（升级后行为零变化）
+  //   display 只隐藏显示：浮窗少空行/空列，复制导出仍全量
+  //   all     显示 + 复制导出一起少列
+  //   custom  两个独立小开关自由组合（hideEmptyDisplay / hideEmptyCopy）
+  //
+  // 这里只负责「配置 → 两个布尔」，不碰 this.data、不碰 fieldOrder：
+  // 过滤只发生在渲染 / 复制那一层，字段清单与提取数据一个字节都不改，
+  // 免得踩「跨站补链按三键判空」「字段顺序」的老坑。
+  var HIDE_EMPTY_MODES = ['off', 'display', 'all', 'custom'];
+  var HIDE_EMPTY_DEFAULT = 'off';
+  var HIDE_EMPTY_KEYS = ['hideEmptyMode', 'hideEmptyDisplay', 'hideEmptyCopy'];
+
+  function normalizeHideEmptyMode(v) {
+    var s = String(v == null ? '' : v).trim().toLowerCase();
+    return HIDE_EMPTY_MODES.indexOf(s) !== -1 ? s : HIDE_EMPTY_DEFAULT;
+  }
+
+  /** 一个字段值算不算「空」：null / undefined / 纯空白 / 数组全空 都算 */
+  function isBlankValue(v) {
+    if (v === null || v === undefined) return true;
+    if (Array.isArray(v)) return v.every(isBlankValue);
+    return String(v).trim() === '';
+  }
+
+  /** 按「要不要隐藏」过滤字段清单；keepAll 时不隐藏（编辑模式 / 搜索时用） */
+  function visibleFields(fields, data, hideEmpty) {
+    var list = fields || [];
+    if (!hideEmpty) return list;
+    var d = data || {};
+    return list.filter(function (f) { return !isBlankValue(d[f]); });
+  }
+
+  /** 三个配置键 → { mode, display, copy }；非 custom 档位忽略两个小开关的值 */
+  function hideEmptyFrom(o) {
+    var x = o || {};
+    var mode = normalizeHideEmptyMode(x.hideEmptyMode);
+    if (mode === 'off') return { mode: 'off', display: false, copy: false };
+    if (mode === 'display') return { mode: 'display', display: true, copy: false };
+    if (mode === 'all') return { mode: 'all', display: true, copy: true };
+    return { mode: 'custom', display: !!x.hideEmptyDisplay, copy: !!x.hideEmptyCopy };
+  }
+
+  /** 当前页生效的空白字段策略：全局打底，站点覆盖逐键盖上去（没设的键继续跟随全局） */
+  function resolveHideEmpty(config, hostname) {
+    var c = config || {};
+    var g = c.settings || {};
+    var found = findSiteOverride(c, hostname);
+    var o = found.obj || {};
+    var hasOwn = Object.prototype.hasOwnProperty;
+    return hideEmptyFrom({
+      hideEmptyMode: hasOwn.call(o, 'hideEmptyMode') ? o.hideEmptyMode : g.hideEmptyMode,
+      hideEmptyDisplay: hasOwn.call(o, 'hideEmptyDisplay') ? o.hideEmptyDisplay : g.hideEmptyDisplay,
+      hideEmptyCopy: hasOwn.call(o, 'hideEmptyCopy') ? o.hideEmptyCopy : g.hideEmptyCopy
+    });
+  }
+
+  // 内容脚本这一侧的当前策略（进程内状态，不落盘）。
+  // content-main.refreshConfig() 负责 set；渲染 / 复制只读 get，不各自再解析一遍配置。
+  var currentHideEmpty = { mode: 'off', display: false, copy: false };
+  function setHideEmptyPolicy(p) {
+    var n = p || {};
+    currentHideEmpty = hideEmptyFrom({
+      hideEmptyMode: n.mode,
+      hideEmptyDisplay: n.display,
+      hideEmptyCopy: n.copy
+    });
+    return currentHideEmpty;
+  }
+  function hideEmptyPolicy() { return currentHideEmpty; }
+
+  /**
+   * 站点规则的写盘快照（options / popup / 批量操作共用）。
+   *
+   * 「基础五项」照旧无条件带上（popup-slim 的契约断言钉着），
+   * 「可跟随键」（复制格式 + 三个空白字段键）只在**本站自己那条规则里已经有**时才带上 ——
+   * 否则改一个别的开关就会把全局值悄悄固化到本站，以后改全局再也影响不到它。
+   */
+  function siteSnapshot(config, hostname, eff) {
+    var e = eff || resolve(config, hostname);
+    var s = {
+      autoExtract: e.autoExtract,
+      autoExtractDelay: e.autoExtractDelay,
+      autoCopy: e.autoCopy,
+      showButton: e.showButton,
+      autoDismiss: e.autoDismiss
+    };
+    var ov = (config && config.siteOverrides) || {};
+    var own = Object.prototype.hasOwnProperty.call(ov, hostname) ? ov[hostname] : null;
+    if (own && typeof own === 'object') {
+      ['autoCopyFormat'].concat(HIDE_EMPTY_KEYS).forEach(function (k) {
+        if (Object.prototype.hasOwnProperty.call(own, k)) s[k] = own[k];
+      });
+    }
+    return s;
+  }
+
+  /**
    * 算出当前页真正生效的四个开关。
    * @returns {{autoExtract:boolean, autoExtractDelay:number, autoCopy:boolean, showButton:boolean, autoDismiss:boolean, rule:string|null}}
    */
@@ -208,25 +327,12 @@
       eff.autoDismissExplicit = true;
     }
 
-    var rule = matchRule(config, hostname);
-
-    // 别名域名回退：bangumi.tv 之于 bgm.tv、game.douban.com 之于 www.douban.com
-    // 这种「同一个站的另一个域名」，后缀匹配天然对不上（.www.douban.com 不是 game.douban.com 的结尾）。
-    // 所以没命中时，再看这个站的主域名上有没有规则，有就沿用。
-    // 设置页给一行设一次，该站所有域名一起生效。
-    if (!rule) {
-      var site = findSite(hostname);
-      if (site && site.domain.toLowerCase() !== String(hostname || '').toLowerCase()) {
-        rule = matchRule(config, site.domain);
-      }
-    }
-
-    if (!rule) return eff;
-
-    // null / 非对象都当作「显式跟随全局」：
-    // 这种情况只会由设置页的「恢复跟随全局」写出来，用来切断上层域名的继承。
-    var o = (config.siteOverrides || {})[rule];
-    if (!o || typeof o !== 'object') return eff;
+    // v2.12.11：覆盖查找抽成 findSiteOverride()，与「空白字段」共用同一套
+    // 后缀匹配 + 最长优先 + 别名域名回退，避免两处逻辑将来漂移。
+    // null / 非对象都当作「显式跟随全局」（设置页「恢复跟随通用」写出来的）。
+    var found = findSiteOverride(config, hostname);
+    var o = found.obj;
+    if (!o) return eff;
 
     if (Object.prototype.hasOwnProperty.call(o, 'autoExtract')) {
       eff.autoExtract = !!o.autoExtract;
@@ -249,7 +355,7 @@
       eff.autoDismiss = !!o.autoDismiss;
       eff.autoDismissExplicit = true;
     }
-    eff.rule = rule;
+    eff.rule = found.rule;
     return eff;
   }
 
@@ -261,13 +367,25 @@
     findSite: findSite,
     globalDefaults: globalDefaults,
     matchRule: matchRule,
+    findSiteOverride: findSiteOverride,
     resolve: resolve,
     // v2.9.6：浮窗自动收起的默认值（社交开 / 其余关）
     autoDismissDefault: autoDismissDefault,
     // v2.5.66：自动复制格式
     AUTO_COPY_FORMATS: AUTO_COPY_FORMATS,
     AUTO_COPY_FORMAT_DEFAULT: AUTO_COPY_FORMAT_DEFAULT,
-    normalizeCopyFormat: normalizeCopyFormat
+    normalizeCopyFormat: normalizeCopyFormat,
+    // v2.12.11：空白字段四档
+    HIDE_EMPTY_MODES: HIDE_EMPTY_MODES,
+    HIDE_EMPTY_DEFAULT: HIDE_EMPTY_DEFAULT,
+    HIDE_EMPTY_KEYS: HIDE_EMPTY_KEYS,
+    normalizeHideEmptyMode: normalizeHideEmptyMode,
+    isBlankValue: isBlankValue,
+    visibleFields: visibleFields,
+    resolveHideEmpty: resolveHideEmpty,
+    setHideEmptyPolicy: setHideEmptyPolicy,
+    hideEmptyPolicy: hideEmptyPolicy,
+    siteSnapshot: siteSnapshot
   };
 
   global.ClipMateSites = api;

@@ -313,7 +313,7 @@ for (const dep of [
 ok('web_accessible_resources 仍保留吉祥物（popup/兜底还要用）',
   JSON.stringify(MANIFEST_JSON.web_accessible_resources || []).indexOf('icons/mascot/*') !== -1);
 
-eq('版本号是 2.12.10', MANIFEST_JSON.version, '2.12.10');
+eq('版本号是 2.12.11', MANIFEST_JSON.version, '2.12.11');
 ok('mascot-inline.js 在成品清单里可被加载（文件确实存在于包内）',
   fs.existsSync(path.join(ROOT, INLINE_JS)) && fs.existsSync(path.join(ROOT, RESOLVER_JS)));
 

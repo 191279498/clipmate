@@ -23,6 +23,52 @@
 
   global.ModalTableMixin = {
 
+    /**
+     * 当前页的空白字段策略（v2.12.11）。
+     * 主来源 = site-config 里的进程内状态（content-main.refreshConfig 写进去的）；
+     * 共享模块没加载时退回页面根属性，再不行就是「不隐藏」——
+     * 读不到配置绝不能把有内容的字段弄没。
+     */
+    _hideEmptyPolicy() {
+      const S = (typeof window !== 'undefined') ? window.ClipMateSites : null;
+      if (S && typeof S.hideEmptyPolicy === 'function') return S.hideEmptyPolicy();
+      try {
+        const root = document.documentElement;
+        const combo = root.getAttribute('data-clipmate-hide-empty-combo') || '';
+        return {
+          mode: root.getAttribute('data-clipmate-hide-empty') || 'off',
+          display: combo.charAt(0) === '1',
+          copy: combo.charAt(1) === '1'
+        };
+      } catch (e) {
+        return { mode: 'off', display: false, copy: false };
+      }
+    },
+
+    /** 显示层什么时候必须给全量字段：编辑模式（空字段要能补填）、搜索条打开（字段名也要能搜到） */
+    _displayAllFields() {
+      if (this.isEditMode) return true;
+      return !!this._searchOpen;
+    },
+
+    /**
+     * 按用途过滤字段清单。只返回一份**新的数组**，
+     * this.fieldOrder / this.data 一个字节都不动（跨站补链按三键判空全靠这个）。
+     */
+    _visibleFields(fields, purpose) {
+      const list = fields || [];
+      if (purpose === 'display' && this._displayAllFields()) return list;
+      const p = this._hideEmptyPolicy();
+      const hide = (purpose === 'copy') ? p.copy : p.display;
+      if (!hide) return list;
+      const S = (typeof window !== 'undefined') ? window.ClipMateSites : null;
+      if (S && typeof S.visibleFields === 'function') return S.visibleFields(list, this.data, true);
+      return list.filter((f) => {
+        const v = this.data ? this.data[f] : undefined;
+        return !(v === null || v === undefined || String(v).trim() === '');
+      });
+    },
+
     isUrl(text) {
     if (!text || typeof text !== 'string') return false;
 
@@ -189,7 +235,8 @@
     // v2.11.2：影视类每次渲染前重算一次「URL 合并格」（幂等），
     // 这样跨站补链补到 IMDB / TMDB / Bangumi 之后刷新一次就能看见，不必另找调用点。
     if (typeof this._mergeLinksIntoUrl === 'function') this._mergeLinksIntoUrl();
-    const fieldsToRender = this.fieldOrder;
+    // v2.12.11：默认就是 this.fieldOrder（不隐藏），四档都关时与升级前逐字节一致
+    const fieldsToRender = this._visibleFields(this.fieldOrder, 'display');
 
     // 根据展示模式生成不同的表格结构
     if (this.displayMode === 'vertical') {

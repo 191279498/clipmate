@@ -317,18 +317,30 @@ class SettingsPage {
     return row;
   }
 
+  /**
+   * 依赖项算「不生效」吗（v2.12.11 通用化）。
+   * 老规矩：依赖值为真才生效；新规矩：写了 equals 时，依赖值必须**等于那个档位**。
+   * 现有两项（延迟 / 复制格式）没写 equals，行为一个字节不变。
+   */
+  dependencyOff(dep, value) {
+    if (!dep) return false;
+    if (Object.prototype.hasOwnProperty.call(dep, 'equals')) return value !== dep.equals;
+    return !value;
+  }
+
   /** 依赖项不满足时置灰 + 换一句「为什么不生效」 */
   applyDependency(row, item, hintEl) {
     if (!item.dependsOn) return;
     var dep = this.readGlobal(item.dependsOn.key);
-    var off = !dep;
+    var off = this.dependencyOff(item.dependsOn, dep);
     row.classList.toggle('is-off', off);
     if (hintEl) hintEl.textContent = off ? (item.dependsOn.offHint || item.hint || '') : (item.hint || '');
 
     var input = row._rangeInput || row._select || row._numberInput || null;
     if (input) input.disabled = off;
+    // v2.12.11：「自定义」档的两个小开关本身就是 switch，非 custom 时也要禁用
     var sw = row.querySelector('.sw');
-    if (sw && item.type !== 'switch') sw.disabled = off;
+    if (sw) sw.disabled = off;
   }
 
   buildSwitch(checked, onChange, label) {
@@ -443,9 +455,24 @@ class SettingsPage {
     return { hasOwn: hasOwn, inheritFrom: inheritFrom, rule: rule, aliasOwn: aliasOwn };
   }
 
+  /**
+   * 站点卡片 / 站点写入共用的「生效值」（v2.12.11）。
+   * resolve() 原本只算 6 个基础开关，站点下拉却按 eff[item.key] 取值 ——
+   * 不把空白字段三键并进来，新档位会永远显示成「跟随通用」，两个自定义小开关也恒置灰。
+   * 不改 resolve() 本身的返回形状，免得动到别处已有的契约断言。
+   */
+  effectiveForSite(site) {
+    var eff = SITES.resolve(this.config, site.domain);
+    var he = SITES.resolveHideEmpty(this.config, site.domain);
+    eff.hideEmptyMode = he.mode;
+    eff.hideEmptyDisplay = he.display;
+    eff.hideEmptyCopy = he.copy;
+    return eff;
+  }
+
   buildSite(site) {
     var st = this.stateOf(site);
-    var eff = SITES.resolve(this.config, site.domain);
+    var eff = this.effectiveForSite(site);
     var isOpen = !!this.openSites[site.domain];
 
     var wrap = el('div', 'site' + (st.hasOwn ? ' is-own' : (st.inheritFrom ? ' is-inherit' : '')) + (isOpen ? ' is-open' : ''));
@@ -559,8 +586,10 @@ class SettingsPage {
 
     var ctrl = el('div', 'row-ctrl');
     var rawOv = (this.config.siteOverrides || {})[site.domain];
-    var hasOwnFmt = !!(rawOv && typeof rawOv === 'object' &&
-      Object.prototype.hasOwnProperty.call(rawOv, 'autoCopyFormat'));
+    // v2.12.11：按「这一项自己的键」判断，不再写死 autoCopyFormat。
+    // 站点层每个下拉都有「跟随通用」，本站规则里没这个键就显示「跟随通用」。
+    var hasOwnSelect = !!(rawOv && typeof rawOv === 'object' &&
+      Object.prototype.hasOwnProperty.call(rawOv, item.key));
 
     if (item.type === 'switch') {
       ctrl.appendChild(this.buildSwitch(eff[item.key], (next) => {
@@ -599,7 +628,7 @@ class SettingsPage {
         op.textContent = o.label;
         sel.appendChild(op);
       });
-      sel.value = hasOwnFmt ? eff[item.key] : '';
+      sel.value = hasOwnSelect ? eff[item.key] : '';
       sel.addEventListener('change', () => this.writeSite(site, item.key, sel.value));
       ctrl.appendChild(sel);
       row._select = sel;
@@ -612,39 +641,30 @@ class SettingsPage {
 
   applySiteDependency(row, item, hintEl, eff) {
     if (!item.dependsOn) return;
-    var off = !eff[item.dependsOn.key];
+    var off = this.dependencyOff(item.dependsOn, eff[item.dependsOn.key]);
     row.classList.toggle('is-off', off);
     if (hintEl) hintEl.textContent = off ? (item.dependsOn.offHint || item.hint || '') : (item.hint || '');
     var input = row._rangeInput || row._select || null;
     if (input) input.disabled = off;
+    var sw = row.querySelector('.sw');
+    if (sw) sw.disabled = off;
   }
 
   // ============ 写入：站点 ============
 
   async writeSite(site, key, value) {
-    var eff = SITES.resolve(this.config, site.domain);
+    var eff = this.effectiveForSite(site);
+    // v2.12.11：快照统一走 site-config.siteSnapshot() —— 基础五项照旧，
+    // 「可跟随键」只在**本站自己那条规则里已经有**时才带上，
+    // 否则改一个别的开关就会把全局档位悄悄固化到本站（popup 也是同一份函数）。
+    var snapshot = SITES.siteSnapshot(this.config, site.domain, eff);
+    var item = SCHEMA.byKey(key);
 
-    // 以当前生效值为快照，只改这一项，其余几项原样落到本站规则里
-    var snapshot = {
-      autoExtract: eff.autoExtract,
-      autoExtractDelay: eff.autoExtractDelay,
-      autoCopy: eff.autoCopy,
-      showButton: eff.showButton,
-      // v2.9.6：必须一起快照 —— 否则用户设过「收起浮窗」再改自动提取，
-      // 新快照里没有这个键，本站就掉回类型默认值了（社交站会悄悄又变回开）
-      autoDismiss: eff.autoDismiss
-    };
-
-    // 复制格式：本站原本没设过就继续保持「跟随通用」，不要顺手把它固定下来
-    var prevOv = (this.config.siteOverrides || {})[site.domain];
-    if (prevOv && typeof prevOv === 'object' &&
-        Object.prototype.hasOwnProperty.call(prevOv, 'autoCopyFormat')) {
-      snapshot.autoCopyFormat = prevOv.autoCopyFormat;
-    }
-
-    if (key === 'autoCopyFormat') {
-      if (value) snapshot.autoCopyFormat = SITES.normalizeCopyFormat(value);
-      else delete snapshot.autoCopyFormat;
+    if (item && item.type === 'select') {
+      // 站点层每个下拉都有「跟随通用」：选它就把这个键删掉，继续跟着上层 / 全局变。
+      // 老键 autoCopyFormat 走同一条路，行为与以前一致。
+      if (!value) delete snapshot[key];
+      else snapshot[key] = (key === 'autoCopyFormat') ? SITES.normalizeCopyFormat(value) : value;
     } else {
       snapshot[key] = value;
     }
@@ -652,16 +672,16 @@ class SettingsPage {
     var ov = Object.assign({}, this.config.siteOverrides || {});
     ov[site.domain] = snapshot;
 
-    var item = SCHEMA.byKey(key);
     var label = item ? item.label : key;
     var tip = site.name + '：' + label + ' ' + this.describeValue(item, value, key);
     await this.save({ siteOverrides: ov }, tip);
   }
 
   describeValue(item, value, key) {
-    if (key === 'autoCopyFormat') {
+    // v2.12.11：对所有站点层下拉生效，不再只认 autoCopyFormat
+    if (item && item.type === 'select') {
       if (!value) return '跟随通用';
-      var hit = (item && item.options || []).filter((o) => o.value === value)[0];
+      var hit = (item.options || []).filter((o) => o.value === value)[0];
       return '已改为 ' + (hit ? hit.label : value);
     }
     if (item && item.type === 'range') return '已改为 ' + value + (item.unit || '');
@@ -742,18 +762,10 @@ class SettingsPage {
 
       SITES.CATALOG.forEach((site) => {
         var effD = SITES.resolve(this.config, site.domain);
-        var snapD = {
-          autoExtract: effD.autoExtract,
-          autoExtractDelay: effD.autoExtractDelay,
-          autoCopy: effD.autoCopy,
-          showButton: effD.showButton,
-          autoDismiss: dismissOn
-        };
-        var prevD = ov[site.domain];
-        if (prevD && typeof prevD === 'object' &&
-            Object.prototype.hasOwnProperty.call(prevD, 'autoCopyFormat')) {
-          snapD.autoCopyFormat = prevD.autoCopyFormat;
-        }
+        // v2.12.11：统一快照（基础五项 + 本站已有的「可跟随键」），
+        // 批量改「自动收起」不会顺手把空白字段的档位固化下来
+        var snapD = SITES.siteSnapshot(this.config, site.domain, effD);
+        snapD.autoDismiss = dismissOn;
         ov[site.domain] = snapD;
       });
 
@@ -766,18 +778,9 @@ class SettingsPage {
 
     SITES.CATALOG.forEach((site) => {
       var eff = SITES.resolve(this.config, site.domain);
-      var snapshot = {
-        autoExtract: eff.autoExtract,
-        autoExtractDelay: eff.autoExtractDelay,
-        autoCopy: eff.autoCopy,
-        showButton: target,
-        autoDismiss: eff.autoDismiss
-      };
-      var prevOv = ov[site.domain];
-      if (prevOv && typeof prevOv === 'object' &&
-          Object.prototype.hasOwnProperty.call(prevOv, 'autoCopyFormat')) {
-        snapshot.autoCopyFormat = prevOv.autoCopyFormat;
-      }
+      // v2.12.11：同上，统一快照
+      var snapshot = SITES.siteSnapshot(this.config, site.domain, eff);
+      snapshot.showButton = target;
       ov[site.domain] = snapshot;
     });
 

@@ -53,6 +53,14 @@
         } catch (e) { /* 焦点被页面抢走时忽略，不影响搜索本身 */ }
       }
 
+      // v2.12.11：搜索要按**全量字段**判定。显示隐藏开着时，
+      // 打开搜索条得先重绘成全量表格（否则空字段行根本不在 DOM 里，搜字段名搜不到）。
+      // updateTable 里会补跑一次 _applySearch，所以两条路只走一条。
+      const p = (typeof this._hideEmptyPolicy === 'function') ? this._hideEmptyPolicy() : null;
+      if (p && p.display && typeof this.updateTable === 'function') {
+        this.updateTable(true);
+        return;
+      }
       this._applySearch();
     },
 
@@ -73,6 +81,10 @@
           filterBtn.textContent = '只看命中';
         }
       }
+
+      // v2.12.11：关搜索后回到「隐藏空白字段」的视图（_searchOpen 已置 false，重绘会自动重新过滤）
+      const p = (typeof this._hideEmptyPolicy === 'function') ? this._hideEmptyPolicy() : null;
+      if (p && p.display && typeof this.updateTable === 'function') this.updateTable(true);
 
       this._clearSearchMarks();
       this._updateSearchCount(0, this._countSearchUnits(this._getSearchTable()));

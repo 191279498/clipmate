@@ -594,7 +594,7 @@ function testManifest() {
   section('8. manifest：两个新脚本都注册、顺序正确、零越权');
 
   const mf = JSON.parse(read('manifest.json'));
-  eq('版本号已升到 2.12.10', mf.version, '2.12.10');
+  eq('版本号已升到 2.12.11', mf.version, '2.12.11');
 
   const isolated = mf.content_scripts.find((e) => !e.world || e.world === 'ISOLATED');
   const js = isolated.js;

@@ -62,8 +62,11 @@
 
     async copyData() {
     try {
-      // 根据需求，所有字段都需要复制，包括空字符串字段，以保证顺序一致性
-      const fieldsToCopy = this.fieldOrder;
+      // v2.12.11：默认全量（含空字段，顺序不变）；B / 自定义档才按「复制隐藏」过滤。
+      // 只单独加载本 mixin 的测试替身没有 _visibleFields（真整机由 modal-table-renderer 挂上），
+      // 这种情况退回 this.fieldOrder，绝不能让复制功能整个抛错。
+      const fieldsToCopy = (typeof this._visibleFields === 'function')
+        ? this._visibleFields(this.fieldOrder, 'copy') : this.fieldOrder;
 
       const dataItems = [];
       for (const fieldName of fieldsToCopy) {
@@ -143,8 +146,10 @@
 
     async copyDataAsMarkdown() {
     try {
-      // 获取所有要复制的字段
-      const fieldsToCopy = this.fieldOrder;
+      // v2.12.11：同 copyData，按「复制隐藏」档位过滤（A 档仍是全量）；
+      // 兜底原因同上，单独加载本 mixin 时不许抛错。
+      const fieldsToCopy = (typeof this._visibleFields === 'function')
+        ? this._visibleFields(this.fieldOrder, 'copy') : this.fieldOrder;
 
       // 确保displayMode有值
       if (!this.displayMode) {
