@@ -1,0 +1,159 @@
+﻿序号,站点,原始词（原文）,词表层级,建议并入（你的标准标签）,关系等级,判定理由,来源编号,来源说明,来源链接
+1,豆瓣电影,纪录片,电影类型,纪录,直接并入（同义/中英对译）,同一类型，「片」是后缀；你库里写「纪录」，站点写「纪录片」,S6,豆瓣电影分类排行榜 28 类整理（含 typerank 类型 ID 对照）,https://blog.csdn.net/silencewx1005/article/details/135631721
+2,豆瓣电影,短片,电影类型,短篇,建议并入（近义/上下位）,一般指片长 <45 分钟的短片；你库里是「短篇」，语义接近但用词习惯不同，需确认是否笔误,S6,豆瓣电影分类排行榜 28 类整理（含 typerank 类型 ID 对照）,https://blog.csdn.net/silencewx1005/article/details/135631721
+3,豆瓣电影,家庭,电影类型,生活,需你拍板（跨类/易误伤）,家庭/家庭伦理更像「生活」，也有人会归到「儿童」；两个标准标签都可能，需你定,S6,豆瓣电影分类排行榜 28 类整理（含 typerank 类型 ID 对照）,https://blog.csdn.net/silencewx1005/article/details/135631721
+4,豆瓣电影,黑色电影,电影类型,黑暗,需你拍板（跨类/易误伤）,Film-Noir 是特定犯罪片流派，不等于「黑暗」题材；并入会丢掉流派信息,S7,豆瓣电影分类排行榜 28 类（第三方站点说明）,https://www.sdmi88.cn/sites/25239.html
+5,豆瓣电影,真人秀,剧集类型样本,综艺,建议并入（近义/上下位）,真人秀是综艺的一个门类,S8,豆瓣官方 /j/search_tags?type=tv 接口返回（综艺/纪录片等筛选标签）,https://movie.douban.com/j/search_tags?type=tv&source=index
+6,豆瓣电影,脱口秀,剧集类型样本,综艺,建议并入（近义/上下位）,脱口秀/访谈节目属综艺,S8,豆瓣官方 /j/search_tags?type=tv 接口返回（综艺/纪录片等筛选标签）,https://movie.douban.com/j/search_tags?type=tv&source=index
+7,豆瓣电影,日本动画,剧集筛选标签,动画,建议并入（近义/上下位）,带地域限定的动画，可并入「动画」但会丢失「日本」信息,S8,豆瓣官方 /j/search_tags?type=tv 接口返回（综艺/纪录片等筛选标签）,https://movie.douban.com/j/search_tags?type=tv&source=index
+8,豆瓣电影,戏曲片,通用类型词,戏曲,直接并入（同义/中英对译）,戏曲片/舞台艺术片即戏曲类,S7,豆瓣电影分类排行榜 28 类（第三方站点说明）,https://www.sdmi88.cn/sites/25239.html
+9,IMDb,Action,官方 genre,动作,直接并入（同义/中英对译）,官方定义：大量动作/特技场面,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+10,IMDb,Adult,官方 genre,成人,直接并入（同义/中英对译）,官方定义专指硬核成人内容，比「情色」更重，归「成人」更准,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+11,IMDb,Adventure,官方 genre,冒险,直接并入（同义/中英对译）,官方定义：探险/追寻目标的连续冒险经历,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+12,IMDb,Animation,官方 genre,动画,直接并入（同义/中英对译）,官方定义：超过 75% 时长为动画,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+13,IMDb,Biography,官方 genre,传记,直接并入（同义/中英对译）,官方定义：以真人一生为主线,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+14,IMDb,Comedy,官方 genre,喜剧,直接并入（同义/中英对译）,官方定义：几乎全片喜剧情境,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+15,IMDb,Crime,官方 genre,犯罪,直接并入（同义/中英对译）,官方定义：以犯罪行为为主线,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+16,IMDb,Documentary,官方 genre,纪录,直接并入（同义/中英对译）,官方定义：真实人物/事件的非虚构影像,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+17,IMDb,Drama,官方 genre,剧情,直接并入（同义/中英对译）,官方定义：严肃叙事、冲突与情感,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+18,IMDb,Family,官方 genre,儿童,需你拍板（跨类/易误伤）,官方定义是「合家欢/适合低龄观众」，你库里「儿童」和「生活」都沾边，需定一个,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+19,IMDb,Fantasy,官方 genre,奇幻,直接并入（同义/中英对译）,官方定义：魔法/神话/超自然叙事,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+20,IMDb,Film-Noir,官方 genre,黑暗,需你拍板（跨类/易误伤）,1940-50 年代黑色电影流派；也可归「犯罪」，不宜直接当「黑暗」,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+21,IMDb,Game-Show,官方 genre,综艺,建议并入（近义/上下位）,竞赛/益智节目，属综艺,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+22,IMDb,History,官方 genre,历史,直接并入（同义/中英对译）,官方定义：真实历史事件与人物,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+23,IMDb,Horror,官方 genre,恐怖,直接并入（同义/中英对译）,官方定义：令人恐惧/厌恶的叙事,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+24,IMDb,Musical,官方 genre,歌舞,直接并入（同义/中英对译）,官方定义：角色以歌舞推进叙事,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+25,IMDb,Music,官方 genre,音乐,直接并入（同义/中英对译）,官方定义：音乐相关内容但非歌舞片,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+26,IMDb,Mystery,官方 genre,悬疑,建议并入（近义/上下位）,官方定义偏「解谜/探寻真相」；你库里同时有「悬疑」「推理」，是否双写需定,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+27,IMDb,News,官方 genre,社会,需你拍板（跨类/易误伤）,新闻时事节目；归「社会」或「综艺」都说得通，且它更像节目形态,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+28,IMDb,Reality-TV,官方 genre,综艺,建议并入（近义/上下位）,真人秀/实景节目,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+29,IMDb,Romance,官方 genre,爱情,直接并入（同义/中英对译）,官方定义：以情感依恋为主线,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+30,IMDb,Sci-Fi,官方 genre,科幻,直接并入（同义/中英对译）,官方定义：基于推测性科学/太空/环境变化,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+31,IMDb,Short,官方 genre,短篇,建议并入（近义/上下位）,官方定义是片长 <45 分钟（剧集 <22 分钟），与「短篇」用词不同,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+32,IMDb,Sport,官方 genre,运动,直接并入（同义/中英对译）,官方定义：以体育项目/赛事为核心,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+33,IMDb,Talk-Show,官方 genre,综艺,建议并入（近义/上下位）,访谈/脱口秀节目,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+34,IMDb,Thriller,官方 genre,惊悚,直接并入（同义/中英对译）,官方定义：紧张/悬念叙事,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+35,IMDb,War,官方 genre,战争,直接并入（同义/中英对译）,官方定义：真实战争相关,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+36,IMDb,Western,官方 genre,西部,直接并入（同义/中英对译）,官方定义：美国西部拓荒题材,S1,IMDb 官方 Genres 帮助页（28 个官方 genre 及定义，页面标注 Updated 12-March-2026）,https://help.imdb.com/article/contribution/titles/genres/GZDRMS6R742JRGAG
+37,IMDb,Wuxia,子类型,武侠,直接并入（同义/中英对译）,IMDb 官方子类型就叫 Wuxia,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+38,IMDb,Martial-Arts / Kung-Fu,子类型,武侠,建议并入（近义/上下位）,功夫/武术片常与武侠混用，但严格说不等于武侠,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+39,IMDb,Samurai,子类型,武侠,需你拍板（跨类/易误伤）,日本武士片；并入「武侠」会抹掉国别，建议保留或归「历史」,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+40,IMDb,Disaster,子类型,灾难,直接并入（同义/中英对译）,灾难片,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+41,IMDb,Superhero,子类型,（保留原词）,不并入（保留原词）,超级英雄片在你 44 库里没有对应标签，硬塞「动作」会失真,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+42,IMDb,Erotic-Thriller,子类型,情色,直接并入（同义/中英对译）,情色惊悚，归「情色」,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+43,IMDb,Steamy-Romance,子类型,情色,需你拍板（跨类/易误伤）,「热辣爱情」偏尺度，不等于情色片,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+44,IMDb,Dark-Comedy / Dark-Fantasy,子类型,喜剧 + 黑暗,需你拍板（跨类/易误伤）,复合词，是否同时写两个标准标签需你定,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+45,IMDb,Dystopian-Sci-Fi,子类型,末世,建议并入（近义/上下位）,反乌托邦科幻与末世高度重合；也可只归「科幻」,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+46,IMDb,Post-Apocalyptic,子类型,末世,直接并入（同义/中英对译）,后末日题材,S3,IMDb 中文界面 genre 浏览页（子类型中文译名样本）,https://www.imdb.com/genre/Sci-Fi
+47,IMDb,Survival-Thriller,子类型,生存,建议并入（近义/上下位）,生存惊悚,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+48,IMDb,Survival-Competition,子类型,综艺,需你拍板（跨类/易误伤）,生存竞赛是综艺节目形态，不是「生存」题材，容易误伤,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+49,IMDb,Zombie-Horror / Slasher-Horror / Folk-Horror,子类型,恐怖,直接并入（同义/中英对译）,恐怖片子类,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+50,IMDb,Body-Horror,子类型,猎奇,建议并入（近义/上下位）,肉体恐怖也可归「猎奇」，但官方归在 Horror 下,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+51,IMDb,Political-Drama / Political-Documentary,子类型,政治,直接并入（同义/中英对译）,政治剧情片/政治纪录片,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+52,IMDb,Workplace-Drama / Medical-Drama / Legal-Drama,子类型,职业,建议并入（近义/上下位）,行业剧（职场/医疗/律政）,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+53,IMDb,Costume-Drama / Period-Drama,子类型,古装,建议并入（近义/上下位）,时代剧/古装剧,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+54,IMDb,Coming-of-Age / Teen-Drama,子类型,校园,需你拍板（跨类/易误伤）,青春成长题材不等于校园，建议保留原词,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+55,IMDb,Biopic,子类型,传记,直接并入（同义/中英对译）,传记片,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+56,IMDb,Short-Film,子类型,短篇,建议并入（近义/上下位）,短片,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+57,IMDb,Adult-Animation,子类型,成人 + 动画,建议并入（近义/上下位）,成人动画，两个维度都命中,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+58,IMDb,Anime / Mecha,子类型,动画 / 科幻,建议并入（近义/上下位）,Anime 归动画；机甲（Mecha）归科幻,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+59,IMDb,Isekai,子类型,奇幻,建议并入（近义/上下位）,异世界转生,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+60,IMDb,Slice-of-Life,子类型,生活,直接并入（同义/中英对译）,日常/生活片段,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+61,IMDb,True-Crime,子类型,犯罪,直接并入（同义/中英对译）,真实犯罪,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+62,IMDb,Mockumentary,子类型,纪录,需你拍板（跨类/易误伤）,伪纪录片不是真纪录片，建议保留原词,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+63,IMDb,Docudrama,子类型,纪录 + 剧情,建议并入（近义/上下位）,文献剧情片,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+64,IMDb,Sitcom / Stand-Up-Comedy / Satire / Parody,子类型,喜剧,直接并入（同义/中英对译）,情景喜剧/单口/讽刺/恶搞,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+65,IMDb,Romantic-Comedy,子类型,爱情 + 喜剧,建议并入（近义/上下位）,爱情喜剧，两个维度,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+66,IMDb,Psychological-Thriller / Spy / Conspiracy-Thriller,子类型,惊悚,直接并入（同义/中英对译）,心理/间谍/阴谋惊悚,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+67,IMDb,Quiz-Show / Talent-Competition / Reality-TV / Talk-Show,子类型,综艺,建议并入（近义/上下位）,益智/才艺/真人秀/访谈节目,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+68,IMDb,Sword-and-Sorcery / Fairy-Tale / Fantasy-Epic,子类型,奇幻,直接并入（同义/中英对译）,剑与魔法/童话/奇幻史诗,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+69,IMDb,Artificial-Intelligence / Cyberpunk / Time-Travel,子类型,科幻,建议并入（近义/上下位）,人工智能/赛博朋克/时空旅行；注意 AI 题材 ≠ 你的「AI剧」形态标签,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+70,IMDb,Korean-Drama / Soap-Opera / Telenovela,子类型,（保留原词）,不并入（保留原词）,剧种或地区形态，不是题材,S2,IMDb Interests / 子类型浏览页（官方，200+ 子类型）,https://www.imdb.com/fr-ca/feature/genre/
+71,TMDB,Action,电影官方 genre,动作,直接并入（同义/中英对译）,电影官方 genre #28,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+72,TMDB,Adventure,电影官方 genre,冒险,直接并入（同义/中英对译）,#12,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+73,TMDB,Animation,电影官方 genre,动画,直接并入（同义/中英对译）,#16,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+74,TMDB,Comedy,电影官方 genre,喜剧,直接并入（同义/中英对译）,#35,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+75,TMDB,Crime,电影官方 genre,犯罪,直接并入（同义/中英对译）,#80,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+76,TMDB,Documentary,电影官方 genre,纪录,直接并入（同义/中英对译）,#99,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+77,TMDB,Drama,电影官方 genre,剧情,直接并入（同义/中英对译）,#18,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+78,TMDB,Family,电影官方 genre,儿童,需你拍板（跨类/易误伤）,官方注释「适合儿童与全家」，与「儿童/生活」都可能，需定（genre id #10751）,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+79,TMDB,Fantasy,电影官方 genre,奇幻,直接并入（同义/中英对译）,#14,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+80,TMDB,History,电影官方 genre,历史,直接并入（同义/中英对译）,#36,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+81,TMDB,Horror,电影官方 genre,恐怖,直接并入（同义/中英对译）,#27,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+82,TMDB,Music,电影官方 genre,音乐,直接并入（同义/中英对译）,#10402,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+83,TMDB,Mystery,电影官方 genre,悬疑,建议并入（近义/上下位）,官方词；是否同时写「推理」需定（genre id #9648）,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+84,TMDB,Romance,电影官方 genre,爱情,直接并入（同义/中英对译）,#10749,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+85,TMDB,Science-Fiction,电影官方 genre,科幻,直接并入（同义/中英对译）,#878,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+86,TMDB,TV-Movie,电影官方 genre,短篇,需你拍板（跨类/易误伤）,电视电影是播出形态，不是短片；建议保留原词（genre id #10770）,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+87,TMDB,Thriller,电影官方 genre,惊悚,直接并入（同义/中英对译）,#53,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+88,TMDB,War,电影官方 genre,战争,直接并入（同义/中英对译）,#10752,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+89,TMDB,Western,电影官方 genre,西部,直接并入（同义/中英对译）,#37,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+90,TMDB,Action & Adventure,剧集官方 genre,动作 + 冒险,建议并入（近义/上下位）,官方复合词，必须拆成两个标准标签（genre id #10759）,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+91,TMDB,Kids,剧集官方 genre,儿童,直接并入（同义/中英对译）,#10762,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+92,TMDB,News,剧集官方 genre,社会,需你拍板（跨类/易误伤）,新闻节目归「社会」还是「综艺」需定（genre id #10763）,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+93,TMDB,Reality,剧集官方 genre,综艺,建议并入（近义/上下位）,#10764,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+94,TMDB,Sci-Fi & Fantasy,剧集官方 genre,科幻 + 奇幻,建议并入（近义/上下位）,官方复合词，拆两个（genre id #10765）,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+95,TMDB,Soap,剧集官方 genre,生活,需你拍板（跨类/易误伤）,肥皂剧/家庭长剧，归「生活」仍会丢信息（genre id #10766）,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+96,TMDB,Talk,剧集官方 genre,综艺,建议并入（近义/上下位）,#10767,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+97,TMDB,War & Politics,剧集官方 genre,战争 + 政治,建议并入（近义/上下位）,官方复合词，拆两个（genre id #10768）,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+98,TMDB,Animation / Comedy / Crime / Documentary / Drama / Family / Mystery / Western,剧集官方 genre,（见同站电影条目）,直接并入（同义/中英对译）,剧集与电影共用的 8 个 genre，映射同上（genre id #16 等）,S4,TMDB 官方 Genre API 返回示例（电影 19 / 剧集 16）,https://apis.io/apis/tmdb/tmdb-genre-api
+99,Bangumi,搞笑 / 喜剧 / 欢乐 / 吐槽 / 玩梗 / 恶搞 / 无厘头 / 爆笑 / 讽刺 / 沙雕,站内标签词,喜剧,直接并入（同义/中英对译）,站内同义词合并规则已把这一组统一为「搞笑」；你的标准词是「喜剧」,S12,Bangumi 站内标签同义词合并规则（官方 blog，2024）,https://bgm.tv/blog/333452
+100,Bangumi,恋爱 / 纯爱 / 狗粮 / 党争 / 甜 / 胃疼 / 恋爱喜剧,站内标签词,爱情,直接并入（同义/中英对译）,站内合并规则：爱情 = 爱情 + 恋爱 + 恋爱喜剧 + 纯爱 + 甜 + 狗粮 + 胃疼 + 党争,S12,Bangumi 站内标签同义词合并规则（官方 blog，2024）,https://bgm.tv/blog/333452
+101,Bangumi,耽美 / 耽美系 / 男同 / BL / BL动画 / 腐 / 腐向 / 搅基 / 基 / 基情,站内标签词,同性,直接并入（同义/中英对译）,站内合并规则，BL/耽美即同性题材,S12,Bangumi 站内标签同义词合并规则（官方 blog，2024）,https://bgm.tv/blog/333452
+102,Bangumi,百合 / 轻百合 / 轻百,站内标签词,同性,需你拍板（跨类/易误伤）,百合是女性同性题材，是否算进「同性」需你定；也可保留原词,S12,Bangumi 站内标签同义词合并规则（官方 blog，2024）,https://bgm.tv/blog/333452
+103,Bangumi,肉番 / 卖肉 / 肉 / 肉片 / 露点 / 杀必死 / 福利,站内标签词,情色,需你拍板（跨类/易误伤）,擦边福利 ≠ 情色片，也可能归「成人」，需定,S12,Bangumi 站内标签同义词合并规则（官方 blog，2024）,https://bgm.tv/blog/333452
+104,Bangumi,战斗 / 打斗 / 打鬥 / 格斗 / 动作 / 枪战,站内标签词,动作,直接并入（同义/中英对译）,站内合并规则：战斗 = 战斗 + 打斗 + 格斗 + 动作 + 枪战,S12,Bangumi 站内标签同义词合并规则（官方 blog，2024）,https://bgm.tv/blog/333452
+105,Bangumi,超能力 / 超自然系 / 异能,站内标签词,奇幻,建议并入（近义/上下位）,站内归「超能力」，更接近奇幻设定,S12,Bangumi 站内标签同义词合并规则（官方 blog，2024）,https://bgm.tv/blog/333452
+106,Bangumi,幻想 / 魔幻 / 魔法 / 奇幻,站内标签词,奇幻,直接并入（同义/中英对译）,站内合并规则：奇幻 = 奇幻 + 幻想 + 魔幻 + 魔法,S12,Bangumi 站内标签同义词合并规则（官方 blog，2024）,https://bgm.tv/blog/333452
+107,Bangumi,异世界 / 转生 / 穿越 / 平行世界,站内标签词,奇幻,建议并入（近义/上下位）,站内合并规则归「异世界」，是设定不是题材，并入奇幻需点头,S12,Bangumi 站内标签同义词合并规则（官方 blog，2024）,https://bgm.tv/blog/333452
+108,Bangumi,宇宙 / 太空 / 太空歌剧 / 赛博朋克,站内标签词,科幻,直接并入（同义/中英对译）,站内合并规则：科幻 = 科幻 + 宇宙 + 太空 + 太空歌剧 + 赛博朋克,S12,Bangumi 站内标签同义词合并规则（官方 blog，2024）,https://bgm.tv/blog/333452
+109,Bangumi,机战 / 机甲 / 萝卜 / GUNDAM / 高达,站内标签词,科幻,建议并入（近义/上下位）,站内合并规则归「机战」，通常属科幻,S12,Bangumi 站内标签同义词合并规则（官方 blog，2024）,https://bgm.tv/blog/333452
+110,Bangumi,战争 / 反战,站内标签词,战争,直接并入（同义/中英对译）,站内合并规则,S12,Bangumi 站内标签同义词合并规则（官方 blog，2024）,https://bgm.tv/blog/333452
+111,Bangumi,推理系,站内标签词,推理,直接并入（同义/中英对译）,站内合并规则：推理 = 推理 + 推理系,S12,Bangumi 站内标签同义词合并规则（官方 blog，2024）,https://bgm.tv/blog/333452
+112,Bangumi,猎奇 / 血腥 / 重口味 / 重口,站内标签词,猎奇,直接并入（同义/中英对译）,站内合并规则,S12,Bangumi 站内标签同义词合并规则（官方 blog，2024）,https://bgm.tv/blog/333452
+113,Bangumi,致郁,站内标签词,黑暗,建议并入（近义/上下位）,情绪氛围标签，与「黑暗」接近但你库里没有「致郁」,S11,Bangumi 三分类标签列表（官方 blog：世界背景/作品主题/情绪氛围）,https://bgm.tv/blog/324482
+114,Bangumi,废土,站内标签词,末世,直接并入（同义/中英对译）,三分类「世界背景」：处于毁灭边缘的世界背景,S11,Bangumi 三分类标签列表（官方 blog：世界背景/作品主题/情绪氛围）,https://bgm.tv/blog/324482
+115,Bangumi,架空世界,站内标签词,奇幻,建议并入（近义/上下位）,三分类「世界背景」：完全虚构世界,S11,Bangumi 三分类标签列表（官方 blog：世界背景/作品主题/情绪氛围）,https://bgm.tv/blog/324482
+116,Bangumi,种田,站内标签词,生活,建议并入（近义/上下位）,三分类「作品主题」：隐居田野/经营发展，偏生活流,S11,Bangumi 三分类标签列表（官方 blog：世界背景/作品主题/情绪氛围）,https://bgm.tv/blog/324482
+117,Bangumi,日常 / 日常系 / 治愈 / 治愈系 / 温情 / 温馨 / 感动,站内标签词,生活,建议并入（近义/上下位）,站内「日常」是独立大类，你库里最接近「生活」；「治愈」是日常子类,S11,Bangumi 三分类标签列表（官方 blog：世界背景/作品主题/情绪氛围）,https://bgm.tv/blog/324482
+118,Bangumi,职场 / 社会见闻,站内标签词,职业,建议并入（近义/上下位）,三分类「作品主题」：职场交际、社会见闻,S11,Bangumi 三分类标签列表（官方 blog：世界背景/作品主题/情绪氛围）,https://bgm.tv/blog/324482
+119,Bangumi,竞技 / 卡牌,站内标签词,运动,需你拍板（跨类/易误伤）,棋牌/综艺竞技不等于体育运动，也可能归「综艺」，需定,S11,Bangumi 三分类标签列表（官方 blog：世界背景/作品主题/情绪氛围）,https://bgm.tv/blog/324482
+120,Bangumi,体育 / 体育番 / 棒球 / 运动番,站内标签词,运动,直接并入（同义/中英对译）,站内合并规则：运动 = 运动 + 体育 + 体育番 + 棒球 + 运动番,S12,Bangumi 站内标签同义词合并规则（官方 blog，2024）,https://bgm.tv/blog/333452
+121,Bangumi,歌番 / 乐队,站内标签词,音乐,直接并入（同义/中英对译）,站内合并规则：音乐 = 音乐 + 歌番 + 乐队,S12,Bangumi 站内标签同义词合并规则（官方 blog，2024）,https://bgm.tv/blog/333452
+122,Bangumi,偶像,站内标签词,音乐,需你拍板（跨类/易误伤）,偶像题材常与音乐绑定，但是独立主题，建议保留原词,S12,Bangumi 站内标签同义词合并规则（官方 blog，2024）,https://bgm.tv/blog/333452
+123,Bangumi,魔法少女 / 变身,站内标签词,奇幻,建议并入（近义/上下位）,三分类「内容」里的主题标签,S10,Bangumi 标签说明（官方 blog）,https://bangumi.tv/blog/286461
+124,Bangumi,子供向 / 子供 / 幼女向,站内标签词,儿童,直接并入（同义/中英对译）,站内合并规则，即低龄向,S12,Bangumi 站内标签同义词合并规则（官方 blog，2024）,https://bgm.tv/blog/333452
+125,Bangumi,青春,站内标签词,校园,需你拍板（跨类/易误伤）,青春成长不等于校园，建议保留原词,S11,Bangumi 三分类标签列表（官方 blog：世界背景/作品主题/情绪氛围）,https://bgm.tv/blog/324482
+126,Bangumi,短篇 / OVA / 泡面番 / 剧场版 / 季番,站内标签词,短篇,需你拍板（跨类/易误伤）,这些是篇幅/播出形态，不是题材；「短篇」字面虽同但语义不同,S10,Bangumi 标签说明（官方 blog）,https://bangumi.tv/blog/286461
+127,Bangumi,原创 / 漫改 / 轻改 / GAL改 / 游戏改,站内标签词,（保留原词）,不并入（保留原词）,作品来源分类，不是题材,S10,Bangumi 标签说明（官方 blog）,https://bangumi.tv/blog/286461
+128,Bangumi,热血 / 燃 / 励志 / 成长 / 催泪 / 复仇 / 文艺 / 中二 / 电波 / 扭曲 / 萌系 / 后宫 / 女性向 / 龙傲天,站内标签词,（保留原词）,不并入（保留原词）,情绪氛围或受众标签，44 库里没有对应项，硬并会严重失真,S11,Bangumi 三分类标签列表（官方 blog：世界背景/作品主题/情绪氛围）,https://bgm.tv/blog/324482
+129,Bangumi,现世 / 架空 / 未来 / 近代 / 古代 / 都市 / 校园 / 废土,站内标签词,（保留原词或按背景单独建轴）,不并入（保留原词）,「世界背景」轴与题材轴不同，不建议压进 44 库,S11,Bangumi 三分类标签列表（官方 blog：世界背景/作品主题/情绪氛围）,https://bgm.tv/blog/324482
+130,红果短剧,都市爱情 / 古风爱情 / 奇幻爱情 / 仙侠爱情 / 年代爱情 / 现言甜宠 / 都市情感 / 古风言情 / 古装爱情,题材标签,爱情,直接并入（同义/中英对译）,「爱情」的复合题材词，页面 tags 里是细分题材,S14,红果短剧官方分类页（题材标签）,https://novelquickapp.com/category
+131,红果短剧,甜宠 / 先婚后爱 / 日久生情 / 暗恋成真 / 破镜重圆 / 闪婚 / 追妻 / 虐恋 / 契约婚姻,题材标签,爱情,建议并入（近义/上下位）,言情套路词，通常随爱情题材出现；并入会丢掉套路信息,S15,红果短剧官方作品/演员页（题材标签样本）,https://novelquickapp.com/actor/shijia829501
+132,红果短剧,轻喜剧,题材标签,喜剧,直接并入（同义/中英对译）,喜剧子类,S14,红果短剧官方分类页（题材标签）,https://novelquickapp.com/category
+133,红果短剧,悬疑推理 / 悬疑情感 / 悬疑灵异 / 刑侦破案 / 反转,题材标签,悬疑 + 推理,建议并入（近义/上下位）,悬疑/推理两条线都有，是否双写需定,S14,红果短剧官方分类页（题材标签）,https://novelquickapp.com/category
+134,红果短剧,玄幻仙侠 / 修真 / 仙尊 / 系统修仙 / 修仙,题材标签,玄幻 + 修仙,直接并入（同义/中英对译）,修仙/修真是「修仙」，玄幻仙侠是「玄幻」,S16,红果短剧题材大类整理（第三方，2026-10-11）,https://www.huaweijia123.com/baike/14142.html
+135,红果短剧,奇幻脑洞 / 奇幻异能 / 脑洞 / 系统 / 异能 / 玄学,题材标签,奇幻,需你拍板（跨类/易误伤）,「设定」不等于题材；脑洞/系统是短剧特有设定词，建议保留,S14,红果短剧官方分类页（题材标签）,https://novelquickapp.com/category
+136,红果短剧,古风权谋 / 宫斗宅斗 / 朝堂权谋 / 历史古代 / 古言甜宠,题材标签,古装,直接并入（同义/中英对译）,古装/古代背景题材,S15,红果短剧官方作品/演员页（题材标签样本）,https://novelquickapp.com/actor/shijia829501
+137,红果短剧,战神归来 / 强者回归 / 隐藏大佬 / 马甲 / 扮猪吃虎 / 打脸虐渣 / 逆袭翻身 / 重生逆袭 / 虐渣,题材标签,（保留原词）,不并入（保留原词）,爽点套路，44 库无对应；这是红果最核心的一批词，硬并会让标签失去意义,S15,红果短剧官方作品/演员页（题材标签样本）,https://novelquickapp.com/actor/shijia829501
+138,红果短剧,重生 / 穿越 / 穿书 / 异界 / 架空 / 古代,题材标签,（保留原词）,不并入（保留原词）,情节设定/时空背景，不是题材；「穿越」若要并可考虑奇幻，但需你定,S14,红果短剧官方分类页（题材标签）,https://novelquickapp.com/category
+139,红果短剧,求生 / 末世 / 丧尸 / 囤货 / 无限流 / 规则怪谈,题材标签,生存 + 末世,直接并入（同义/中英对译）,求生→生存，末世/丧尸→末世；规则怪谈偏悬疑,S16,红果短剧题材大类整理（第三方，2026-10-11）,https://www.huaweijia123.com/baike/14142.html
+140,红果短剧,动作打斗,题材标签,动作,直接并入（同义/中英对译）,动作题材,S15,红果短剧官方作品/演员页（题材标签样本）,https://novelquickapp.com/actor/shijia829501
+141,红果短剧,家庭 / 家庭伦理 / 家族 / 家族振兴 / 婚姻生活 / 婆媳,题材标签,生活,建议并入（近义/上下位）,家庭伦理/家族题材与「生活」最近,S14,红果短剧官方分类页（题材标签）,https://novelquickapp.com/category
+142,红果短剧,都市 / 都市日常 / 都市脑洞 / 都市玄幻,题材标签,生活,需你拍板（跨类/易误伤）,都市是现代生活背景，也可能是纯背景标签；归「生活」需你定,S14,红果短剧官方分类页（题材标签）,https://novelquickapp.com/category
+143,红果短剧,年代 / 乡村 / 种田,题材标签,生活,建议并入（近义/上下位）,年代/乡村/种田流偏生活流,S16,红果短剧题材大类整理（第三方，2026-10-11）,https://www.huaweijia123.com/baike/14142.html
+144,红果短剧,成长 / 女性成长 / 大女主 / 女强 / 职场励志,题材标签,职业,需你拍板（跨类/易误伤）,女性成长/职场励志与「职业」沾边，但更像人物线，建议保留,S15,红果短剧官方作品/演员页（题材标签样本）,https://novelquickapp.com/actor/shijia829501
+145,红果短剧,校园 / 青春 / 学渣逆袭,题材标签,校园,直接并入（同义/中英对译）,校园题材,S16,红果短剧题材大类整理（第三方，2026-10-11）,https://www.huaweijia123.com/baike/14142.html
+146,红果短剧,职场,题材标签,职业,直接并入（同义/中英对译）,职场题材,S14,红果短剧官方分类页（题材标签）,https://novelquickapp.com/category
+147,红果短剧,法律正义 / 刑侦破案,题材标签,犯罪,建议并入（近义/上下位）,律政/刑侦题材,S15,红果短剧官方作品/演员页（题材标签样本）,https://novelquickapp.com/actor/shijia829501
+148,红果短剧,民国 / 谍战 / 家国情怀,题材标签,历史,建议并入（近义/上下位）,民国/谍战属近现代历史背景,S16,红果短剧题材大类整理（第三方，2026-10-11）,https://www.huaweijia123.com/baike/14142.html
+149,红果短剧,AI / 平行世界 / 外星 / 末世,题材标签,科幻,建议并入（近义/上下位）,科幻/末世题材；注意 AI 题材 ≠ 形态标签「AI剧」,S16,红果短剧题材大类整理（第三方，2026-10-11）,https://www.huaweijia123.com/baike/14142.html
+150,红果短剧,萌宝 / 福宝,题材标签,儿童,需你拍板（跨类/易误伤）,萌宝是角色设定，不等于儿童向,S16,红果短剧题材大类整理（第三方，2026-10-11）,https://www.huaweijia123.com/baike/14142.html
+151,红果短剧,脑洞 / 诡秘 / 灵异,题材标签,猎奇,需你拍板（跨类/易误伤）,猎奇/诡秘氛围接近，但红果多归悬疑或奇幻,S15,红果短剧官方作品/演员页（题材标签样本）,https://novelquickapp.com/actor/shijia829501
+152,红果短剧,AI剧,形态标签,AI剧,直接并入（同义/中英对译）,红果「子分类」判据词，字面一致；但它现在写在「其他信息」而非「标签」列,S17,本仓库实测存档：tests/golden/*.json、tests/fixtures/html/*.html、源码 site-config.js,本仓库 tests/golden/、tests/fixtures/html/、ClipMate_chrome/src/
+153,红果短剧,漫剧,形态标签,动画,需你拍板（跨类/易误伤）,漫剧是动画化短剧形态，是否归「动画」需定,S17,本仓库实测存档：tests/golden/*.json、tests/fixtures/html/*.html、源码 site-config.js,本仓库 tests/golden/、tests/fixtures/html/、ClipMate_chrome/src/
+154,红果短剧,真人剧 / 短剧,形态标签,短剧,需你拍板（跨类/易误伤）,整站都是短剧，作为标签会 100% 命中、没有区分度；建议只作形态字段,S17,本仓库实测存档：tests/golden/*.json、tests/fixtures/html/*.html、源码 site-config.js,本仓库 tests/golden/、tests/fixtures/html/、ClipMate_chrome/src/
+155,红果短剧,"脑洞,穿越,古代,乡村（实测样本1）",实测落库,（保留原词）,不并入（保留原词）,本地 golden 实测：hongguo-7671966197985856536 的标签列原样就是这 4 个词,S17,本仓库实测存档：tests/golden/*.json、tests/fixtures/html/*.html、源码 site-config.js,本仓库 tests/golden/、tests/fixtures/html/、ClipMate_chrome/src/
+156,红果短剧,"脑洞,重生,求生,升级流,异界（实测样本2）",实测落库,生存,建议并入（近义/上下位）,含「求生」；其余 4 词无对应，需保留原词,S17,本仓库实测存档：tests/golden/*.json、tests/fixtures/html/*.html、源码 site-config.js,本仓库 tests/golden/、tests/fixtures/html/、ClipMate_chrome/src/
+157,红果短剧,"玄幻,异界（实测样本3）",实测落库,玄幻,直接并入（同义/中英对译）,含「玄幻」字面一致；「异界」需保留,S17,本仓库实测存档：tests/golden/*.json、tests/fixtures/html/*.html、源码 site-config.js,本仓库 tests/golden/、tests/fixtures/html/、ClipMate_chrome/src/
+158,红果短剧,"家族,家族振兴,穿越,扮猪吃虎,女强,总裁,世家,现代（实测样本4）",实测落库,生活,建议并入（近义/上下位）,「家族/家族振兴」可归生活；其余 6 词是设定/爽点，需保留,S17,本仓库实测存档：tests/golden/*.json、tests/fixtures/html/*.html、源码 site-config.js,本仓库 tests/golden/、tests/fixtures/html/、ClipMate_chrome/src/

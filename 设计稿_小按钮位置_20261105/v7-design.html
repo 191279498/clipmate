@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>豆瓣收藏列表 · 小按钮位置设计稿 v2.11.7</title>
+<style>
+  :root{
+    --ink:#1f2328; --sub:#5b6570; --line:#e3e8ee; --bg:#f6f8fa; --card:#fff;
+    --a:#2563eb; --b:#ea580c; --c:#16a34a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.7 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+  .wrap{max-width:1040px;margin:0 auto;padding:32px 22px 60px}
+  h1{font-size:26px;margin:0 0 6px;letter-spacing:-.3px}
+  .lede{color:var(--sub);margin:0 0 26px;font-size:14px}
+  h2{font-size:19px;margin:38px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  h3{font-size:15px;margin:0 0 6px}
+  p{margin:0 0 10px}
+  .muted{color:var(--sub);font-size:13px}
+
+  .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .plan{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;
+    position:relative;overflow:hidden}
+  .plan::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+  .plan.a::before{background:var(--a)} .plan.b::before{background:var(--b)} .plan.c::before{background:var(--c)}
+  .plan .tag{display:inline-block;font-size:11px;font-weight:700;color:#fff;border-radius:99px;
+    padding:1px 8px;margin-bottom:8px}
+  .plan.a .tag{background:var(--a)} .plan.b .tag{background:var(--b)} .plan.c .tag{background:var(--c)}
+  .plan ul{margin:8px 0 0;padding-left:18px;font-size:13px;color:var(--sub)}
+  .plan li{margin:3px 0}
+  .badge{display:inline-block;font-size:11px;border-radius:5px;padding:0 6px;margin:6px 4px 0 0;
+    background:#eef2f7;color:#48525d}
+  .badge.good{background:#e7f6ec;color:#166534}
+  .badge.warn{background:#fff3e6;color:#9a3412}
+
+  figure{margin:0 0 26px;background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:14px 14px 10px}
+  figcaption{font-size:13px;color:var(--sub);margin-bottom:10px}
+  .stage{position:relative;width:100%;overflow:hidden;border-radius:8px;border:1px solid #dfe4ea}
+  .stage img{display:block;width:100%;height:auto}
+  .mk{position:absolute;display:flex;align-items:center;justify-content:center;
+    font:700 12px/1 system-ui,sans-serif;color:#fff;border-radius:6px;
+    box-shadow:0 2px 8px rgba(0,0,0,.28);cursor:default}
+  .mk.a{background:rgba(37,99,235,.92);outline:2px solid rgba(37,99,235,.35);outline-offset:2px}
+  .mk.b{background:rgba(234,88,12,.92);outline:2px solid rgba(234,88,12,.35);outline-offset:2px}
+  .mk.c{background:rgba(22,163,74,.92);outline:2px solid rgba(22,163,74,.32);outline-offset:2px}
+  .mk.clash{background:rgba(220,38,38,.92);outline-color:rgba(220,38,38,.35)}
+  .legend{display:flex;gap:16px;font-size:12px;color:var(--sub);margin-top:9px;flex-wrap:wrap}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);
+    border-radius:12px;overflow:hidden;font-size:13.5px}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:#f0f3f7;font-weight:600}
+  tr:last-child td{border-bottom:none}
+  td.ok{color:#166534} td.no{color:#b91c1c} td.mid{color:#9a3412}
+
+  .note{background:var(--card);border:1px solid var(--line);border-left:4px solid #0f766e;
+    border-radius:10px;padding:14px 16px;margin:16px 0}
+  .note h3{color:#0f766e}
+  code{background:#eef2f7;border-radius:4px;padding:1px 5px;font-size:12.5px}
+  .spec{font-size:13.5px}
+  .spec li{margin:5px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>豆瓣收藏列表 · 小按钮位置设计稿</h1>
+  <p class="lede">基于 2026-11-05 真机测量（三站四种结构、视口 965×877）。
+    下面三张方案图都叠在<b>真实页面截图</b>上，彩色块就是按钮的落点；同一站里每条的位置完全一致。</p>
+
+  <h2>一、三个方案</h2>
+  <div class="plans">
+    <div class="plan a">
+      <span class="tag">方案 A · 推荐</span>
+      <h3>封面右下角「角标」</h3>
+      <p class="muted">按钮浮在封面区域右下角，像收藏角标。</p>
+      <span class="badge good">三站一套规则</span>
+      <span class="badge good">不撑高</span>
+      <span class="badge warn">遮封面右下角 24×24</span>
+      <ul>
+        <li>落点：<code>right:4px; bottom:4px</code>（相对封面框）</li>
+        <li>封面宽 80 / 90 / 102 自动跟随，不用写死坐标</li>
+        <li>列表视图另定规则（见第四张图）</li>
+      </ul>
+    </div>
+    <div class="plan b">
+      <span class="tag">方案 B · 最贴你的红框</span>
+      <h3>封面正下方</h3>
+      <p class="muted">按钮放在封面下方留白里，不压封面。</p>
+      <span class="badge good">不遮封面</span>
+      <span class="badge warn">游戏页只有 21px</span>
+      <span class="badge warn">需缩到 20px 或压边 3px</span>
+      <ul>
+        <li>影视：封面框内下方有 44px 空白，放得下</li>
+        <li>读书：封面外有 31px，放得下</li>
+        <li>游戏：只有 21px，24px 按钮差 3px</li>
+      </ul>
+    </div>
+    <div class="plan c">
+      <span class="tag">方案 C · 不推荐</span>
+      <h3>条目最右侧固定列</h3>
+      <p class="muted">所有行按钮统一贴条目右缘，像「操作列」。</p>
+      <span class="badge good">最整齐</span>
+      <span class="badge good">完全不遮内容</span>
+      <span class="badge warn">离封面太远</span>
+      <span class="badge warn">列表视图会撞日期</span>
+      <span class="badge warn">长简介会被压住</span>
+      <ul>
+        <li>条目宽 675，按钮跑到最右边，鼠标要横移很远</li>
+        <li>列表视图右侧是「2026-10-26」，要改豆瓣布局才放得下</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>二、叠在真实页面上的样子</h2>
+  <p class="muted">每条画了两行，A 蓝 / B 橙 / C 绿。图里能直接看出「同一站每条是不是同一个位置」。</p>
+
+  <figure>
+    <figcaption><b>影视 · 网格视图</b> — 条目 675×164，封面框 80×158，封面图 80×114（下方有 44px 空白）</figcaption>
+    <div class="stage" id="s-movie-grid"><img src="v7-movie-grid.png" alt="影视网格视图"></div>
+    <div class="legend">
+      <span><i style="background:#2563eb"></i>A 封面右下角</span>
+      <span><i style="background:#ea580c"></i>B 封面下方</span>
+      <span><i style="background:#16a34a"></i>C 条目最右</span>
+    </div>
+  </figure>
+
+  <figure>
+    <figcaption><b>读书 · 网格视图</b> — 条目 675×180，封面框 90×128（封面即图片，下方留 31px）</figcaption>
+    <div class="stage" id="s-book-grid"><img src="v7-book-grid.png" alt="读书网格视图"></div>
+    <div class="legend"><span><i style="background:#2563eb"></i>A 会遮封面右下角</span>
+      <span><i style="background:#ea580c"></i>B 正好在封面下方</span>
+      <span><i style="background:#16a34a"></i>C 条目最右</span></div>
+  </figure>
+
+  <figure>
+    <figcaption><b>游戏 · 列表</b> — 条目 675×159，封面框 102×138，封面下方只剩 21px</figcaption>
+    <div class="stage" id="s-game-grid"><img src="v7-game-grid.png" alt="游戏列表"></div>
+    <div class="legend"><span><i style="background:#2563eb"></i>A 封面右下角</span>
+      <span><i style="background:#ea580c"></i>B 会溢出 3px（红字提示）</span>
+      <span><i style="background:#16a34a"></i>C 条目最右</span></div>
+  </figure>
+
+  <figure>
+    <figcaption><b>影视 · 列表视图</b> — 条目只有 28px 高，没有封面，右侧「2026-10-26」占住 618～684</figcaption>
+    <div class="stage" id="s-movie-list"><img src="v7-movie-list.png" alt="影视列表视图"></div>
+    <div class="legend"><span><i style="background:#2563eb"></i>A / B 固定在日期左侧</span>
+      <span><i style="background:#16a34a"></i>C 会压住日期（红块）</span></div>
+  </figure>
+
+  <h2>三、横向对比</h2>
+  <table>
+    <tr><th style="width:22%">看什么</th><th>A 封面角标</th><th>B 封面下方</th><th>C 右侧固定列</th></tr>
+    <tr><td>同一站每条是否同一位置</td><td class="ok">是</td><td class="ok">是</td><td class="ok">是</td></tr>
+    <tr><td>会不会撑高列表</td><td class="ok">不会（浮层不占位）</td><td class="ok">不会（游戏压边 3px）</td><td class="ok">不会</td></tr>
+    <tr><td>遮不遮封面</td><td class="mid">读书/游戏遮右下角 24×24</td><td class="ok">不遮</td><td class="ok">不遮</td></tr>
+    <tr><td>游戏页（只有 21px）</td><td class="ok">放得下</td><td class="mid">24px 差 3px，要缩到 20px</td><td class="ok">放得下</td></tr>
+    <tr><td>列表视图（无封面）</td><td class="ok">日期左侧固定</td><td class="ok">日期左侧固定</td><td class="no">会压住日期</td></tr>
+    <tr><td>会不会压住文字</td><td class="ok">不会（封面区域是空的）</td><td class="ok">不会</td><td class="no">游戏长简介、列表日期都会被压</td></tr>
+    <tr><td>离标题/封面的距离</td><td class="ok">近</td><td class="ok">最近</td><td class="no">远（横移约 600px）</td></tr>
+    <tr><td>要不要动豆瓣自己的布局</td><td class="ok">不动</td><td class="ok">不动</td><td class="no">列表视图要改</td></tr>
+  </table>
+
+  <div class="note">
+    <h3>我的建议：方案 A</h3>
+    <p>你的红框（封面下方）在影视、读书页都放得下，但<b>游戏页封面下方只有 21px</b>，
+      24px 的按钮要么缩成 20px（手指不好点），要么压住下一条 3px。方案 A 把按钮放进封面右下角，
+      三站一套规则、零撑高、不用给游戏开特例；遮住的是封面右下角一小块（约 5%），
+      点起来也离封面最近。</p>
+    <p>如果你更在意「一点都不遮封面」，就选 B，代价是游戏页按钮小一号（20px）。
+      两个方案我都能做，列表视图都用「日期左侧固定」这一条规则。</p>
+  </div>
+
+  <h2>四、怎么实现（不管你选哪个）</h2>
+  <ul class="spec">
+    <li><b>按钮不再塞进标题里</b>：从 <code>.title</code> 移出来，挂到条目容器上，用绝对定位；
+      条目容器加 <code>position:relative</code>，按钮不占文档流，所以<b>行高一个像素都不变</b>。</li>
+    <li><b>网格视图</b>：以封面框 <code>.pic</code> 为锚点（A 用 <code>right:4px;bottom:4px</code>；
+      B 用 <code>left:50%;transform:translateX(-50%);top:封面底+3px</code>）。</li>
+    <li><b>列表视图</b>：以日期 <code>.date</code> 为锚点，按钮右缘距日期左缘 8px，垂直居中；
+      没有日期就退回条目右缘内侧 10px。</li>
+    <li><b>点击逻辑完全不动</b>：仍然靠按钮上的 <code>data-cm-subject</code> 和绑定的详情地址；
+      浮窗仍以这颗按钮为锚点，弹出位置规则不变。</li>
+    <li><b>换分辨率 / 浏览器缩放</b>：全部用相对锚点 + 固定内缩，不写死屏幕坐标。</li>
+    <li><b>异常</b>：封面懒加载失败、封面高度不一致（读书 128/132）、条目缺日期，都有回退位置，按钮不会消失或跑位。</li>
+  </ul>
+
+  <h2>五、改完怎么验（选好方案后开工，出 v2.11.7）</h2>
+  <ul class="spec">
+    <li>单测：按钮父元素是条目而不是标题；网格/列表两套定位规则；点击仍拿到正确地址；<b>加挂前后条目高度差 = 0</b>。</li>
+    <li>变异：把挂载点改回标题 → 必须变红；把列表定位改成标题末尾 → 必须变红。</li>
+    <li>真机：三站四种结构，量每条按钮的 x 坐标，<b>同站必须只有一个值</b>；条目高度前后一致；截图人眼确认不遮「修改 删除」。</li>
+    <li>出成品包、报告，推源码与记忆。</li>
+  </ul>
+
+</div>
+
+<script>
+(function(){
+  var shots = {
+    's-movie-grid': [
+      {a:[64,452,24,24],  b:[40,452,24,24],  c:[653,392,24,24]},
+      {a:[64,636,24,24],  b:[40,636,24,24],  c:[653,576,24,24]}
+    ],
+    's-book-grid': [
+      {a:[74,418,24,24],  b:[45,449,24,24],  c:[653,375,24,24]},
+      {a:[74,598,24,24],  b:[45,629,24,24],  c:[653,555,24,24]}
+    ],
+    's-game-grid': [
+      {a:[86,399,24,24],  b:[51,427,24,24],  c:[653,356,24,24], clash:['b']},
+      {a:[86,578,24,24],  b:[51,606,24,24],  c:[653,535,24,24], clash:['b']}
+    ],
+    's-movie-list': [
+      {a:[586,324,24,24], b:[586,324,24,24], c:[653,324,24,24], clash:['c']},
+      {a:[586,352,24,24], b:[586,352,24,24], c:[653,352,24,24], clash:['c']}
+    ]
+  };
+  var W = 965, H = 877;
+  Object.keys(shots).forEach(function(id){
+    var stage = document.getElementById(id);
+    if(!stage) return;
+    shots[id].forEach(function(row){
+      ['a','b','c'].forEach(function(k){
+        if(!row[k]) return;
+        var r = row[k];
+        var el = document.createElement('div');
+        el.className = 'mk ' + k + ((row.clash||[]).indexOf(k) > -1 ? ' clash' : '');
+        el.style.left   = (r[0]/W*100) + '%';
+        el.style.top    = (r[1]/H*100) + '%';
+        el.style.width  = (r[2]/W*100) + '%';
+        el.style.height = (r[3]/H*100) + '%';
+        el.textContent = k.toUpperCase();
+        el.title = k.toUpperCase() + ' 方案落点';
+        stage.appendChild(el);
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>
